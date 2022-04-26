@@ -50,10 +50,7 @@ contract BaseRewardPool {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    address public constant bal = address(0xba100000625a3754423978a60c9317c58a424e3D);
-    address public constant d2dBal = address(0x); //need address or instance of d2dBal
-
-    IERC20 public rewardToken = bal;
+    IERC20 public rewardToken;
     IERC20 public stakingToken;
     uint256 public constant duration = 7 days;
 
@@ -81,16 +78,17 @@ contract BaseRewardPool {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
+    address public constant bal = address(0xc128a9954e6c874ea3d62ce62b468ba073093f25);
+    address public constant d2dBal = address(0x); //need address or instance of d2dBal
+
     constructor(
         uint256 pid_,
-        // address stakingToken_,
-        // address rewardToken_,
         address operator_,
         address rewardManager_
     ) public {
-        pid = pid_
-        stakingToken = IERC20(d2dBal);//stakingToken_); //d2dBal //0x43D4A3cd90ddD2F8f4f693170C9c8098163502ad
-        rewardToken = IERC20(bal);//rewardToken_); //bal
+        pid = pid_;
+        stakingToken = IERC20(d2dBal); //Staking token is d2dBal.
+        rewardToken = IERC20(bal); // Rewards token is Bal.
         operator = operator_;
         rewardManager = rewardManager_;
     }
@@ -155,7 +153,7 @@ contract BaseRewardPool {
                 .add(rewards[account]);
     }
 
-    function stake(uint256 _amount) 
+    function stake(uint256 _amount)
         public
         updateReward(msg.sender)
         returns(bool)
@@ -170,7 +168,7 @@ contract BaseRewardPool {
         _totalSupply = _totalSupply.add(_amount);
         _balances[msg.sender] = _balances[msg.sender].add(_amount);
 
-        stakingToken.safeTransferFrom(msg.sender, address(this), _amount); //d2dBal
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit Staked(msg.sender, _amount);
 
         

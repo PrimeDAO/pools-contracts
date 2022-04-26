@@ -42,7 +42,7 @@ contract BalDepositor{
     function setFees(uint256 _lockIncentive) external{
         require(msg.sender==feeManager, "!auth");
 
-        if(_lockIncentive >= 0 && _lockIncentive <= 30)
+        if(_lockIncentive >= 0 && _lockIncentive <= 30){
             lockIncentive = _lockIncentive;
        }
     }
