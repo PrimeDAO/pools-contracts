@@ -23,7 +23,7 @@ contract BalDepositor{
 
     address public feeManager;
     address public immutable staker;
-    address public immutable minter;
+    address public immutable minter; //d2dBAL
     uint256 public incentiveBal = 0; 
     uint256 public unlockTime;
 
@@ -42,7 +42,7 @@ contract BalDepositor{
     function setFees(uint256 _lockIncentive) external{
         require(msg.sender==feeManager, "!auth");
 
-        if(_lockIncentive >= 0 && _lockIncentive <= 30){
+        if(_lockIncentive >= 0 && _lockIncentive <= 30)
             lockIncentive = _lockIncentive;
        }
     }
@@ -90,15 +90,15 @@ contract BalDepositor{
         }
     }
 
-    function lockBalancer() external {
-        _lockBalancer();
+    // function lockBalancer() external {
+    //     _lockBalancer();
 
-        //mint incentives
-        if(incentiveBal > 0){
-            ITokenMinter(minter).mint(msg.sender,incentiveBal);
-            incentiveBal = 0;
-        }
-    }
+    //     //mint incentives
+    //     if(incentiveBal > 0){
+    //         ITokenMinter(minter).mint(msg.sender,incentiveBal);
+    //         incentiveBal = 0;
+    //     }
+    // }
 
     function deposit(uint256 _amount, bool _lock, address _stakeAddress) public {
         require(_amount > 0,"!>0");
@@ -106,7 +106,7 @@ contract BalDepositor{
         if(_lock){
             //lock immediately, transfer directly to staker to skip an erc20 transfer
             IERC20(bal).safeTransferFrom(msg.sender, staker, _amount);
-            _lockBalancer();
+            _lockBalancer();//TODO change to lock in Rewerds
             if(incentiveBal > 0){
                 //add the incentive tokens here so they can be staked together
                 _amount = _amount.add(incentiveBal);

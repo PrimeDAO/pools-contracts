@@ -184,7 +184,7 @@ contract Controller {
         uint256 pid = poolInfo.length;
 
         //create a tokenized deposit
-        address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken);
+        address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken); //d2dBal;  Staking token is d2dBal.
         //create a reward contract for bal rewards
         address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(pid,token);
         //create a stash to handle extra incentives
