@@ -15,6 +15,7 @@ contract D2DToken is ERC20, Ownable {
     {
         _mint(msg.sender, initialSupply);
         // _balances[msg.sender] += 20000000000000000000000;
+        _transferOwnership(_msgSender()); // as D2DToken is Ownable 
     }
 
     function transfer(address recipient, uint256 amount)

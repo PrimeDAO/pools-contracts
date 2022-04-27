@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
-import "./Interfaces.sol";
-import '@openzeppelin/contracts/math/SafeMath.sol';
+// import "./Interfaces.sol";
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 
-contract PoolContract{
+contract PoolContract is Ownable {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -22,26 +23,27 @@ contract PoolContract{
     constructor(address _pools) public {
         operator = msg.sender;
         pools = _pools;
+        _transferOwnership(_msgSender()); // as PoolContract is Ownable 
     }
 
-    function setOperator(address _operator) external {
+    function setOperator(address _operator) onlyOwner external {
         require(msg.sender == operator, "!auth");
         operator = _operator;
     }
 
     //revert control of adding  pools back to operator
-    function revertControl() external{
+    function revertControl() onlyOwner external{
         require(msg.sender == operator, "!auth");
         IPools(pools).setPoolManager(operator);
     }
 
     //add a new D2DBal pool to the system.
     //gauge must be on bal's registry, thus anyone can call
-    function addPool(address _swap, address _gauge, uint256 _stashVersion) external returns(bool){
+    function addPool(address _swap, address _gauge, uint256 _stashVersion) external onlyOwner returns(bool){
         require(_gauge != address(0),"gauge is 0");
         require(_swap != address(0),"swap is 0");
 
-        //get bal's registery
+        //get bal's registry
         address mainReg = IRegistry(registry).get_registry();
         
         //get lp token and gauge list from swap address
@@ -69,7 +71,7 @@ contract PoolContract{
         return true;
     }
 
-    function shutdownPool(uint256 _pid) external returns(bool){
+    function shutdownPool(uint256 _pid) external onlyOwner returns(bool){
         require(msg.sender==operator, "!auth");
 
         IPools(pools).shutdownPool(_pid);
