@@ -1,26 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-
 contract Controller {
-
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using Address for address;
 
-    address public constant bal = address(0xba100000625a3754423978a60c9317c58a424e3D); 
-    address public constant registry = address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
+    address public constant bal =
+        address(0xba100000625a3754423978a60c9317c58a424e3D);
+    address public constant registry =
+        address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
-    address public constant voteOwnership = address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
-    address public constant voteParameter = address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
+    address public constant voteOwnership =
+        address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
+    address public constant voteParameter =
+        address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
     uint256 public lockIncentive = 1000; //incentive to bal stakers
     uint256 public stakerIncentive = 450; //incentive to native token stakers
@@ -61,8 +62,16 @@ contract Controller {
     PoolInfo[] public poolInfo;
     mapping(address => bool) public gaugeMap;
 
-    event Deposited(address indexed user, uint256 indexed poolid, uint256 amount);
-    event Withdrawn(address indexed user, uint256 indexed poolid, uint256 amount);
+    event Deposited(
+        address indexed user,
+        uint256 indexed poolid,
+        uint256 amount
+    );
+    event Withdrawn(
+        address indexed user,
+        uint256 indexed poolid,
+        uint256 amount
+    );
 
     constructor(address _staker, address _minter) public {
         isShutdown = false;
@@ -71,12 +80,11 @@ contract Controller {
         voteDelegate = msg.sender;
         feeManager = msg.sender;
         poolManager = msg.sender;
-        feeDistro = address(0); 
-        feeToken = address(0); 
+        feeDistro = address(0);
+        feeToken = address(0);
         treasury = address(0);
         minter = _minter;
     }
-
 
     /// SETTER SECTION ///
 
@@ -95,13 +103,17 @@ contract Controller {
         poolManager = _poolM;
     }
 
-    function setFactories(address _rfactory, address _sfactory, address _tfactory) external {
+    function setFactories(
+        address _rfactory,
+        address _sfactory,
+        address _tfactory
+    ) external {
         require(msg.sender == owner, "!auth");
-        
+
         //reward factory only allow this to be called once even if owner
         //removes ability to inject malicious staking contracts
         //token factory can also be immutable
-        if(rewardFactory == address(0)){
+        if (rewardFactory == address(0)) {
             rewardFactory = _rfactory;
             tokenFactory = _tfactory;
         }
@@ -112,21 +124,23 @@ contract Controller {
     }
 
     function setArbitrator(address _arb) external {
-        require(msg.sender==owner, "!auth");
+        require(msg.sender == owner, "!auth");
         rewardArbitrator = _arb;
     }
 
     function setVoteDelegate(address _voteDelegate) external {
-        require(msg.sender==voteDelegate, "!auth");
+        require(msg.sender == voteDelegate, "!auth");
         voteDelegate = _voteDelegate;
     }
 
-    function setRewardContracts(address _rewards, address _stakerRewards) external {
+    function setRewardContracts(address _rewards, address _stakerRewards)
+        external
+    {
         require(msg.sender == owner, "!auth");
-        
+
         //reward contracts are immutable or else the owner
         //has a means to redeploy and mint bal via rewardClaimed()
-        if(lockRewards == address(0)){
+        if (lockRewards == address(0)) {
             lockRewards = _rewards;
             stakerRewards = _stakerRewards;
         }
@@ -134,28 +148,44 @@ contract Controller {
 
     // Set reward token and claim contract, get from Curve's registry
     function setFeeInfo() external {
-        require(msg.sender==feeManager, "!auth");
-        
+        require(msg.sender == feeManager, "!auth");
+
         feeDistro = IRegistry(registry).get_address(distributionAddressId);
         address _feeToken = IFeeDistro(feeDistro).token();
-        if(feeToken != _feeToken){
+        if (feeToken != _feeToken) {
             //create a new reward contract for the new token
-            lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(_feeToken,lockRewards,address(this));
+            lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(
+                _feeToken,
+                lockRewards,
+                address(this)
+            );
             feeToken = _feeToken;
         }
     }
 
-    function setFees(uint256 _lockFees, uint256 _stakerFees, uint256 _callerFees, uint256 _platform) external{
-        require(msg.sender==feeManager, "!auth");
+    function setFees(
+        uint256 _lockFees,
+        uint256 _stakerFees,
+        uint256 _callerFees,
+        uint256 _platform
+    ) external {
+        require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _lockFees.add(_stakerFees).add(_callerFees).add(_platform);
+        uint256 total = _lockFees.add(_stakerFees).add(_callerFees).add(
+            _platform
+        );
         require(total <= MaxFees, ">MaxFees");
 
-        //values must be within certain ranges     
-        if(_lockFees >= 1000 && _lockFees <= 1500
-            && _stakerFees >= 300 && _stakerFees <= 600
-            && _callerFees >= 10 && _callerFees <= 100
-            && _platform <= 200){
+        //values must be within certain ranges
+        if (
+            _lockFees >= 1000 &&
+            _lockFees <= 1500 &&
+            _stakerFees >= 300 &&
+            _stakerFees <= 600 &&
+            _callerFees >= 10 &&
+            _callerFees <= 100 &&
+            _platform <= 200
+        ) {
             lockIncentive = _lockFees;
             stakerIncentive = _stakerFees;
             earmarkIncentive = _callerFees;
@@ -164,31 +194,44 @@ contract Controller {
     }
 
     function setTreasury(address _treasury) external {
-        require(msg.sender==feeManager, "!auth");
+        require(msg.sender == feeManager, "!auth");
         treasury = _treasury;
     }
 
     /// END SETTER SECTION ///
-
 
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
     }
 
     //create a new pool
-    function addPool(address _lptoken, address _gauge, uint256 _stashVersion) external returns(bool){
-        require(msg.sender==poolManager && !isShutdown, "!add");
-        require(_gauge != address(0) && _lptoken != address(0),"!param");
+    function addPool(
+        address _lptoken,
+        address _gauge,
+        uint256 _stashVersion
+    ) external returns (bool) {
+        require(msg.sender == poolManager && !isShutdown, "!add");
+        require(_gauge != address(0) && _lptoken != address(0), "!param");
 
         //the next pool's pid
         uint256 pid = poolInfo.length;
 
         //create a tokenized deposit
-        address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken);
+        address token = ITokenFactory(tokenFactory).CreateDepositToken(
+            _lptoken
+        );
         //create a reward contract for bal rewards
-        address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(pid,token);
+        address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(
+            pid,
+            token
+        );
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).CreateStash(pid,_gauge,staker,_stashVersion);
+        address stash = IStashFactory(stashFactory).CreateStash(
+            pid,
+            _gauge,
+            staker,
+            _stashVersion
+        );
 
         //add the new pool
         poolInfo.push(
@@ -205,22 +248,21 @@ contract Controller {
         //give stashes access to rewardfactory and voteproxy
         //   voteproxy so it can grab the incentive tokens off the contract after claiming rewards
         //   reward factory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
-        if(stash != address(0)){
+        if (stash != address(0)) {
             poolInfo[pid].stash = stash;
-            IStaker(staker).setStashAccess(stash,true);
-            IRewardFactory(rewardFactory).setAccess(stash,true);
+            IStaker(staker).setStashAccess(stash, true);
+            IRewardFactory(rewardFactory).setAccess(stash, true);
         }
         return true;
     }
 
     //shutdown pool
-    function shutdownPool(uint256 _pid) external returns(bool){
-        require(msg.sender==poolManager, "!auth");
+    function shutdownPool(uint256 _pid) external returns (bool) {
+        require(msg.sender == poolManager, "!auth");
         PoolInfo storage pool = poolInfo[_pid];
 
         //withdraw from gauge
-        try IStaker(staker).withdrawAll(pool.lptoken,pool.gauge){
-        }catch{}
+        try IStaker(staker).withdrawAll(pool.lptoken, pool.gauge) {} catch {}
 
         pool.shutdown = true;
         gaugeMap[pool.gauge] = false;
@@ -230,11 +272,11 @@ contract Controller {
     //shutdown this contract.
     //  unstake and pull all lp tokens to this address
     //  only allow withdrawals
-    function shutdownSystem() external{
+    function shutdownSystem() external {
         require(msg.sender == owner, "!auth");
         isShutdown = true;
 
-        for(uint i=0; i < poolInfo.length; i++){
+        for (uint256 i = 0; i < poolInfo.length; i++) {
             PoolInfo storage pool = poolInfo[i];
             if (pool.shutdown) continue;
 
@@ -242,16 +284,19 @@ contract Controller {
             address gauge = pool.gauge;
 
             //withdraw from gauge
-            try IStaker(staker).withdrawAll(token,gauge){
+            try IStaker(staker).withdrawAll(token, gauge) {
                 pool.shutdown = true;
-            }catch{}
+            } catch {}
         }
     }
 
-
     //deposit lp tokens and stake
-    function deposit(uint256 _pid, uint256 _amount, bool _stake) public returns(bool){
-        require(!isShutdown,"shutdown");
+    function deposit(
+        uint256 _pid,
+        uint256 _amount,
+        bool _stake
+    ) public returns (bool) {
+        require(!isShutdown, "shutdown");
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 
@@ -261,64 +306,68 @@ contract Controller {
 
         //stake
         address gauge = pool.gauge;
-        require(gauge != address(0),"!gauge setting");
-        BaseRevardsPool(staker).deposit(lptoken,gauge);
+        require(gauge != address(0), "!gauge setting");
+        IStaker(staker).deposit(lptoken, gauge);
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;
-        if(stash != address(0)){
+        if (stash != address(0)) {
             IStash(stash).stashRewards();
         }
 
         address token = pool.token;
-        if(_stake){
+        if (_stake) {
             //mint here and send to rewards on user behalf
-            ITokenMinter(token).mint(address(this),_amount);
+            ITokenMinter(token).mint(address(this), _amount);
             address rewardContract = pool.balRewards;
-            IERC20(token).safeApprove(rewardContract,0);
-            IERC20(token).safeApprove(rewardContract,_amount);
-            IRewards(rewardContract).stakeFor(msg.sender,_amount);
-        }else{
+            IERC20(token).safeApprove(rewardContract, 0);
+            IERC20(token).safeApprove(rewardContract, _amount);
+            IRewards(rewardContract).stakeFor(msg.sender, _amount);
+        } else {
             //add user balance directly
-            ITokenMinter(token).mint(msg.sender,_amount);
+            ITokenMinter(token).mint(msg.sender, _amount);
         }
 
-        
         emit Deposited(msg.sender, _pid, _amount);
         return true;
     }
 
     //deposit all lp tokens and stake
-    function depositAll(uint256 _pid, bool _stake) external returns(bool){
+    function depositAll(uint256 _pid, bool _stake) external returns (bool) {
         address lptoken = poolInfo[_pid].lptoken;
         uint256 balance = IERC20(lptoken).balanceOf(msg.sender);
-        deposit(_pid,balance,_stake);
+        deposit(_pid, balance, _stake);
         return true;
     }
 
     //withdraw lp tokens
-    function _withdraw(uint256 _pid, uint256 _amount, address _from, address _to) internal {
+    function _withdraw(
+        uint256 _pid,
+        uint256 _amount,
+        address _from,
+        address _to
+    ) internal {
         PoolInfo storage pool = poolInfo[_pid];
         address lptoken = pool.lptoken;
         address gauge = pool.gauge;
 
         //remove lp balance
         address token = pool.token;
-        ITokenMinter(token).burn(_from,_amount);
+        ITokenMinter(token).burn(_from, _amount);
 
         //pull from gauge if not shutdown
         // if shutdown tokens will be in this contract
         if (!pool.shutdown) {
-            IStaker(staker).withdraw(lptoken,gauge, _amount);
+            IStaker(staker).withdraw(lptoken, gauge, _amount);
         }
 
         //some gauges claim rewards when withdrawing, stash them in a seperate contract until next claim
         //do not call if shutdown since stashes wont have access
         address stash = pool.stash;
-        if(stash != address(0) && !isShutdown && !pool.shutdown){
+        if (stash != address(0) && !isShutdown && !pool.shutdown) {
             IStash(stash).stashRewards();
         }
-        
+
         //return lp tokens
         IERC20(lptoken).safeTransfer(_to, _amount);
 
@@ -326,13 +375,13 @@ contract Controller {
     }
 
     //withdraw lp tokens
-    function withdraw(uint256 _pid, uint256 _amount) public returns(bool){
-        _withdraw(_pid,_amount,msg.sender,msg.sender);
+    function withdraw(uint256 _pid, uint256 _amount) public returns (bool) {
+        _withdraw(_pid, _amount, msg.sender, msg.sender);
         return true;
     }
 
     //withdraw all lp tokens
-    function withdrawAll(uint256 _pid) public returns(bool){
+    function withdrawAll(uint256 _pid) public returns (bool) {
         address token = poolInfo[_pid].token;
         uint256 userBal = IERC20(token).balanceOf(msg.sender);
         withdraw(_pid, userBal);
@@ -340,47 +389,66 @@ contract Controller {
     }
 
     //allow reward contracts to send here and withdraw to user
-    function withdrawTo(uint256 _pid, uint256 _amount, address _to) external returns(bool){
+    function withdrawTo(
+        uint256 _pid,
+        uint256 _amount,
+        address _to
+    ) external returns (bool) {
         address rewardContract = poolInfo[_pid].balRewards;
-        require(msg.sender == rewardContract,"!auth");
+        require(msg.sender == rewardContract, "!auth");
 
-        _withdraw(_pid,_amount,msg.sender,_to);
+        _withdraw(_pid, _amount, msg.sender, _to);
         return true;
     }
-
 
     //delegate address votes on dao
-    function vote(uint256 _voteId, address _votingAddress, bool _support) external returns(bool){
+    function vote(
+        uint256 _voteId,
+        address _votingAddress,
+        bool _support
+    ) external returns (bool) {
         require(msg.sender == voteDelegate, "!auth");
-        require(_votingAddress == voteOwnership || _votingAddress == voteParameter, "!voteAddr");
-        
-        IStaker(staker).vote(_voteId,_votingAddress,_support);
+        require(
+            _votingAddress == voteOwnership || _votingAddress == voteParameter,
+            "!voteAddr"
+        );
+
+        IStaker(staker).vote(_voteId, _votingAddress, _support);
         return true;
     }
 
-    function voteGaugeWeight(address[] calldata _gauge, uint256[] calldata _weight ) external returns(bool){
+    function voteGaugeWeight(
+        address[] calldata _gauge,
+        uint256[] calldata _weight
+    ) external returns (bool) {
         require(msg.sender == voteDelegate, "!auth");
 
-        for(uint256 i = 0; i < _gauge.length; i++){
-            IStaker(staker).voteGaugeWeight(_gauge[i],_weight[i]);
+        for (uint256 i = 0; i < _gauge.length; i++) {
+            IStaker(staker).voteGaugeWeight(_gauge[i], _weight[i]);
         }
         return true;
     }
 
-    function claimRewards(uint256 _pid, address _gauge) external returns(bool){
+    function claimRewards(uint256 _pid, address _gauge)
+        external
+        returns (bool)
+    {
         address stash = poolInfo[_pid].stash;
-        require(msg.sender == stash,"!auth");
+        require(msg.sender == stash, "!auth");
 
         IStaker(staker).claimRewards(_gauge);
         return true;
     }
 
-    function setGaugeRedirect(uint256 _pid) external returns(bool){
+    function setGaugeRedirect(uint256 _pid) external returns (bool) {
         address stash = poolInfo[_pid].stash;
-        require(msg.sender == stash,"!auth");
+        require(msg.sender == stash, "!auth");
         address gauge = poolInfo[_pid].gauge;
-        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
-        IStaker(staker).execute(gauge,uint256(0),data);
+        bytes memory data = abi.encodeWithSelector(
+            bytes4(keccak256("set_rewards_receiver(address)")),
+            stash
+        );
+        IStaker(staker).execute(gauge, uint256(0), data);
         return true;
     }
 
@@ -396,7 +464,7 @@ contract Controller {
 
         //check if there are extra rewards
         address stash = pool.stash;
-        if(stash != address(0)){
+        if (stash != address(0)) {
             //claim extra rewards
             IStash(stash).claimRewards();
             //process extra rewards
@@ -407,23 +475,37 @@ contract Controller {
         uint256 balBal = IERC20(bal).balanceOf(address(this));
 
         if (balBal > 0) {
-            uint256 _lockIncentive = balBal.mul(lockIncentive).div(FEE_DENOMINATOR);
-            uint256 _stakerIncentive = balBal.mul(stakerIncentive).div(FEE_DENOMINATOR);
-            uint256 _callIncentive = balBal.mul(earmarkIncentive).div(FEE_DENOMINATOR);
-            
+            uint256 _lockIncentive = balBal.mul(lockIncentive).div(
+                FEE_DENOMINATOR
+            );
+            uint256 _stakerIncentive = balBal.mul(stakerIncentive).div(
+                FEE_DENOMINATOR
+            );
+            uint256 _callIncentive = balBal.mul(earmarkIncentive).div(
+                FEE_DENOMINATOR
+            );
+
             //send treasury
-            if(treasury != address(0) && treasury != address(this) && platformFee > 0){
+            if (
+                treasury != address(0) &&
+                treasury != address(this) &&
+                platformFee > 0
+            ) {
                 //only subtract after address condition check
-                uint256 _platform = balBal.mul(platformFee).div(FEE_DENOMINATOR);
+                uint256 _platform = balBal.mul(platformFee).div(
+                    FEE_DENOMINATOR
+                );
                 balBal = balBal.sub(_platform);
                 IERC20(bal).safeTransfer(treasury, _platform);
             }
 
             //remove incentives from balance
-            balBal = balBal.sub(_lockIncentive).sub(_callIncentive).sub(_stakerIncentive);
+            balBal = balBal.sub(_lockIncentive).sub(_callIncentive).sub(
+                _stakerIncentive
+            );
 
             //send incentives for calling
-            IERC20(bal).safeTransfer(msg.sender, _callIncentive);          
+            IERC20(bal).safeTransfer(msg.sender, _callIncentive);
 
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
@@ -440,14 +522,14 @@ contract Controller {
         }
     }
 
-    function earmarkRewards(uint256 _pid) external returns(bool){
-        require(!isShutdown,"shutdown");
+    function earmarkRewards(uint256 _pid) external returns (bool) {
+        require(!isShutdown, "shutdown");
         _earmarkRewards(_pid);
         return true;
     }
 
     //claim fees from curve distro contract, put in lockers' reward contract
-    function earmarkFees() external returns(bool){
+    function earmarkFees() external returns (bool) {
         //claim fee rewards
         IStaker(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
@@ -458,14 +540,20 @@ contract Controller {
     }
 
     //callback from reward contract when crv is received.
-    function rewardClaimed(uint256 _pid, address _address, uint256 _amount) external returns(bool){
+    function rewardClaimed(
+        uint256 _pid,
+        address _address,
+        uint256 _amount
+    ) external returns (bool) {
         address rewardContract = poolInfo[_pid].balRewards;
-        require(msg.sender == rewardContract || msg.sender == lockRewards, "!auth");
+        require(
+            msg.sender == rewardContract || msg.sender == lockRewards,
+            "!auth"
+        );
 
         //mint reward tokens
-        ITokenMinter(minter).mint(_address,_amount);
-        
+        ITokenMinter(minter).mint(_address, _amount);
+
         return true;
     }
-
 }
