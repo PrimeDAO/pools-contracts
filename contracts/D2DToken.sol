@@ -3,17 +3,15 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
 
 contract D2DToken is ERC20, Ownable {
     mapping(address => uint256) private _balances;
-
     mapping(address => mapping(address => uint256)) private _allowances;
 
     uint256 public constant initialSupply = 20000000000000000000000;
 
-    constructor(string memory _name, string memory _symbol)
-        ERC20(_name, _symbol)
+    constructor()
+        ERC20("D2D Token", "D2DBAL")
     {
         _mint(msg.sender, initialSupply);
         // _balances[msg.sender] += 20000000000000000000000;
