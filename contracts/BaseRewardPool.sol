@@ -77,9 +77,7 @@ contract BaseRewardPool {
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
-
-    address public constant bal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25);
-    address public constant d2dBal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //need to change to actual address of d2dBal
+ 
 
     constructor(
         uint256 pid_,
@@ -87,6 +85,8 @@ contract BaseRewardPool {
         address rewardManager_
     ) public {
         pid = pid_;
+        address bal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25);
+        address d2dBal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //need to change to actual address of d2dBal
         stakingToken = IERC20(d2dBal); //Staking token is d2dBal.
         rewardToken = IERC20(bal); // Rewards token is Bal.
         operator = operator_;
@@ -230,7 +230,7 @@ contract BaseRewardPool {
         return true;
     }
 
-    function withdrawAll(bool claim) external{
+    function withdrawAll(bool claim) external{ //It is possible to withdraw the whole amount of d2dBal.
         withdraw(_balances[msg.sender],claim);
     }
 
