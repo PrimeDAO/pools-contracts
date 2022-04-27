@@ -218,7 +218,7 @@ contract BaseRewardPool {
         }
 
         _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount); //(_balances created with mapping)
 
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
@@ -230,7 +230,7 @@ contract BaseRewardPool {
         return true;
     }
 
-    function withdrawAll(bool claim) external{ //It is possible to withdraw the whole amount of d2dBal.
+    function withdrawAll() external{ //It is possible to withdraw the whole amount of d2dBal.
         withdraw(_balances[msg.sender],claim);
     }
 
