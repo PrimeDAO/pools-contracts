@@ -184,7 +184,7 @@ contract Controller {
         uint256 pid = poolInfo.length;
 
         //create a tokenized deposit
-        address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken); //d2dBal;  Staking token is d2dBal.
+        address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken);
         //create a reward contract for bal rewards
         address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(pid,token);
         //create a stash to handle extra incentives
@@ -262,7 +262,7 @@ contract Controller {
         //stake
         address gauge = pool.gauge;
         require(gauge != address(0),"!gauge setting");
-        IStaker(staker).deposit(lptoken,gauge);
+        BaseRevardsPool(staker).deposit(lptoken,gauge);
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;

@@ -2,147 +2,304 @@ pragma solidity ^0.8.0;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-
-contract BalDepositor{
+contract BaseRewardPool {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    using Address for address;
 
-    address public constant bal = address(0xba100000625a3754423978a60c9317c58a424e3D);  // This will be the new BAL contract addesss, found this here: https://help.balancer.finance/en/articles/4476959-bal-token-address
-    address public immutable escrow;
-    uint256 private constant MAXTIME = 4 * 364 * 86400;
-    uint256 private constant WEEK = 7 * 86400;
+    IERC20 public rewardToken;
+    IERC20 public stakingToken;
+    uint256 public constant duration = 7 days;
 
-    uint256 public lockIncentive = 10; //incentive to users who spend gas to lock bal
-    uint256 public constant FEE_DENOMINATOR = 10000;
+    address public operator;
+    address public rewardManager;
 
-    address public feeManager;
-    address public immutable staker;
-    address public immutable minter; //d2dBAL
-    uint256 public incentiveBal = 0; 
-    uint256 public unlockTime;
+    uint256 public pid;
+    uint256 public periodFinish = 0;
+    uint256 public rewardRate = 0;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
+    uint256 public queuedRewards = 0;
+    uint256 public currentRewards = 0;
+    uint256 public historicalRewards = 0;
+    uint256 public constant newRewardRatio = 830;
+    uint256 private _totalSupply;
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
+    mapping(address => uint256) private _balances;
 
-    constructor(address _staker, address _minter, address _escrow) public {
-        staker = _staker;
-        minter = _minter;
-        feeManager = msg.sender;
-        escrow = _escrow;
+    address[] public extraRewards;
+
+    event RewardAdded(uint256 reward);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address indexed user, uint256 reward);
+
+    constructor(
+        uint256 pid_,
+        address stakingToken_,
+        address rewardToken_,
+        address operator_,
+        address rewardManager_
+    ) public {
+        pid = pid_;
+        stakingToken = IERC20(stakingToken_);
+        rewardToken = IERC20(rewardToken_);
+        operator = operator_;
+        rewardManager = rewardManager_;
     }
 
-    function setFeeManager(address _feeManager) external {
-        require(msg.sender == feeManager, "!auth");
-        feeManager = _feeManager;
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
     }
 
-    function setFees(uint256 _lockIncentive) external{
-        require(msg.sender==feeManager, "!auth");
-
-        if(_lockIncentive >= 0 && _lockIncentive <= 30){
-            lockIncentive = _lockIncentive;
-       }
+    function balanceOf(address account) public view returns (uint256) {
+        return _balances[account];
     }
 
-    function initialLock() external{
-        require(msg.sender==feeManager, "!auth");
+    function extraRewardsLength() external view returns (uint256) {
+        return extraRewards.length;
+    }
 
-        uint256 vBal = IERC20(escrow).balanceOf(staker); 
-        if(vBal == 0){                                     
-            uint256 unlockAt = block.timestamp + MAXTIME;
-            uint256 unlockInWeeks = (unlockAt/WEEK)*WEEK;
+    function addExtraReward(address _reward) external returns (bool) {
+        require(msg.sender == rewardManager, "!authorized");
+        require(_reward != address(0), "!reward setting");
 
-            //release old lock if exists
-            IStaker(staker).release();
-            //create new lock
-            uint256 balBalanceStaker = IERC20(bal).balanceOf(staker); 
-            IStaker(staker).createLock(balBalanceStaker, unlockAt);
-            unlockTime = unlockInWeeks;
+        extraRewards.push(_reward);
+        return true;
+    }
+
+    function clearExtraRewards() external {
+        require(msg.sender == rewardManager, "!authorized");
+        delete extraRewards;
+    }
+
+    modifier updateReward(address account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = lastTimeRewardApplicable();
+        if (account != address(0)) {
+            rewards[account] = earned(account);
+            userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
+        _;
     }
 
-    function _lockBalancer() internal {
-        uint256 balBalance = IERC20(bal).balanceOf(address(this)); 
-        if(balBalance > 0){                                         
-            IERC20(bal).safeTransfer(staker, balBalance); 
-        }
-        
-        //increase ammount
-        uint256 balBalanceStaker = IERC20(bal).balanceOf(staker); 
-        if(balBalanceStaker == 0){
-            return;
-        }
-        
-        //increase amount
-        IStaker(staker).increaseAmount(balBalanceStaker);
-        
-
-        uint256 unlockAt = block.timestamp + MAXTIME;
-        uint256 unlockInWeeks = (unlockAt/WEEK)*WEEK;
-
-        //increase time too if over 2 week buffer
-        if(unlockInWeeks.sub(unlockTime) > 2){
-            IStaker(staker).increaseTime(unlockAt);
-            unlockTime = unlockInWeeks;
-        }
+    function lastTimeRewardApplicable() public view returns (uint256) {
+        return MathUtil.min(block.timestamp, periodFinish);
     }
 
-    // function lockBalancer() external {
-    //     _lockBalancer();
+    function rewardPerToken() public view returns (uint256) {
+        if (totalSupply() == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored.add(
+                lastTimeRewardApplicable()
+                    .sub(lastUpdateTime)
+                    .mul(rewardRate)
+                    .mul(1e18)
+                    .div(totalSupply())
+            );
+    }
 
-    //     //mint incentives
-    //     if(incentiveBal > 0){
-    //         ITokenMinter(minter).mint(msg.sender,incentiveBal);
-    //         incentiveBal = 0;
-    //     }
-    // }
+    function earned(address account) public view returns (uint256) {
+        return
+            balanceOf(account)
+                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
+                .div(1e18)
+                .add(rewards[account]);
+    }
 
-    function deposit(uint256 _amount, bool _lock, address _stakeAddress) public {
-        require(_amount > 0,"!>0");
-        
-        if(_lock){
-            //lock immediately, transfer directly to staker to skip an erc20 transfer
-            IERC20(bal).safeTransferFrom(msg.sender, staker, _amount);
-            _lockBalancer();//TODO change to lock in Rewerds
-            if(incentiveBal > 0){
-                //add the incentive tokens here so they can be staked together
-                _amount = _amount.add(incentiveBal);
-                incentiveBal = 0;
+    function stake(uint256 _amount)
+        public
+        updateReward(msg.sender)
+        returns (bool)
+    {
+        require(_amount > 0, "RewardPool : Cannot stake 0");
+
+        //also stake to linked rewards
+        for (uint256 i = 0; i < extraRewards.length; i++) {
+            IRewards(extraRewards[i]).stake(msg.sender, _amount);
+        }
+
+        _totalSupply = _totalSupply.add(_amount);
+        _balances[msg.sender] = _balances[msg.sender].add(_amount);
+
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        emit Staked(msg.sender, _amount);
+
+        return true;
+    }
+
+    function stakeAll() external returns (bool) {
+        uint256 balance = stakingToken.balanceOf(msg.sender);
+        stake(balance);
+        return true;
+    }
+
+    function stakeFor(address _for, uint256 _amount)
+        public
+        updateReward(_for)
+        returns (bool)
+    {
+        require(_amount > 0, "RewardPool : Cannot stake 0");
+
+        //also stake to linked rewards
+        for (uint256 i = 0; i < extraRewards.length; i++) {
+            IRewards(extraRewards[i]).stake(_for, _amount);
+        }
+
+        //give to _for
+        _totalSupply = _totalSupply.add(_amount);
+        _balances[_for] = _balances[_for].add(_amount);
+
+        //take away from sender
+        stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        emit Staked(_for, _amount);
+
+        return true;
+    }
+
+    function withdraw(uint256 amount, bool claim)
+        public
+        updateReward(msg.sender)
+        returns (bool)
+    {
+        require(amount > 0, "RewardPool : Cannot withdraw 0");
+
+        //also withdraw from linked rewards
+        for (uint256 i = 0; i < extraRewards.length; i++) {
+            IRewards(extraRewards[i]).withdraw(msg.sender, amount);
+        }
+
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+
+        stakingToken.safeTransfer(msg.sender, amount);
+        emit Withdrawn(msg.sender, amount);
+
+        if (claim) {
+            getReward(msg.sender, true);
+        }
+
+        return true;
+    }
+
+    function withdrawAll(bool claim) external {
+        withdraw(_balances[msg.sender], claim);
+    }
+
+    function withdrawAndUnwrap(uint256 amount, bool claim)
+        public
+        updateReward(msg.sender)
+        returns (bool)
+    {
+        //also withdraw from linked rewards
+        for (uint256 i = 0; i < extraRewards.length; i++) {
+            IRewards(extraRewards[i]).withdraw(msg.sender, amount);
+        }
+
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+
+        //tell operator to withdraw from here directly to user
+        IDeposit(operator).withdrawTo(pid, amount, msg.sender);
+        emit Withdrawn(msg.sender, amount);
+
+        //get rewards too
+        if (claim) {
+            getReward(msg.sender, true);
+        }
+        return true;
+    }
+
+    function withdrawAllAndUnwrap(bool claim) external {
+        withdrawAndUnwrap(_balances[msg.sender], claim);
+    }
+
+    function getReward(address _account, bool _claimExtras)
+        public
+        updateReward(_account)
+        returns (bool)
+    {
+        uint256 reward = earned(_account);
+        if (reward > 0) {
+            rewards[_account] = 0;
+            rewardToken.safeTransfer(_account, reward);
+            IDeposit(operator).rewardClaimed(pid, _account, reward);
+            emit RewardPaid(_account, reward);
+        }
+
+        //also get rewards from linked rewards
+        if (_claimExtras) {
+            for (uint256 i = 0; i < extraRewards.length; i++) {
+                IRewards(extraRewards[i]).getReward(_account);
             }
-        }else{
-            //move tokens here
-            IERC20(bal).safeTransferFrom(msg.sender, address(this), _amount);
-            //defer lock cost to another user
-            uint256 callIncentive = _amount.mul(lockIncentive).div(FEE_DENOMINATOR);
-            _amount = _amount.sub(callIncentive);
-
-            //add to a pool for lock caller
-            incentiveBal = incentiveBal.add(callIncentive);
         }
-
-        bool depositOnly = _stakeAddress == address(0);
-        if(depositOnly){
-            //mint for msg.sender
-            ITokenMinter(minter).mint(msg.sender,_amount);
-        }else{
-            //mint here 
-            ITokenMinter(minter).mint(address(this),_amount);
-            //stake for msg.sender
-            IERC20(minter).safeApprove(_stakeAddress,0);
-            IERC20(minter).safeApprove(_stakeAddress,_amount);
-            IRewards(_stakeAddress).stakeFor(msg.sender,_amount);
-        }
+        return true;
     }
 
-    function deposit(uint256 _amount, bool _lock) external {
-        deposit(_amount,_lock,address(0));
+    function getReward() external returns (bool) {
+        getReward(msg.sender, true);
+        return true;
     }
 
-    function depositAll(bool _lock, address _stakeAddress) external{
-        uint256 balBal = IERC20(bal).balanceOf(msg.sender); //This is balancer balance of msg.sender
-        deposit(balBal,_lock,_stakeAddress);
+    function donate(uint256 _amount) external returns (bool) {
+        IERC20(rewardToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
+        queuedRewards = queuedRewards.add(_amount);
+    }
+
+    function queueNewRewards(uint256 _rewards) external returns (bool) {
+        require(msg.sender == operator, "!authorized");
+
+        _rewards = _rewards.add(queuedRewards);
+
+        if (block.timestamp >= periodFinish) {
+            notifyRewardAmount(_rewards);
+            queuedRewards = 0;
+            return true;
+        }
+
+        //et = now - (finish-duration)
+        uint256 elapsedTime = block.timestamp.sub(periodFinish.sub(duration));
+        //current at now: rewardRate * elapsedTime
+        uint256 currentAtNow = rewardRate * elapsedTime;
+        uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
+
+        //uint256 queuedRatio = currentRewards.mul(1000).div(_rewards);
+        if (queuedRatio < newRewardRatio) {
+            notifyRewardAmount(_rewards);
+            queuedRewards = 0;
+        } else {
+            queuedRewards = _rewards;
+        }
+        return true;
+    }
+
+    function notifyRewardAmount(uint256 reward)
+        internal
+        updateReward(address(0))
+    {
+        historicalRewards = historicalRewards.add(reward);
+        if (block.timestamp >= periodFinish) {
+            rewardRate = reward.div(duration);
+        } else {
+            uint256 remaining = periodFinish.sub(block.timestamp);
+            uint256 leftover = remaining.mul(rewardRate);
+            reward = reward.add(leftover);
+            rewardRate = reward.div(duration);
+        }
+        currentRewards = reward;
+        lastUpdateTime = block.timestamp;
+        periodFinish = block.timestamp.add(duration);
+        emit RewardAdded(reward);
     }
 }
