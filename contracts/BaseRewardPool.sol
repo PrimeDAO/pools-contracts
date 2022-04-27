@@ -78,8 +78,8 @@ contract BaseRewardPool {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
-    address public constant bal = address(0xc128a9954e6c874ea3d62ce62b468ba073093f25);
-    address public constant d2dBal = address(0x); //need address or instance of d2dBal
+    address public constant bal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25);
+    address public constant d2dBal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //need to change to actual address of d2dBal
 
     constructor(
         uint256 pid_,
@@ -181,7 +181,7 @@ contract BaseRewardPool {
         return true;
     }
 
-    function stakeFor(address _for, uint256 _amount)
+    function stakeFor(address _for, uint256 _amount) //here we locking tockens
         public
         updateReward(_for)
         returns(bool)
