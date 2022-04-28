@@ -5,15 +5,17 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract D2DToken is ERC20, Ownable {
+    uint8 private immutable _decimals;
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
 
     uint256 public constant initialSupply = 20000000000000000000000;
 
-    constructor()
+    constructor(uint8 decimals_)
         ERC20("D2D Token", "D2DBAL")
     {
         _mint(msg.sender, initialSupply);
+        _decimals = decimals_;
         _transferOwnership(_msgSender()); // as D2DToken is Ownable 
     }
 
@@ -44,6 +46,10 @@ contract D2DToken is ERC20, Ownable {
     {
         _approve(_msgSender(), spender, amount);
         return true;
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
     }
 
 }

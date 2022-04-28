@@ -1,27 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.9;
 
-// import "./Interfaces.sol";
-import '@openzeppelin/contracts/utils/math/SafeMath.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-
 contract PoolContract is ERC20, Ownable {
-    using SafeERC20 for IERC20;
-    using Address for address;
-    using SafeMath for uint256;
-
-    address public constant registry = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //need change to actual
+    uint8 private immutable _decimals;
 
     //d2dPool tokens are staked in the Rewards contract for specific pool on the name of user, without the possibility to unstake them.
     mapping(address => uint256) private _balances; 
+    uint256 public constant initialSupply = 20000000000000000000000;
 
-    constructor()
-        ERC20("D2DPool Token", "D2DP")
-    {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint8 decimals_
+    ) ERC20(_name, _symbol) {
+        // _mint(msg.sender, initialSupply);
+        _decimals = decimals_;
         _transferOwnership(_msgSender()); // as PoolContract is Ownable 
     }
 
@@ -31,5 +27,9 @@ contract PoolContract is ERC20, Ownable {
 
     function burn(address account) public onlyOwner {
         _balances[account] = 0;
+    }   
+
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
     }
 }
