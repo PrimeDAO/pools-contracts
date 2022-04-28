@@ -1,50 +1,11 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-/**
- *Submitted for verification at Etherscan.io on 2020-07-17
- */
-
-/*
-   ____            __   __        __   _
-  / __/__ __ ___  / /_ / /  ___  / /_ (_)__ __
- _\ \ / // // _ \/ __// _ \/ -_)/ __// / \ \ /
-/___/ \_, //_//_/\__//_//_/\__/ \__//_/ /_\_\
-     /___/
-* Synthetix: BaseRewardPool.sol
-*
-* Docs: https://docs.synthetix.io/
-*
-*
-* MIT License
-* ===========
-*
-* Copyright (c) 2020 Synthetix
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in all
-* copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-*/
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
 
 contract BaseRewardPool {
     using SafeMath for uint256;
@@ -105,14 +66,15 @@ contract BaseRewardPool {
         return extraRewards.length;
     }
 
-    function addExtraReward(address _reward) external returns(bool){
+    function addExtraReward(address _reward) external returns (bool) {
         require(msg.sender == rewardManager, "!authorized");
-        require(_reward != address(0),"!reward setting");
+        require(_reward != address(0), "!reward setting");
 
         extraRewards.push(_reward);
         return true;
     }
-    function clearExtraRewards() external{
+
+    function clearExtraRewards() external {
         require(msg.sender == rewardManager, "!authorized");
         delete extraRewards;
     }
@@ -156,12 +118,12 @@ contract BaseRewardPool {
     function stake(uint256 _amount)
         public
         updateReward(msg.sender)
-        returns(bool)
+        returns (bool)
     {
-        require(_amount > 0, 'RewardPool : Cannot stake 0');
-        
+        require(_amount > 0, "RewardPool : Cannot stake 0");
+
         //also stake to linked rewards
-        for(uint i=0; i < extraRewards.length; i++){
+        for (uint256 i = 0; i < extraRewards.length; i++) {
             IRewards(extraRewards[i]).stake(msg.sender, _amount);
         }
 
@@ -171,11 +133,10 @@ contract BaseRewardPool {
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit Staked(msg.sender, _amount);
 
-        
         return true;
     }
 
-    function stakeAll() external returns(bool){
+    function stakeAll() external returns (bool) {
         uint256 balance = stakingToken.balanceOf(msg.sender);
         stake(balance);
         return true;
@@ -184,12 +145,12 @@ contract BaseRewardPool {
     function stakeFor(address _for, uint256 _amount) //here we locking tockens
         public
         updateReward(_for)
-        returns(bool)
+        returns (bool)
     {
-        require(_amount > 0, 'RewardPool : Cannot stake 0');
-        
+        require(_amount > 0, "RewardPool : Cannot stake 0");
+
         //also stake to linked rewards
-        for(uint i=0; i < extraRewards.length; i++){
+        for (uint256 i = 0; i < extraRewards.length; i++) {
             IRewards(extraRewards[i]).stake(_for, _amount);
         }
 
@@ -200,20 +161,19 @@ contract BaseRewardPool {
         //take away from sender
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit Staked(_for, _amount);
-        
+
         return true;
     }
-
 
     function withdraw(uint256 amount, bool claim)
         public
         updateReward(msg.sender)
-        returns(bool)
+        returns (bool)
     {
-        require(amount > 0, 'RewardPool : Cannot withdraw 0');
+        require(amount > 0, "RewardPool : Cannot withdraw 0");
 
         //also withdraw from linked rewards
-        for(uint i=0; i < extraRewards.length; i++){
+        for (uint256 i = 0; i < extraRewards.length; i++) {
             IRewards(extraRewards[i]).withdraw(msg.sender, amount);
         }
 
@@ -222,9 +182,9 @@ contract BaseRewardPool {
 
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
-     
-        if(claim){
-            getReward(msg.sender,true);
+
+        if (claim) {
+            getReward(msg.sender, true);
         }
 
         return true;
@@ -235,32 +195,39 @@ contract BaseRewardPool {
         withdraw(_balances[msg.sender],claim);
     }
 
-    function withdrawAndUnwrap(uint256 amount, bool claim) public updateReward(msg.sender) returns(bool){
-
+    function withdrawAndUnwrap(uint256 amount, bool claim)
+        public
+        updateReward(msg.sender)
+        returns (bool)
+    {
         //also withdraw from linked rewards
-        for(uint i=0; i < extraRewards.length; i++){
+        for (uint256 i = 0; i < extraRewards.length; i++) {
             IRewards(extraRewards[i]).withdraw(msg.sender, amount);
         }
-        
+
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
 
         //tell operator to withdraw from here directly to user
-        IDeposit(operator).withdrawTo(pid,amount,msg.sender);
+        IDeposit(operator).withdrawTo(pid, amount, msg.sender);
         emit Withdrawn(msg.sender, amount);
 
         //get rewards too
-        if(claim){
-            getReward(msg.sender,true);
+        if (claim) {
+            getReward(msg.sender, true);
         }
         return true;
     }
 
-    function withdrawAllAndUnwrap(bool claim) external{
-        withdrawAndUnwrap(_balances[msg.sender],claim);
+    function withdrawAllAndUnwrap(bool claim) external {
+        withdrawAndUnwrap(_balances[msg.sender], claim);
     }
 
-    function getReward(address _account, bool _claimExtras) public updateReward(_account) returns(bool){
+    function getReward(address _account, bool _claimExtras)
+        public
+        updateReward(_account)
+        returns (bool)
+    {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
@@ -270,25 +237,29 @@ contract BaseRewardPool {
         }
 
         //also get rewards from linked rewards
-        if(_claimExtras){
-            for(uint i=0; i < extraRewards.length; i++){
+        if (_claimExtras) {
+            for (uint256 i = 0; i < extraRewards.length; i++) {
                 IRewards(extraRewards[i]).getReward(_account);
             }
         }
         return true;
     }
 
-    function getReward() external returns(bool){
-        getReward(msg.sender,true);
+    function getReward() external returns (bool) {
+        getReward(msg.sender, true);
         return true;
     }
 
-    function donate(uint256 _amount) external returns(bool){
-        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+    function donate(uint256 _amount) external returns (bool) {
+        IERC20(rewardToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
         queuedRewards = queuedRewards.add(_amount);
     }
 
-    function queueNewRewards(uint256 _rewards) external returns(bool){
+    function queueNewRewards(uint256 _rewards) external returns (bool) {
         require(msg.sender == operator, "!authorized");
 
         _rewards = _rewards.add(queuedRewards);
@@ -306,10 +277,10 @@ contract BaseRewardPool {
         uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
 
         //uint256 queuedRatio = currentRewards.mul(1000).div(_rewards);
-        if(queuedRatio < newRewardRatio){
+        if (queuedRatio < newRewardRatio) {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
-        }else{
+        } else {
             queuedRewards = _rewards;
         }
         return true;

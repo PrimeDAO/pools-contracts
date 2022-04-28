@@ -1,0 +1,8 @@
+# test contracts
+contracts/test
+
+# legacy contracts that have been deployed already
+
+# contracts/contracts/CrvDepositor.sol
+# contracts/contracts/BaseRewardPool.sol
+# contracts/contracts/Booster.sol
