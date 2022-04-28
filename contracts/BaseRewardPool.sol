@@ -231,7 +231,7 @@ contract BaseRewardPool {
     }
 
     function withdrawAll() external{ //It is possible to withdraw the whole amount of d2dBal.
-        bool claim = True; 
+        bool claim = true; 
         withdraw(_balances[msg.sender],claim);
     }
 
