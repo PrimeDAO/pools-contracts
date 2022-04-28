@@ -9,7 +9,7 @@ import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
-contract PoolContract is Ownable {
+contract PoolContract is ERC20, Ownable {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
@@ -18,7 +18,6 @@ contract PoolContract is Ownable {
 
     address public operator;
     address public pools;
-
 
     constructor(address _pools) public {
         operator = msg.sender;
