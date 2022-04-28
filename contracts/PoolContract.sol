@@ -16,15 +16,12 @@ contract PoolContract is ERC20, Ownable {
 
     address public constant registry = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //need change to actual
 
-    address public operator;
-    address public pools;
-
     //d2dPool tokens are staked in the Rewards contract for specific pool on the name of user, without the possibility to unstake them.
     mapping(address => uint256) private _balances; 
 
-    constructor(address _pools) public {
-        operator = msg.sender;
-        pools = _pools;
+    constructor()
+        ERC20("D2DPool Token", "D2DP")
+    {
         _transferOwnership(_msgSender()); // as PoolContract is Ownable 
     }
 
@@ -34,16 +31,5 @@ contract PoolContract is ERC20, Ownable {
 
     function burn(address account) public onlyOwner {
         _balances[account] = 0;
-    }
-
-    function setOperator(address _operator) onlyOwner external {
-        require(msg.sender == operator, "!auth");
-        operator = _operator;
-    }
-
-    //revert control of adding  pools back to operator
-    function revertControl() onlyOwner external{
-        require(msg.sender == operator, "!auth");
-        IPools(pools).setPoolManager(operator);
     }
 }
