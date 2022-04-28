@@ -43,13 +43,11 @@ contract BaseRewardPool {
     constructor(
         uint256 pid_,
         address operator_,
-        address rewardManager_,
-        address d2dBal,
-        address bal
+        address rewardManager_
     ) public {
         pid = pid_;
-        // address bal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25);
-        // address d2dBal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //need to change to actual address of d2dBal
+        address bal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25);
+        address d2dBal = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //need to change to actual address of d2dBal
         stakingToken = IERC20(d2dBal); //Staking token is d2dBal.
         rewardToken = IERC20(bal); // Rewards token is Bal.
         operator = operator_;
