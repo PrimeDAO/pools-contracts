@@ -19,10 +19,21 @@ contract PoolContract is ERC20, Ownable {
     address public operator;
     address public pools;
 
+    //d2dPool tokens are staked in the Rewards contract for specific pool on the name of user, without the possibility to unstake them.
+    mapping(address => uint256) private _balances; 
+
     constructor(address _pools) public {
         operator = msg.sender;
         pools = _pools;
         _transferOwnership(_msgSender()); // as PoolContract is Ownable 
+    }
+
+    function mint(uint256 amount, address staker) public onlyOwner {
+        _mint(msg.sender, amount);
+    }
+
+    function burn(address account) public onlyOwner {
+        _balances[account] = 0;
     }
 
     function setOperator(address _operator) onlyOwner external {
