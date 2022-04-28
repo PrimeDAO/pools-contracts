@@ -35,46 +35,4 @@ contract PoolContract is ERC20, Ownable {
         require(msg.sender == operator, "!auth");
         IPools(pools).setPoolManager(operator);
     }
-
-    //add a new D2DBal pool to the system.
-    //gauge must be on bal's registry, thus anyone can call
-    function addPool(address _swap, address _gauge, uint256 _stashVersion) external onlyOwner returns(bool){
-        require(_gauge != address(0),"gauge is 0");
-        require(_swap != address(0),"swap is 0");
-
-        //get bal's registry
-        address mainReg = IRegistry(registry).get_registry();
-        
-        //get lp token and gauge list from swap address
-        address lptoken = IRegistry(mainReg).get_lp_token(_swap);
-
-        (address[10] memory gaugeList,) = IRegistry(mainReg).get_gauges(_swap);
-
-        //confirm the gauge passed in calldata is in the list
-        //  a passed gauge address is needed if there is ever multiple gauges
-        //  as the fact that an array is returned implies.
-        bool found = false;
-        for(uint256 i = 0; i < gaugeList.length; i++){
-            if(gaugeList[i] == _gauge){
-                found = true;
-                break;
-            }
-        }
-        require(found, "!registry");
-
-        bool gaugeExists = IPools(pools).gaugeMap(_gauge);
-        require(!gaugeExists, "already registered");
-        
-        IPools(pools).addPool(lptoken,_gauge,_stashVersion);
-
-        return true;
-    }
-
-    function shutdownPool(uint256 _pid) external onlyOwner returns(bool){
-        require(msg.sender==operator, "!auth");
-
-        IPools(pools).shutdownPool(_pid);
-        return true;
-    }
-
 }
