@@ -7,19 +7,25 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-interface ERC20 {
-    function decimals() view returns (uint256);
-    function name() view returns (string);
-    function symbol() view returns (string);
-    function transfer(address to, uint256 amount) returns (bool); //nonpayable
-    function transferFrom(address spender, address to, uint256 amount) returns (bool); //nonpayable
+interface BAL_ERC20 { //was just ERC20 in their python contract
+    function decimals() external view returns (uint256);
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function transfer(address to, uint256 amount) external returns (bool); //nonpayable
+    function transferFrom(address spender, address to, uint256 amount) external returns (bool); //nonpayable
 }
+// Interface for checking whether address belongs to a whitelisted
+// type of a smart wallet.
+// When new types are added - the whole contract is changed
+// The check() method is modifying to be able to use caching
+// for individual wallet addresses 
 interface SmartWalletChecker {
-    function check(address addr) returns (bool);//nonpayable
+    function check(address addr) external returns (bool);//nonpayable
 }   
 
-contract BalMock is ERC20 {
-    
+// contract BalMock is ERC20, ReentrancyGuard, SmartWalletChecker, BALERC20 {
+contract BalMock is BAL_ERC20{ // }, ReentrancyGuard {
+
     struct Point{
         int128 bias;
         int128 slope; // - dweight / dt
@@ -35,11 +41,7 @@ contract BalMock is ERC20 {
         uint256 end;
     }  
 
-    // Interface for checking whether address belongs to a whitelisted
-    // type of a smart wallet.
-    // When new types are added - the whole contract is changed
-    // The check() method is modifying to be able to use caching
-    // for individual wallet addresses 
+    address constant ZERO_ADDRESS = address(0x0000000000000000000000000000000000000000);
 
     int128 constant DEPOSIT_FOR_TYPE = 0;
     int128 constant CREATE_LOCK_TYPE = 1;
@@ -101,7 +103,7 @@ contract BalMock is ERC20 {
         point_history[0].blk = block.number;
         point_history[0].ts = block.timestamp;
 
-        uint256 _decimals = ERC20(token_addr).decimals();
+        uint256 _decimals = BAL_ERC20(token_addr).decimals();
         require(_decimals <= 255, "BalMock: _decimals > 255");
 
         NAME = _name;
@@ -113,10 +115,10 @@ contract BalMock is ERC20 {
     function token() external view returns (address){
         return TOKEN;
     }
-    function name() external view returns (string){
+    function name() external view returns (string memory){
         return NAME;
     }
-    function symbol() external view returns (string){
+    function symbol() external view returns (string memory){
         return SYMBOL;
     }
     function decimals() external view returns (uint256){
@@ -127,16 +129,17 @@ contract BalMock is ERC20 {
     }
     function commit_smart_wallet_checker(address addr) external {}
     function apply_smart_wallet_checker() external {}
-    function assert_not_contract() internal {}
-    function get_last_user_slope() external view returns (int128){
+    function assert_not_contract(address addr) internal {}
+    function get_last_user_slope(address addr) external view returns (int128){
         /**
         @notice Get the most recently recorded rate of voting power decrease for `addr`
         @param addr Address of the user wallet
         @return Value of the slope
-    */
+        */
+        uint256 uepoch = user_point_epoch[addr];
         return user_point_history[addr][uepoch].slope;
     }
-    function user_point_history__ts() external view returns (uint256){
+    function user_point_history__ts(address _addr, uint256 _idx) external view returns (uint256){
         /**
         @notice Get the timestamp for checkpoint `_idx` for `_addr`
         @param _addr User wallet address
@@ -153,8 +156,8 @@ contract BalMock is ERC20 {
         */
         return locked[_addr].end;
     }
-    function _checkpoint(address addr, LockedBalance old_locked, LockedBalance new_locked) internal {}
-    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance locked_balance, int128 type_) internal {}
+    function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {}
+    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, int128 type_) internal {}
     function checkpoint() external {}
     function deposit_for(address _addr, uint256 _value) external nonReentrant {}
     function create_lock(uint256) external nonReentrant {}
@@ -245,7 +248,7 @@ contract BalMock is ERC20 {
         //some code and actual rerurn is not 1
         return 1;
     }
-    function supply_at(Point p, uint256 t) external view returns (uint256){
+    function supply_at(Point memory p, uint256 t) external view returns (uint256){
         //some code and actual rerurn is not 1
         return 1;    
     }
