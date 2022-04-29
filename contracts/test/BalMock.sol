@@ -63,9 +63,7 @@ contract BalMock is ERC20 {
 
     uint256 public supply;
 
-    // locked: public(HashMap[address, LockedBalance])
     mapping(address => LockedBalance) public locked;
-
 
     uint256 public epoch;
 
@@ -76,7 +74,7 @@ contract BalMock is ERC20 {
 
     // Checker for whitelisted (smart contract) wallets which are allowed to deposit
     // The goal is to prevent tokenizing the escrow
-    address public future_smart_wallet_checker
+    address public future_smart_wallet_checker;
     address public smart_wallet_checker;
 
 
@@ -102,7 +100,7 @@ contract BalMock is ERC20 {
         point_history[0].blk = block.number;
         point_history[0].ts = block.timestamp;
 
-        _decimals: uint256 = ERC20(token_addr).decimals()
+        uint256 _decimals = ERC20(token_addr).decimals();
         require(_decimals <= 255, "BalMock: _decimals > 255");
 
         NAME = _name;
