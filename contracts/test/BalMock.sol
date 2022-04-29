@@ -154,7 +154,7 @@ contract BalMock is ERC20 {
         return locked[_addr].end;
     }
     function _checkpoint(address addr, LockedBalance old_locked, LockedBalance new_locked) internal {}
-    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance locked_balance, int128 type) internal {}
+    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance locked_balance, int128 type_) internal {}
     function checkpoint() external {}
     function deposit_for(address _addr, uint256 _value) external nonReentrant {}
     function create_lock(uint256) external nonReentrant {}
