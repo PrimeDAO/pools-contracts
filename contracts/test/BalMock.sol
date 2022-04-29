@@ -5,6 +5,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface ERC20 {
     function decimals() view returns (uint256);
@@ -124,15 +125,26 @@ contract BalMock is ERC20 {
     function admin() external view returns (address){
         return AUTHORIZER_ADAPTOR;
     }
-    function commit_smart_wallet_checker(address addr) external {};
-    function apply_smart_wallet_checker() external {};
-    function assert_not_contract() internal {};
+    function commit_smart_wallet_checker(address addr) external {}
+    function apply_smart_wallet_checker() external {}
+    function assert_not_contract() internal {}
     function get_last_user_slope() external view returns (int128){
-        return
-    };
+        /**
+        @notice Get the most recently recorded rate of voting power decrease for `addr`
+        @param addr Address of the user wallet
+        @return Value of the slope
+    */
+        return user_point_history[addr][uepoch].slope;
+    }
     function user_point_history__ts() external view returns (uint256){
-        return
-    };
+        /**
+        @notice Get the timestamp for checkpoint `_idx` for `_addr`
+        @param _addr User wallet address
+        @param _idx User epoch number
+        @return Epoch time of the checkpoint
+    */
+        return user_point_history[_addr][_idx].ts;
+    }
     function locked__end(address _addr) external view returns (uint256){
         /**
         @notice Get timestamp when `_addr`'s lock finishes
@@ -140,15 +152,15 @@ contract BalMock is ERC20 {
         @return Epoch time of the lock end
         */
         return locked[_addr].end;
-    };
-    function _checkpoint() internal {};
-    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance locked_balance, int128 type) internal {};
-    function checkpoint() external {};
-    function deposit_for(address _addr, uint256 _value) external {};
-    function create_lock(uint256) external {};
-    function increase_amount(uint256) external {};
-    function increase_unlock_time(uint256 _unlock_time) external {};
-    function withdraw() external {};
+    }
+    function _checkpoint(address addr, LockedBalance old_locked, LockedBalance new_locked) internal {}
+    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance locked_balance, int128 type) internal {}
+    function checkpoint() external {}
+    function deposit_for(address _addr, uint256 _value) external nonReentrant {}
+    function create_lock(uint256) external nonReentrant {}
+    function increase_amount(uint256) external nonReentrant {}
+    function increase_unlock_time(uint256 _unlock_time) external nonReentrant {}
+    function withdraw() external nonReentrant {}
 
     // The following ERC20/minime-compatible methods are not real balanceOf and supply!
     // They measure the weights for the purpose of voting, so they don't represent
@@ -168,7 +180,7 @@ contract BalMock is ERC20 {
         //some code
 
         return _min;
-    };
+    }
     function find_timestamp_epoch(uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
         /**
         @notice Binary search to find epoch for timestamp
@@ -183,7 +195,7 @@ contract BalMock is ERC20 {
         //some code
         
         return _min;
-    };
+    }
     function find_block_user_epoch(address addr, uint256 _block, uint256 max_epoch) internal view returns (uint256){
         /**
         @notice Binary search to find epoch for block number
@@ -199,7 +211,7 @@ contract BalMock is ERC20 {
         //some code
         
         return _min;
-    };
+    }
     function find_timestamp_user_epoch(address addr, uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
         /**
         @notice Binary search to find user epoch for timestamp
@@ -215,27 +227,27 @@ contract BalMock is ERC20 {
         //some code
         
         return _min;
-    };
+    }
     function balanceOf(address addr, uint256 _t = block.timestamp) external view returns (uint256){
         //some code and actual rerurn is not 1
         return 1;
-    };
+    }
     function balanceOfAt(address addr, uint256 _block) external view returns (uint256){
         //some code and actual rerurn is not 1
         return 1;
-    };
+    }
     function supply_at(Point p, uint256 t) external view returns (uint256){
         //some code and actual rerurn is not 1
         return 1;    
-    };
+    }
     function totalSupply(uint256 t = block.timestamp) external view returns (uint256){
         //some code and actual rerurn is not 1
         return 1;    
-    };
+    }
     function totalSupplyAt(uint256 _block) external view returns (uint256){
         //some code and actual rerurn is not 1
         return 1; 
-    };
+    }
 
 }
 
