@@ -13,7 +13,7 @@ contract BaseRewardPool {
 
     IERC20 public rewardToken;
     IERC20 public stakingToken;
-    uint256 public constant duration = 7 days;
+    uint256 public constant DURATION = 7 days;
 
     address public operator;
     address public rewardManager;
@@ -38,8 +38,7 @@ contract BaseRewardPool {
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
- 
-
+    
     constructor(
         uint256 pid_,
         address operator_,
@@ -142,7 +141,8 @@ contract BaseRewardPool {
         return true;
     }
 
-    function stakeFor(address _for, uint256 _amount) //here we locking tockens
+    //here we are locking tokens
+    function stakeFor(address _for, uint256 _amount) 
         public
         updateReward(_for)
         returns (bool)
@@ -190,7 +190,8 @@ contract BaseRewardPool {
         return true;
     }
 
-    function withdrawAll() external{ //It is possible to withdraw the whole amount of d2dBal.
+    //It is possible to withdraw the whole amount of d2dBal.
+    function withdrawAll() external { 
         bool claim = true; 
         withdraw(_balances[msg.sender],claim);
     }
@@ -271,7 +272,7 @@ contract BaseRewardPool {
         }
 
         //et = now - (finish-duration)
-        uint256 elapsedTime = block.timestamp.sub(periodFinish.sub(duration));
+        uint256 elapsedTime = block.timestamp.sub(periodFinish.sub(DURATION));
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
         uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
@@ -292,16 +293,16 @@ contract BaseRewardPool {
     {
         historicalRewards = historicalRewards.add(reward);
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(duration);
+            rewardRate = reward.div(DURATION);
         } else {
             uint256 remaining = periodFinish.sub(block.timestamp);
             uint256 leftover = remaining.mul(rewardRate);
             reward = reward.add(leftover);
-            rewardRate = reward.div(duration);
+            rewardRate = reward.div(DURATION);
         }
         currentRewards = reward;
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(duration);
+        periodFinish = block.timestamp.add(DURATION);
         emit RewardAdded(reward);
     }
 }
