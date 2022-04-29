@@ -24,7 +24,7 @@ interface SmartWalletChecker {
 }   
 
 // contract BalMock is ERC20, ReentrancyGuard, SmartWalletChecker, BALERC20 {
-contract BalMock is BAL_ERC20{ // }, ReentrancyGuard {
+contract BalMock is ERC20, ReentrancyGuard {
 
     struct Point{
         int128 bias;
@@ -60,8 +60,9 @@ contract BalMock is BAL_ERC20{ // }, ReentrancyGuard {
     address immutable TOKEN; 
     address immutable AUTHORIZER_ADAPTOR; //Authorizer Adaptor
 
-    string immutable NAME;
-    string immutable SYMBOL;
+    //string is not succorted to be immutable in solidity
+    string public NAME; //immutable NAME;
+    string public SYMBOL; //immutable SYMBOL; 
     uint256 immutable DECIMALS;
 
     uint256 public supply;
@@ -115,13 +116,13 @@ contract BalMock is BAL_ERC20{ // }, ReentrancyGuard {
     function token() external view returns (address){
         return TOKEN;
     }
-    function name() external view returns (string memory){
+    function name() public view virtual override returns (string memory){
         return NAME;
     }
-    function symbol() external view returns (string memory){
+    function symbol() public view virtual override returns (string memory){
         return SYMBOL;
     }
-    function decimals() external view returns (uint256){
+    function decimals() public view virtual override returns (uint256){
         return DECIMALS;
     }
     function admin() external view returns (address){
