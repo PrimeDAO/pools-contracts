@@ -78,7 +78,8 @@ const balDepositor = async (setup) => {
   );
   const minterInstance = await ethers.getContract("D2DToken");
   const staker = address();
-  const escrow = address();
+  const veBal = await ethers.getContract("veBal");
+  const escrow = veBal;
   return await balDepositor.deploy(setup.roles.root.address, staker, minterInstance.address, escrow);
 };
 
@@ -90,10 +91,10 @@ const baseRewardPool = async (setup) => {
   const pid = 1; //1 for example (set correct later_)
   const stakingTokenInstance = await ethers.getContract("D2DToken");
   const rewardToken = BAL_ADDRESS;
-  const operator = address();
-  const rewardManager = address();
+  const operator = await ethers.getContract("Controller");
+  const rewardManager = address(0xedccb35798fae4925718a43cc608ae136208aa8d);
 
-  return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingTokenInstance.address, rewardToken, operator, rewardManager);
+  return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingTokenInstance.address, rewardToken, operator.address, rewardManager);
 };
 
 const controller = async (setup) => {

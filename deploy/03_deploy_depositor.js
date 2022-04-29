@@ -6,7 +6,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
   const staker = address(); //balWeth. Immutable address of the 80BAL/20WETH token instead of crv, sent in the constractor
   //from hackmd: minter. Will be set up by constructor, we’ll need to use the address of d2dBAL token
   const minterInstance = await ethers.getContract("D2DToken");
-  const veBal = address();
+  const veBal = await ethers.getContract("veBal");//address(); //veBal will be deployed locally
   const escrow = veBal; //veBal. Immutable address of the veBal token instead of escrow received in the constructor
 
   await deploy("BalDepositor", {
