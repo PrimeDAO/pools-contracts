@@ -4,7 +4,7 @@ const { parseEther } = utils;
 const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
-  const staker = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25);
+  const staker = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //the veBal staking rewards
   const minter = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //Rewards tokens minted by balancer for the liquidity providers.
 
   await deploy("Controller", {
