@@ -13,7 +13,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
   await deploy("PoolContract", {
     contract: "PoolContract",
     from: root,
-    args: ["Pool Contract", "BALP", 10], // 10 for example (set correct later)
+    args: ["Pool Contract", "BALP", 10], //decimals_; 10 for example (set correct later)
     log: true,
   });
 };

@@ -3,10 +3,9 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
   
-  const pid = 1; //1 for example (set correct later_)
   //from hackmd: minter. Will be set up by constructor, we’ll need to use the address of d2dBAL token
   const minterInstance = await ethers.getContract("D2DToken");
-  const rewardToken = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //bal address
+  // const rewardToken = address(0xC128a9954e6c874eA3d62ce62B468bA073093F25); //bal address
   const staker = address();
   const escrow = address();
 
