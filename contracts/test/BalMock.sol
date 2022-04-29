@@ -228,7 +228,16 @@ contract BalMock is ERC20 {
         
         return _min;
     }
-    function balanceOf(address addr, uint256 _t = block.timestamp) external view returns (uint256){
+    function balanceOf(address addr, uint256 _t) external view returns (uint256){
+        /**
+        @notice Get the current voting power for `msg.sender`
+        @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
+        @param addr User wallet address
+        @param _t Epoch time to return voting power at
+        @return User voting power
+        */
+        uint256 _t = block.timestamp;
+
         //some code and actual rerurn is not 1
         return 1;
     }
@@ -240,7 +249,8 @@ contract BalMock is ERC20 {
         //some code and actual rerurn is not 1
         return 1;    
     }
-    function totalSupply(uint256 t = block.timestamp) external view returns (uint256){
+    function totalSupply(uint256 t) external view returns (uint256){
+        uint256 t = block.timestamp;
         //some code and actual rerurn is not 1
         return 1;    
     }
