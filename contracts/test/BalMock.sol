@@ -4,7 +4,7 @@
 // solium-disable linebreak-style
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface BAL_ERC20 { //was just ERC20 in their python contract
@@ -24,7 +24,8 @@ interface SmartWalletChecker {
 }   
 
 // contract BalMock is ERC20, ReentrancyGuard, SmartWalletChecker, BALERC20 {
-contract BalMock is BAL_ERC20, SmartWalletChecker, ReentrancyGuard {
+contract BalMock is ReentrancyGuard {
+// contract BalMock is BAL_ERC20, SmartWalletChecker{//}, ReentrancyGuard {
 
     struct Point{
         int128 bias;
@@ -116,13 +117,13 @@ contract BalMock is BAL_ERC20, SmartWalletChecker, ReentrancyGuard {
     function token() external view returns (address){
         return TOKEN;
     }
-    function name() public view virtual override returns (string memory){
+    function name() public view virtual returns (string memory){
         return NAME;
     }
-    function symbol() public view virtual override returns (string memory){
+    function symbol() public view virtual returns (string memory){
         return SYMBOL;
     }
-    function decimals() public view virtual override returns (uint256){
+    function decimals() public view virtual returns (uint256){
         return DECIMALS;
     }
     function admin() external view returns (address){
@@ -130,7 +131,7 @@ contract BalMock is BAL_ERC20, SmartWalletChecker, ReentrancyGuard {
     }
     function commit_smart_wallet_checker(address addr) external {}
     function apply_smart_wallet_checker() external {}
-    function assert_not_contract(address addr) internal {}
+    function assert_not_contract(address addr) internal {}    
     function get_last_user_slope(address addr) external view returns (int128){
         /**
         @notice Get the most recently recorded rate of voting power decrease for `addr`
