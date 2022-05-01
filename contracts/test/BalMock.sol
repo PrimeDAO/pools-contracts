@@ -250,7 +250,7 @@ contract BalMock is ReentrancyGuard {
         //some code and actual rerurn is not 1
         return 1;
     }
-    function supply_at(Point memory p, uint256 t) external view returns (uint256){
+    function supply_at(Point memory p, uint256 t) internal view returns (uint256){
         //some code and actual rerurn is not 1
         return 1;    
     }
@@ -260,8 +260,34 @@ contract BalMock is ReentrancyGuard {
         return 1;    
     }
     function totalSupplyAt(uint256 _block) external view returns (uint256){
-        //some code and actual rerurn is not 1
-        return 1; 
+        /**
+        @notice Calculate total voting power at some point in the past
+        @param _block Block to calculate the total voting power at
+        @return Total voting power at `_block`
+        */
+
+        require(_block <= block.number, "_block > block.number");
+        uint256 _epoch = epoch;
+        uint256 target_epoch = find_block_epoch(_block, _epoch);
+
+        Point memory point = point_history[target_epoch];
+        uint256 dt = 0;
+        if (target_epoch < _epoch){
+            Point memory point_next = point_history[target_epoch + 1];
+            if (point.blk != point_next.blk){
+                dt = (_block - point.blk) * (point_next.ts - point.ts) / (point_next.blk - point.blk);
+            }
+        }else{
+            if (point.blk != block.number){
+                dt = (_block - point.blk) * (block.timestamp - point.ts) / (block.number - point.blk);
+            }
+        }
+        // Now dt contains info on how far are we beyond point
+
+        return supply_at(point, point.ts + dt);
+
+        //some code and actual return is not 1
+        // return 1; 
     }
 
 }
