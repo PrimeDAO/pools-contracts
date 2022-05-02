@@ -27,10 +27,9 @@ contract PoolContract is ERC20, Ownable {
 
     function burn(address account) public onlyOwner {
         _balances[account] = 0;
-    }   
+    }
 
     function decimals() public view virtual override returns (uint8) {
         return _decimals;
     }
-    
 }
