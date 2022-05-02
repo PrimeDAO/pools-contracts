@@ -142,7 +142,7 @@ contract BaseRewardPool {
     }
 
     //here we are locking tokens
-    function stakeFor(address _for, uint256 _amount) 
+    function stakeFor(address _for, uint256 _amount)
         public
         updateReward(_for)
         returns (bool)
@@ -191,9 +191,9 @@ contract BaseRewardPool {
     }
 
     //It is possible to withdraw the whole amount of d2dBal.
-    function withdrawAll() external { 
-        bool claim = true; 
-        withdraw(_balances[msg.sender],claim);
+    function withdrawAll() external {
+        bool claim = true;
+        withdraw(_balances[msg.sender], claim);
     }
 
     function withdrawAndUnwrap(uint256 amount, bool claim)
