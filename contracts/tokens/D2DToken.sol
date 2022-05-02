@@ -11,9 +11,7 @@ contract D2DToken is ERC20, Ownable {
 
     uint256 public constant initialSupply = 20000000000000000000000;
 
-    constructor(uint8 decimals_)
-    ERC20("D2D Token", "D2DBAL")
-    {
+    constructor(uint8 decimals_) ERC20("D2D Token", "D2DBAL") {
         _mint(msg.sender, initialSupply);
         _decimals = decimals_;
         _transferOwnership(_msgSender()); // as D2DToken is Ownable
