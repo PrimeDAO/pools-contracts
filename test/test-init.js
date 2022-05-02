@@ -1,6 +1,6 @@
-const { parseEther } = ethers.utils;
+// const { parseEther } = ethers.utils;
 
-const PROXY_CREATION = "ProxyCreation";
+// const PROXY_CREATION = "ProxyCreation";
 const BAL_ADDRESS = "0xC128a9954e6c874eA3d62ce62B468bA073093F25";
 
 const initialize = async (accounts) => {
