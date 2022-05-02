@@ -12,8 +12,8 @@ contract BalDepositor {
     using SafeERC20 for IERC20;
     using Address for address;
 
-    address public constant bal = address(0xba100000625a3754423978a60c9317c58a424e3D);
-    address public constant d2dBal = address(0xba100000625a3754423978a60c9317c58a424e3D);
+    address public constant bal =
+        address(0xba100000625a3754423978a60c9317c58a424e3D);
     address public immutable escrow;
     uint256 private constant MAXTIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
@@ -29,10 +29,11 @@ contract BalDepositor {
 
     constructor(
         address _staker,
+        address _minter,
         address _escrow
     ) public {
         staker = _staker;
-        minter = d2dBal; // d2dBAL address
+        minter = _minter;
         feeManager = msg.sender;
         escrow = _escrow;
     }
@@ -108,10 +109,10 @@ contract BalDepositor {
         address _stakeAddress
     ) public {
         require(_amount > 0, "!>0");
-        //contract should deposit BAL/WETH tokens received in the veBAL contract for Controller contract
-        if (_lock) { //All lock functions should be removed, no tokens are being staked in the Deposit contract.
+
+        if (_lock) {
             //lock immediately, transfer directly to staker to skip an erc20 transfer
-            IERC20(bal).safeTransferFrom(msg.sender, staker, _amount); 
+            IERC20(bal).safeTransferFrom(msg.sender, staker, _amount);
             _lockBalancer();
             if (incentiveBal > 0) {
                 //add the incentive tokens here so they can be staked together

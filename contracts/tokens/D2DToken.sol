@@ -51,5 +51,4 @@ contract D2DToken is ERC20, Ownable {
     function decimals() public view virtual override returns (uint8) {
         return _decimals;
     }
-
 }
