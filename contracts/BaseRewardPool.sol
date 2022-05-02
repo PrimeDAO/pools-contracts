@@ -38,7 +38,7 @@ contract BaseRewardPool {
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
-    
+
     constructor(
         uint256 pid_,
         address operator_,
