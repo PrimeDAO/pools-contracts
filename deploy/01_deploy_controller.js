@@ -1,4 +1,4 @@
-const { utils } = require("ethers");
+// const { utils } = require("ethers");
 
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;

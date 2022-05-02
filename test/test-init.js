@@ -43,11 +43,11 @@ const getVoterProxy = async (setup) => {
 // };
 
 
-const getContractInstance = async (factoryName, address, args) => {
-  const Factory = await ethers.getContractFactory(factoryName, address);
-  const parameters = args ? args : [];
-  return await Factory.deploy(...parameters);
-};
+// const getContractInstance = async (factoryName, address, args) => {
+//   const Factory = await ethers.getContractFactory(factoryName, address);
+//   const parameters = args ? args : [];
+//   return await Factory.deploy(...parameters);
+// };
 
 //(done)
 const gettokenInstances = async (setup) => {
@@ -62,10 +62,10 @@ const gettokenInstances = async (setup) => {
     setup.roles.root.address
   );
 
-  const PoolContract_Factory = await ethers.getContractFactory(
-    "PoolContract",
-    setup.roles.root
-  );
+  // const PoolContract_Factory = await ethers.getContractFactory(
+  //   "PoolContract",
+  //   setup.roles.root
+  // );
   const PoolContract = await ERC20_Factory.deploy("Pool Contract", "BALP", decimals);
 
   return { D2DToken, PoolContract };
@@ -92,7 +92,7 @@ const baseRewardPool = async (setup) => {
   const stakingTokenInstance = await ethers.getContract("D2DToken");
   const rewardToken = BAL_ADDRESS;
   const operator = await ethers.getContract("Controller");
-  const rewardManager = address(0xedccb35798fae4925718a43cc608ae136208aa8d);
+  const rewardManager = "0xedccb35798fae4925718a43cc608ae136208aa8d";
 
   return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingTokenInstance.address, rewardToken, operator.address, rewardManager);
 };
