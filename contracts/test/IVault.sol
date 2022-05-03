@@ -25,7 +25,7 @@ pragma experimental ABIEncoderV2;
 // import "../../lib/helpers/ISignaturesValidator.sol";
 // import "../../lib/helpers/ITemporarilyPausable.sol";
 
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 pragma solidity ^0.8.0;
 
@@ -42,6 +42,65 @@ interface ISignaturesValidator {
      * @dev Returns the next nonce used by an address to sign messages.
      */
     function getNextNonce(address user) external view returns (uint256);
+}
+
+interface IAuthorizer {
+    /**
+     * @dev Returns true if `account` can perform the action described by `actionId` in the contract `where`.
+     */
+    function canPerform(
+        bytes32 actionId,
+        address account,
+        address where
+    ) external view returns (bool);
+}
+
+interface IAsset {
+    // solhint-disable-previous-line no-empty-blocks
+}
+
+interface IFlashLoanRecipient {
+    /**
+     * @dev When `flashLoan` is called on the Vault, it invokes the `receiveFlashLoan` hook on the recipient.
+     *
+     * At the time of the call, the Vault will have transferred `amounts` for `tokens` to the recipient. Before this
+     * call returns, the recipient must have transferred `amounts` plus `feeAmounts` for each token back to the
+     * Vault, or else the entire flash loan will revert.
+     *
+     * `userData` is the same value passed in the `IVault.flashLoan` call.
+     */
+    function receiveFlashLoan(
+        IERC20[] memory tokens,
+        uint256[] memory amounts,
+        uint256[] memory feeAmounts,
+        bytes memory userData
+    ) external;
+}
+
+interface IWETH is IERC20 {
+    function deposit() external payable;
+
+    function withdraw(uint256 amount) external;
+}
+
+
+interface ITemporarilyPausable {
+    /**
+     * @dev Emitted every time the pause state changes by `_setPaused`.
+     */
+    event PausedStateChanged(bool paused);
+
+    /**
+     * @dev Returns the current paused state.
+     */
+    function getPausedState()
+        external
+        view
+        returns (
+            bool paused,
+            uint256 pauseWindowEndTime,
+            uint256 bufferPeriodEndTime
+        );
 }
 
 /**
@@ -762,7 +821,7 @@ interface IVault is ISignaturesValidator, ITemporarilyPausable {
     /**
      * @dev Returns the current protocol fee module.
      */
-    function getProtocolFeesCollector() external view returns (ProtocolFeesCollector);
+    function getProtocolFeesCollector() external view returns (IERC20); //ProtocolFeesCollector);
 
     /**
      * @dev Safety mechanism to pause most Vault operations in the event of an emergency - typically detection of an
