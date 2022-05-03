@@ -9,10 +9,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./IVault.sol";
 
 contract WETHBALMock is ERC20 {
+
     mapping(address => uint256) private _balances;
-
     mapping(address => mapping(address => uint256)) private _allowances;
-
 
     uint256 private constant _MINIMUM_BPT = 1e6;
 
@@ -837,7 +836,22 @@ contract WETHBALMock is ERC20 {
         uint256 bptAmountIn,
         uint256 totalBPT
     ) internal pure returns (uint256[] memory) {
-        return 1;
+        uint256 bptRatio = bptAmountIn / totalBPT;
+
+        uint256[] memory amountsOut = new uint256[](balances.length);
+        for (uint256 i = 0; i < balances.length; i++) {
+            amountsOut[i] = balances[i]*bptRatio;
+        }
+
+        return amountsOut;
+    }
+
+    function bptInForExactTokensOut(bytes memory self)
+        internal
+        pure
+        returns (uint256[] memory amountsOut, uint256 maxBPTAmountIn)
+    {
+        (, amountsOut, maxBPTAmountIn) = abi.decode(self, (ExitKind, uint256[], uint256));
     }
 
     function _exitBPTInForExactTokensOut(
@@ -847,7 +861,7 @@ contract WETHBALMock is ERC20 {
     ) private view whenNotPaused returns (uint256, uint256[] memory) {
         // This exit function is disabled if the contract is paused.
 
-        (uint256[] memory amountsOut, uint256 maxBPTAmountIn) = userData.bptInForExactTokensOut();
+        (uint256[] memory amountsOut, uint256 maxBPTAmountIn) = bptInForExactTokensOut(userData);
         // InputHelpers.ensureInputLengthMatch(amountsOut.length, 2);
         _upscaleArray(amountsOut);
 
@@ -880,7 +894,7 @@ contract WETHBALMock is ERC20 {
     }
 
     function getLatest(Variable variable) external view returns (uint256) {
-        int256 instantValue = _getInstantValue(variable, _miscData.oracleIndex());
+        int256 instantValue = 1;//_getInstantValue(variable, _miscData.oracleIndex());
         return _fromLowResLog(instantValue);
     }
 
@@ -895,17 +909,17 @@ contract WETHBALMock is ERC20 {
     {
         results = new uint256[](queries.length);
 
-        uint256 oracleIndex = _miscData.oracleIndex();
+        // uint256 oracleIndex = 1;// _miscData.oracleIndex();
 
-        OracleAverageQuery memory query;
-        for (uint256 i = 0; i < queries.length; ++i) {
-            query = queries[i];
-            _require(query.secs != 0, Errors.ORACLE_BAD_SECS);
+        // OracleAverageQuery memory query;
+        // for (uint256 i = 0; i < queries.length; ++i) {
+        //     query = queries[i];
+        //     _require(query.secs != 0, Errors.ORACLE_BAD_SECS);
 
-            int256 beginAccumulator = _getPastAccumulator(query.variable, oracleIndex, query.ago + query.secs);
-            int256 endAccumulator = _getPastAccumulator(query.variable, oracleIndex, query.ago);
-            results[i] = _fromLowResLog((endAccumulator - beginAccumulator) / int256(query.secs));
-        }
+        //     int256 beginAccumulator = _getPastAccumulator(query.variable, oracleIndex, query.ago + query.secs);
+        //     int256 endAccumulator = _getPastAccumulator(query.variable, oracleIndex, query.ago);
+        //     results[i] = _fromLowResLog((endAccumulator - beginAccumulator) / int256(query.secs));
+        // }
     }
 
     function _getPastAccumulator(
@@ -927,13 +941,13 @@ contract WETHBALMock is ERC20 {
     {
         results = new int256[](queries.length);
 
-        uint256 oracleIndex = _miscData.oracleIndex();
+        uint256 oracleIndex = 1;//_miscData.oracleIndex();
 
         OracleAccumulatorQuery memory query;
-        for (uint256 i = 0; i < queries.length; ++i) {
-            query = queries[i];
-            results[i] = _getPastAccumulator(query.variable, oracleIndex, query.ago);
-        }
+        // for (uint256 i = 0; i < queries.length; ++i) {
+        //     query = queries[i];
+        //     results[i] = _getPastAccumulator(query.variable, oracleIndex, query.ago);
+        // }
     }
 
     /**
@@ -991,11 +1005,6 @@ contract WETHBALMock is ERC20 {
      */
     function _cacheInvariantAndSupply() internal {
         bytes32 miscData = _miscData;
-        if (miscData.oracleEnabled()) {
-            miscData = miscData.setLogInvariant(_toLowResLog(_lastInvariant));
-            miscData = miscData.setLogTotalSupply(_toLowResLog(totalSupply()));
-            _miscData = miscData;
-        }
     }
 
     function _toLowResLog(uint256 value) internal pure returns (int256) {
@@ -1023,22 +1032,6 @@ contract WETHBALMock is ERC20 {
         uint256 protocolSwapFeePercentage,
         bytes memory userData
     ) external returns (uint256 bptOut, uint256[] memory amountsIn) {
-        // InputHelpers.ensureInputLengthMatch(balances.length, 2);
-
-        _queryAction(
-            poolId,
-            sender,
-            recipient,
-            balances,
-            lastChangeBlock,
-            protocolSwapFeePercentage,
-            userData,
-            _onJoinPool,
-            _downscaleUpArray
-        );
-
-        // The `return` opcode is executed directly inside `_queryAction`, so execution never reaches this statement,
-        // and we don't need to return anything here - it just silences compiler warnings.
         return (bptOut, amountsIn);
     }
 
@@ -1061,22 +1054,6 @@ contract WETHBALMock is ERC20 {
         uint256 protocolSwapFeePercentage,
         bytes memory userData
     ) external returns (uint256 bptIn, uint256[] memory amountsOut) {
-        // InputHelpers.ensureInputLengthMatch(balances.length, 2);
-
-        _queryAction(
-            poolId,
-            sender,
-            recipient,
-            balances,
-            lastChangeBlock,
-            protocolSwapFeePercentage,
-            userData,
-            _onExitPool,
-            _downscaleDownArray
-        );
-
-        // The `return` opcode is executed directly inside `_queryAction`, so execution never reaches this statement,
-        // and we don't need to return anything here - it just silences compiler warnings.
         return (bptIn, amountsOut);
     }
 
@@ -1217,17 +1194,21 @@ contract WETHBALMock is ERC20 {
         amounts[1] = 3;//Math.divUp(amounts[1], _scalingFactor(false));
     }
 
-    function _getAuthorizer() internal view  returns (IAuthorizer) {
-        // Access control management is delegated to the Vault's Authorizer. This lets Balancer Governance manage which
-        // accounts can call permissioned functions: for example, to perform emergency pauses.
-        // If the owner is delegated, then *all* permissioned functions, including `setSwapFeePercentage`, will be under
-        // Governance control.
-        return getVault().getAuthorizer();
+    // function _getAuthorizer() internal view  returns (IAuthorizer) {
+    //     // Access control management is delegated to the Vault's Authorizer. This lets Balancer Governance manage which
+    //     // accounts can call permissioned functions: for example, to perform emergency pauses.
+    //     // If the owner is delegated, then *all* permissioned functions, including `setSwapFeePercentage`, will be under
+    //     // Governance control.
+    //     return getVault().getAuthorizer();
+    // }
+    
+    function getAuthorizer() external view returns (IAuthorizer) {
+        return _getAuthorizer();
     }
 
-    function _queryAction(
-    ) private {
-    }
+    function _getAuthorizer() internal view virtual returns (IAuthorizer); 
+
+    function _queryAction() private {   }
 
 
 
