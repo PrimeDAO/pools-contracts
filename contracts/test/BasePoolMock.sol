@@ -133,7 +133,7 @@ abstract contract Authentication {
         // _require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
     }
 
-    function getActionId(bytes4 selector) public view override returns (bytes32) {
+    function getActionId(bytes4 selector) public view returns (bytes32) {
         // Each external function is dynamically assigned an action identifier as the hash of the disambiguator and the
         // function selector. Disambiguation is necessary to avoid potential collisions in the function selectors of
         // multiple contracts.
@@ -167,7 +167,7 @@ abstract contract Authentication {
 abstract contract BasePoolMock is IBasePool, BalancerPoolToken{//}, ERC20Pausable {
 
 
-    address private immutable _owner;
+    address private  _owner;
 
     address private constant _DELEGATE_OWNER = 0xBA1BA1ba1BA1bA1bA1Ba1BA1ba1BA1bA1ba1ba1B;
 
@@ -233,31 +233,31 @@ abstract contract BasePoolMock is IBasePool, BalancerPoolToken{//}, ERC20Pausabl
 
     uint256 internal _swapFeePercentage;
 
-    IVault private immutable _vault;
-    bytes32 private immutable _poolId;
-    uint256 private immutable _totalTokens;
+    IVault private  _vault;
+    bytes32 private  _poolId;
+    uint256 private  _totalTokens;
 
-    IERC20 internal immutable _token0;
-    IERC20 internal immutable _token1;
-    IERC20 internal immutable _token2;
-    IERC20 internal immutable _token3;
-    IERC20 internal immutable _token4;
-    IERC20 internal immutable _token5;
-    IERC20 internal immutable _token6;
-    IERC20 internal immutable _token7;
+    IERC20 internal  _token0;
+    IERC20 internal  _token1;
+    IERC20 internal  _token2;
+    IERC20 internal  _token3;
+    IERC20 internal  _token4;
+    IERC20 internal  _token5;
+    IERC20 internal  _token6;
+    IERC20 internal  _token7;
 
     // All token balances are normalized to behave as if the token had 18 decimals. We assume a token's decimals will
     // not change throughout its lifetime, and store the corresponding scaling factor for each at construction time.
     // These factors are always greater than or equal to one: tokens with more than 18 decimals are not supported.
 
-    uint256 internal immutable _scalingFactor0;
-    uint256 internal immutable _scalingFactor1;
-    uint256 internal immutable _scalingFactor2;
-    uint256 internal immutable _scalingFactor3;
-    uint256 internal immutable _scalingFactor4;
-    uint256 internal immutable _scalingFactor5;
-    uint256 internal immutable _scalingFactor6;
-    uint256 internal immutable _scalingFactor7;
+    uint256 internal  _scalingFactor0;
+    uint256 internal  _scalingFactor1;
+    uint256 internal  _scalingFactor2;
+    uint256 internal  _scalingFactor3;
+    uint256 internal  _scalingFactor4;
+    uint256 internal  _scalingFactor5;
+    uint256 internal  _scalingFactor6;
+    uint256 internal  _scalingFactor7;
 
     event SwapFeePercentageChanged(uint256 swapFeePercentage);
 
