@@ -3,10 +3,12 @@
 // solium-disable linebreak-style
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 import "./IVault.sol";
 
-contract WETHBALMock is ERC20Pausable {
+contract WETHBALMock is ERC20 {
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -45,6 +47,7 @@ contract WETHBALMock is ERC20Pausable {
 
     event OracleEnabledChanged(bool enabled);
     event SwapFeePercentageChanged(uint256 swapFeePercentage);
+    event PausedStateChanged(bool paused);
 
     struct NewPoolParams {
         // IVault vault;
@@ -62,6 +65,32 @@ contract WETHBALMock is ERC20Pausable {
         address owner;
     }
 
+    struct OracleAverageQuery {
+        Variable variable;
+        uint256 secs;
+        uint256 ago;
+    }
+
+    struct OracleAccumulatorQuery {
+        Variable variable;
+        uint256 ago;
+    }
+
+    modifier onlyVault(bytes32 poolId) {
+        _require(msg.sender == address(getVault()), Errors.CALLER_NOT_VAULT);
+        _require(poolId == getPoolId(), Errors.INVALID_POOL_ID);
+        _;
+    }
+
+    modifier whenNotPaused() {
+        _ensureNotPaused();
+        _;
+    }
+    function _ensureNotPaused() internal view {
+        _require(_isNotPaused(), Errors.PAUSED);
+    }
+
+    enum Variable { PAIR_PRICE, BPT_PRICE, INVARIANT }
 
     constructor(string memory _name, string memory _symbol)
         ERC20(_name, _symbol)
@@ -130,7 +159,15 @@ contract WETHBALMock is ERC20Pausable {
         bytes32 actionId = getActionId(msg.sig);
         _require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
     }
- 
+
+    function getActionId(bytes4 selector) public view  returns (bytes32) {
+        // Each external function is dynamically assigned an action identifier as the hash of the disambiguator and the
+        // function selector. Disambiguation is necessary to avoid potential collisions in the function selectors of
+        // multiple contracts.
+        return keccak256(abi.encodePacked(selector));
+    }
+
+    function _canPerform(bytes32 actionId, address user) internal view virtual returns (bool);
 
   /**
      * @dev Balancer Governance can always enable the Oracle, even if it was originally not enabled. This allows for
@@ -148,8 +185,19 @@ contract WETHBALMock is ERC20Pausable {
     }
 
     function _setOracleEnabled(bool enabled) internal {
-        _miscData = _miscData.setOracleEnabled(enabled);
+        // _miscData = _miscData.setOracleEnabled(enabled);
         emit OracleEnabledChanged(enabled);
+    }
+
+    function _setPaused(bool paused) internal {
+        // if (paused) {
+        //     _require(block.timestamp < _getPauseWindowEndTime(), Errors.PAUSE_WINDOW_EXPIRED);
+        // } else {
+        //     _require(block.timestamp < _getBufferPeriodEndTime(), Errors.BUFFER_PERIOD_EXPIRED);
+        // }
+
+        // _paused = paused;
+        emit PausedStateChanged(paused);
     }
 
     // Caller must be approved by the Vault's Authorizer
@@ -176,18 +224,25 @@ contract WETHBALMock is ERC20Pausable {
         return _lastInvariant;
     }
 
+
+    function _calculateInvariant(uint256[] memory normalizedWeights, uint256[] memory balances)
+        internal
+        pure
+        returns (uint256 invariant)
+    {    }
+
     /**
      * @dev Returns the current value of the invariant.
      */
     function getInvariant() public view returns (uint256) {
-        (, uint256[] memory balances, ) = getVault().getPoolTokens(getPoolId());
+        // (, uint256[] memory balances, ) = getVault().getPoolTokens(getPoolId());
 
-        // Since the Pool hooks always work with upscaled balances, we manually
-        // upscale here for consistency
-        _upscaleArray(balances);
+        // // Since the Pool hooks always work with upscaled balances, we manually
+        // // upscale here for consistency
+        // _upscaleArray(balances);
 
-        uint256[] memory normalizedWeights = _normalizedWeights();
-        return WeightedMath._calculateInvariant(normalizedWeights, balances);
+        // uint256[] memory normalizedWeights = _normalizedWeights();
+        return 1;//_calculateInvariant(normalizedWeights, balances);
     }
 
     // Swap Hooks
@@ -208,7 +263,7 @@ contract WETHBALMock is ERC20Pausable {
         SwapRequest memory request,
         uint256 balanceTokenIn,
         uint256 balanceTokenOut
-    ) external virtual override whenNotPaused onlyVault(request.poolId) returns (uint256) {
+    ) external virtual  whenNotPaused onlyVault(request.poolId) returns (uint256) {
         bool tokenInIsToken0 = request.tokenIn == _token0;
 
         uint256 scalingFactorTokenIn = _scalingFactor(tokenInIsToken0);
@@ -231,8 +286,8 @@ contract WETHBALMock is ERC20Pausable {
         if (request.kind == IVault.SwapKind.GIVEN_IN) {
             // Fees are subtracted before scaling, to reduce the complexity of the rounding direction analysis.
             // This is amount - fee amount, so we round up (favoring a higher fee amount).
-            uint256 feeAmount = request.amount.mulUp(getSwapFeePercentage());
-            request.amount = _upscale(request.amount.sub(feeAmount), scalingFactorTokenIn);
+            uint256 feeAmount = 1;//request.amount.mulUp(getSwapFeePercentage());
+            request.amount = 1;//_upscale(request.amount.sub(feeAmount), scalingFactorTokenIn);
 
             uint256 amountOut = _onSwapGivenIn(
                 request,
@@ -243,7 +298,7 @@ contract WETHBALMock is ERC20Pausable {
             );
 
             // amountOut tokens are exiting the Pool, so we round down.
-            return _downscaleDown(amountOut, scalingFactorTokenOut);
+            return 2;//_downscaleDown(amountOut, scalingFactorTokenOut);
         } else {
             request.amount = _upscale(request.amount, scalingFactorTokenOut);
 
@@ -260,8 +315,28 @@ contract WETHBALMock is ERC20Pausable {
 
             // Fees are added after scaling happens, to reduce the complexity of the rounding direction analysis.
             // This is amount + fee amount, so we round up (favoring a higher fee amount).
-            return amountIn.divUp(getSwapFeePercentage().complement());
+            return 3;//amountIn.divUp(getSwapFeePercentage().complement());
         }
+    }
+
+    function _calcOutGivenIn(
+        uint256 balanceIn,
+        uint256 weightIn,
+        uint256 balanceOut,
+        uint256 weightOut,
+        uint256 amountIn
+    ) internal pure returns (uint256) {
+        return 1;
+    }
+
+    function _calcInGivenOut(
+        uint256 balanceIn,
+        uint256 weightIn,
+        uint256 balanceOut,
+        uint256 weightOut,
+        uint256 amountOut
+    ) internal pure returns (uint256) {
+        return 1;
     }
 
     function _onSwapGivenIn(
@@ -273,7 +348,7 @@ contract WETHBALMock is ERC20Pausable {
     ) private pure returns (uint256) {
         // Swaps are disabled while the contract is paused.
         return
-            WeightedMath._calcOutGivenIn(
+            _calcOutGivenIn(
                 currentBalanceTokenIn,
                 normalizedWeightIn,
                 currentBalanceTokenOut,
@@ -291,7 +366,7 @@ contract WETHBALMock is ERC20Pausable {
     ) private pure returns (uint256) {
         // Swaps are disabled while the contract is paused.
         return
-            WeightedMath._calcInGivenOut(
+            _calcInGivenOut(
                 currentBalanceTokenIn,
                 normalizedWeightIn,
                 currentBalanceTokenOut,
@@ -313,60 +388,75 @@ contract WETHBALMock is ERC20Pausable {
     )
         external
         virtual
-        override
+        
         onlyVault(poolId)
         whenNotPaused
         returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts)
     {
         // All joins, including initializations, are disabled while the contract is paused.
 
-        uint256 bptAmountOut;
-        if (totalSupply() == 0) {
-            (bptAmountOut, amountsIn) = _onInitializePool(poolId, sender, recipient, userData);
+        // uint256 bptAmountOut;
+        // if (totalSupply() == 0) {
+        //     (bptAmountOut, amountsIn) = _onInitializePool(poolId, sender, recipient, userData);
 
-            // On initialization, we lock _MINIMUM_BPT by minting it for the zero address. This BPT acts as a minimum
-            // as it will never be burned, which reduces potential issues with rounding, and also prevents the Pool from
-            // ever being fully drained.
-            _require(bptAmountOut >= _MINIMUM_BPT, Errors.MINIMUM_BPT);
-            _mintPoolTokens(address(0), _MINIMUM_BPT);
-            _mintPoolTokens(recipient, bptAmountOut - _MINIMUM_BPT);
+        //     // On initialization, we lock _MINIMUM_BPT by minting it for the zero address. This BPT acts as a minimum
+        //     // as it will never be burned, which reduces potential issues with rounding, and also prevents the Pool from
+        //     // ever being fully drained.
+        //     _require(bptAmountOut >= _MINIMUM_BPT, Errors.MINIMUM_BPT);
+        //     _mintPoolTokens(address(0), _MINIMUM_BPT);
+        //     _mintPoolTokens(recipient, bptAmountOut - _MINIMUM_BPT);
 
-            // amountsIn are amounts entering the Pool, so we round up.
-            _downscaleUpArray(amountsIn);
+        //     // amountsIn are amounts entering the Pool, so we round up.
+        //     _downscaleUpArray(amountsIn);
 
-            // There are no due protocol fee amounts during initialization
-            dueProtocolFeeAmounts = new uint256[](2);
-        } else {
-            _upscaleArray(balances);
+        //     // There are no due protocol fee amounts during initialization
+        //     dueProtocolFeeAmounts = new uint256[](2);
+        // } else {
+        //     _upscaleArray(balances);
 
-            // Update price oracle with the pre-join balances
-            _updateOracle(lastChangeBlock, balances[0], balances[1]);
+        //     // Update price oracle with the pre-join balances
+        //     _updateOracle(lastChangeBlock, balances[0], balances[1]);
 
-            (bptAmountOut, amountsIn, dueProtocolFeeAmounts) = _onJoinPool(
-                poolId,
-                sender,
-                recipient,
-                balances,
-                lastChangeBlock,
-                protocolSwapFeePercentage,
-                userData
-            );
+        //     (bptAmountOut, amountsIn, dueProtocolFeeAmounts) = _onJoinPool(
+        //         poolId,
+        //         sender,
+        //         recipient,
+        //         balances,
+        //         lastChangeBlock,
+        //         protocolSwapFeePercentage,
+        //         userData
+        //     );
 
-            // Note we no longer use `balances` after calling `_onJoinPool`, which may mutate it.
+        //     // Note we no longer use `balances` after calling `_onJoinPool`, which may mutate it.
 
-            _mintPoolTokens(recipient, bptAmountOut);
+        //     _mintPoolTokens(recipient, bptAmountOut);
 
-            // amountsIn are amounts entering the Pool, so we round up.
-            _downscaleUpArray(amountsIn);
-            // dueProtocolFeeAmounts are amounts exiting the Pool, so we round down.
-            _downscaleDownArray(dueProtocolFeeAmounts);
-        }
+        //     // amountsIn are amounts entering the Pool, so we round up.
+        //     _downscaleUpArray(amountsIn);
+        //     // dueProtocolFeeAmounts are amounts exiting the Pool, so we round down.
+        //     _downscaleDownArray(dueProtocolFeeAmounts);
+        // }
 
         // Update cached total supply and invariant using the results after the join that will be used for future
         // oracle updates.
         _cacheInvariantAndSupply();
     }
 
+
+    enum JoinKind { INIT, EXACT_TOKENS_IN_FOR_BPT_OUT, TOKEN_IN_FOR_EXACT_BPT_OUT }
+    enum ExitKind { EXACT_BPT_IN_FOR_ONE_TOKEN_OUT, EXACT_BPT_IN_FOR_TOKENS_OUT, BPT_IN_FOR_EXACT_TOKENS_OUT }
+
+    function joinKind(bytes memory self) internal pure returns (JoinKind) {
+        return abi.decode(self, (JoinKind));
+    }
+
+    function exitKind(bytes memory self) internal pure returns (ExitKind) {
+        return abi.decode(self, (ExitKind));
+    }
+
+    function initialAmountsIn(bytes memory self) internal pure returns (uint256[] memory amountsIn) {
+        (, amountsIn) = abi.decode(self, (JoinKind, uint256[]));
+    }
     /**
      * @dev Called when the Pool is joined for the first time; that is, when the BPT total supply is zero.
      *
@@ -386,20 +476,20 @@ contract WETHBALMock is ERC20Pausable {
         address,
         bytes memory userData
     ) private returns (uint256, uint256[] memory) {
-        WeightedPool.JoinKind kind = userData.joinKind();
-        _require(kind == WeightedPool.JoinKind.INIT, Errors.UNINITIALIZED);
+        JoinKind kind = joinKind(userData);
+        _require(kind == JoinKind.INIT, Errors.UNINITIALIZED);
 
-        uint256[] memory amountsIn = userData.initialAmountsIn();
-        InputHelpers.ensureInputLengthMatch(amountsIn.length, 2);
+        uint256[] memory amountsIn = initialAmountsIn(userData);
+        // InputHelpers.ensureInputLengthMatch(amountsIn.length, 2);
         _upscaleArray(amountsIn);
 
         uint256[] memory normalizedWeights = _normalizedWeights();
 
-        uint256 invariantAfterJoin = WeightedMath._calculateInvariant(normalizedWeights, amountsIn);
+        uint256 invariantAfterJoin = _calculateInvariant(normalizedWeights, amountsIn);
 
         // Set the initial BPT to the value of the invariant times the number of tokens. This makes BPT supply more
         // consistent in Pools with similar compositions but different number of tokens.
-        uint256 bptAmountOut = Math.mul(invariantAfterJoin, 2);
+        uint256 bptAmountOut = invariantAfterJoin * 2;
 
         _lastInvariant = invariantAfterJoin;
 
@@ -444,7 +534,7 @@ contract WETHBALMock is ERC20Pausable {
         // Due protocol swap fee amounts are computed by measuring the growth of the invariant between the previous join
         // or exit event and now - the invariant's growth is due exclusively to swap fees. This avoids spending gas
         // computing them on each individual swap
-        uint256 invariantBeforeJoin = WeightedMath._calculateInvariant(normalizedWeights, balances);
+        uint256 invariantBeforeJoin = _calculateInvariant(normalizedWeights, balances);
 
         uint256[] memory dueProtocolFeeAmounts = _getDueProtocolFeeAmounts(
             balances,
@@ -454,14 +544,7 @@ contract WETHBALMock is ERC20Pausable {
             protocolSwapFeePercentage
         );
 
-        // Update current balances by subtracting the protocol fee amounts
-        _mutateAmounts(balances, dueProtocolFeeAmounts, FixedPoint.sub);
         (uint256 bptAmountOut, uint256[] memory amountsIn) = _doJoin(balances, normalizedWeights, userData);
-
-        // Update the invariant with the balances the Pool will have after the join, in order to compute the
-        // protocol swap fee amounts due in future joins and exits.
-        _mutateAmounts(balances, amountsIn, FixedPoint.add);
-        _lastInvariant = WeightedMath._calculateInvariant(normalizedWeights, balances);
 
         return (bptAmountOut, amountsIn, dueProtocolFeeAmounts);
     }
@@ -471,15 +554,23 @@ contract WETHBALMock is ERC20Pausable {
         uint256[] memory normalizedWeights,
         bytes memory userData
     ) private view returns (uint256, uint256[] memory) {
-        WeightedPool.JoinKind kind = userData.joinKind();
-
-        if (kind == WeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT) {
+        JoinKind kind = joinKind(userData);
+        
+        if (kind == JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT) {
             return _joinExactTokensInForBPTOut(balances, normalizedWeights, userData);
-        } else if (kind == WeightedPool.JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT) {
+        } else if (kind == JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT) {
             return _joinTokenInForExactBPTOut(balances, normalizedWeights, userData);
         } else {
             _revert(Errors.UNHANDLED_JOIN_KIND);
         }
+    }
+
+    function exactTokensInForBptOut(bytes memory self)
+        internal
+        pure
+        returns (uint256[] memory amountsIn, uint256 minBPTAmountOut)
+    {
+        (, amountsIn, minBPTAmountOut) = abi.decode(self, (JoinKind, uint256[], uint256));
     }
 
     function _joinExactTokensInForBPTOut(
@@ -487,12 +578,12 @@ contract WETHBALMock is ERC20Pausable {
         uint256[] memory normalizedWeights,
         bytes memory userData
     ) private view returns (uint256, uint256[] memory) {
-        (uint256[] memory amountsIn, uint256 minBPTAmountOut) = userData.exactTokensInForBptOut();
-        InputHelpers.ensureInputLengthMatch(amountsIn.length, 2);
+        (uint256[] memory amountsIn, uint256 minBPTAmountOut) = exactTokensInForBptOut(userData);
+        // InputHelpers.ensureInputLengthMatch(amountsIn.length, 2);
 
         _upscaleArray(amountsIn);
 
-        uint256 bptAmountOut = WeightedMath._calcBptOutGivenExactTokensIn(
+        uint256 bptAmountOut = _calcBptOutGivenExactTokensIn(
             balances,
             normalizedWeights,
             amountsIn,
@@ -504,19 +595,33 @@ contract WETHBALMock is ERC20Pausable {
 
         return (bptAmountOut, amountsIn);
     }
+    
+    function _calcBptOutGivenExactTokensIn(
+        uint256[] memory balances,
+        uint256[] memory normalizedWeights,
+        uint256[] memory amountsIn,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        return 1;
+    }
+
+    function tokenInForExactBptOut(bytes memory self) internal pure returns (uint256 bptAmountOut, uint256 tokenIndex) {
+        (, bptAmountOut, tokenIndex) = abi.decode(self, (JoinKind, uint256, uint256));
+    }
 
     function _joinTokenInForExactBPTOut(
         uint256[] memory balances,
         uint256[] memory normalizedWeights,
         bytes memory userData
     ) private view returns (uint256, uint256[] memory) {
-        (uint256 bptAmountOut, uint256 tokenIndex) = userData.tokenInForExactBptOut();
+        (uint256 bptAmountOut, uint256 tokenIndex) = tokenInForExactBptOut(userData);
         // Note that there is no maximum amountIn parameter: this is handled by `IVault.joinPool`.
 
         _require(tokenIndex < 2, Errors.OUT_OF_BOUNDS);
 
         uint256[] memory amountsIn = new uint256[](2);
-        amountsIn[tokenIndex] = WeightedMath._calcTokenInGivenExactBptOut(
+        amountsIn[tokenIndex] = _calcTokenInGivenExactBptOut(
             balances[tokenIndex],
             normalizedWeights[tokenIndex],
             bptAmountOut,
@@ -525,6 +630,16 @@ contract WETHBALMock is ERC20Pausable {
         );
 
         return (bptAmountOut, amountsIn);
+    }
+
+    function _calcTokenInGivenExactBptOut(
+        uint256 balance,
+        uint256 normalizedWeight,
+        uint256 bptAmountOut,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        return 1;
     }
 
     // Exit Hook
@@ -537,7 +652,7 @@ contract WETHBALMock is ERC20Pausable {
         uint256 lastChangeBlock,
         uint256 protocolSwapFeePercentage,
         bytes memory userData
-    ) external virtual override onlyVault(poolId) returns (uint256[] memory, uint256[] memory) {
+    ) external virtual onlyVault(poolId) returns (uint256[] memory, uint256[] memory) {
         _upscaleArray(balances);
 
         (uint256 bptAmountIn, uint256[] memory amountsOut, uint256[] memory dueProtocolFeeAmounts) = _onExitPool(
@@ -565,6 +680,11 @@ contract WETHBALMock is ERC20Pausable {
         }
 
         return (amountsOut, dueProtocolFeeAmounts);
+    }
+
+    function _isNotPaused() internal view returns (bool) {
+        // After the Buffer Period, the (inexpensive) timestamp check short-circuits the storage access.
+        return true;
     }
 
     /**
@@ -612,7 +732,7 @@ contract WETHBALMock is ERC20Pausable {
             // Due protocol swap fee amounts are computed by measuring the growth of the invariant between the previous
             // join or exit event and now - the invariant's growth is due exclusively to swap fees. This avoids
             // spending gas calculating the fees on each individual swap.
-            uint256 invariantBeforeExit = WeightedMath._calculateInvariant(normalizedWeights, balances);
+            uint256 invariantBeforeExit = _calculateInvariant(normalizedWeights, balances);
             dueProtocolFeeAmounts = _getDueProtocolFeeAmounts(
                 balances,
                 normalizedWeights,
@@ -621,8 +741,6 @@ contract WETHBALMock is ERC20Pausable {
                 protocolSwapFeePercentage
             );
 
-            // Update current balances by subtracting the protocol fee amounts
-            _mutateAmounts(balances, dueProtocolFeeAmounts, FixedPoint.sub);
         } else {
             // If the contract is paused, swap protocol fee amounts are not charged and the oracle is not updated
             // to avoid extra calculations and reduce the potential for errors.
@@ -630,11 +748,7 @@ contract WETHBALMock is ERC20Pausable {
         }
 
         (bptAmountIn, amountsOut) = _doExit(balances, normalizedWeights, userData);
-
-        // Update the invariant with the balances the Pool will have after the exit, in order to compute the
-        // protocol swap fees due in future joins and exits.
-        _mutateAmounts(balances, amountsOut, FixedPoint.sub);
-        _lastInvariant = WeightedMath._calculateInvariant(normalizedWeights, balances);
+        _lastInvariant = _calculateInvariant(normalizedWeights, balances);
 
         return (bptAmountIn, amountsOut, dueProtocolFeeAmounts);
     }
@@ -644,16 +758,20 @@ contract WETHBALMock is ERC20Pausable {
         uint256[] memory normalizedWeights,
         bytes memory userData
     ) private view returns (uint256, uint256[] memory) {
-        WeightedPool.ExitKind kind = userData.exitKind();
+        ExitKind kind = exitKind(userData);
 
-        if (kind == WeightedPool.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT) {
+        if (kind == ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT) {
             return _exitExactBPTInForTokenOut(balances, normalizedWeights, userData);
-        } else if (kind == WeightedPool.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT) {
+        } else if (kind == ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT) {
             return _exitExactBPTInForTokensOut(balances, userData);
         } else {
             // ExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
             return _exitBPTInForExactTokensOut(balances, normalizedWeights, userData);
         }
+    }
+
+    function exactBptInForTokenOut(bytes memory self) internal pure returns (uint256 bptAmountIn, uint256 tokenIndex) {
+        (, bptAmountIn, tokenIndex) = abi.decode(self, (ExitKind, uint256, uint256));
     }
 
     function _exitExactBPTInForTokenOut(
@@ -663,7 +781,7 @@ contract WETHBALMock is ERC20Pausable {
     ) private view whenNotPaused returns (uint256, uint256[] memory) {
         // This exit function is disabled if the contract is paused.
 
-        (uint256 bptAmountIn, uint256 tokenIndex) = userData.exactBptInForTokenOut();
+        (uint256 bptAmountIn, uint256 tokenIndex) = exactBptInForTokenOut(userData);
         // Note that there is no minimum amountOut parameter: this is handled by `IVault.exitPool`.
 
         _require(tokenIndex < 2, Errors.OUT_OF_BOUNDS);
@@ -672,7 +790,7 @@ contract WETHBALMock is ERC20Pausable {
         uint256[] memory amountsOut = new uint256[](2);
 
         // And then assign the result to the selected token
-        amountsOut[tokenIndex] = WeightedMath._calcTokenOutGivenExactBptIn(
+        amountsOut[tokenIndex] = _calcTokenOutGivenExactBptIn(
             balances[tokenIndex],
             normalizedWeights[tokenIndex],
             bptAmountIn,
@@ -681,6 +799,20 @@ contract WETHBALMock is ERC20Pausable {
         );
 
         return (bptAmountIn, amountsOut);
+    }
+
+    function _calcTokenOutGivenExactBptIn(
+        uint256 balance,
+        uint256 normalizedWeight,
+        uint256 bptAmountIn,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        return 1;
+    }
+
+    function exactBptInForTokensOut(bytes memory self) internal pure returns (uint256 bptAmountIn) {
+        (, bptAmountIn) = abi.decode(self, (ExitKind, uint256));
     }
 
     function _exitExactBPTInForTokensOut(uint256[] memory balances, bytes memory userData)
@@ -693,11 +825,19 @@ contract WETHBALMock is ERC20Pausable {
         // This particular exit function is the only one that remains available because it is the simplest one, and
         // therefore the one with the lowest likelihood of errors.
 
-        uint256 bptAmountIn = userData.exactBptInForTokensOut();
+        uint256 bptAmountIn = exactBptInForTokensOut(userData);
         // Note that there is no minimum amountOut parameter: this is handled by `IVault.exitPool`.
 
-        uint256[] memory amountsOut = WeightedMath._calcTokensOutGivenExactBptIn(balances, bptAmountIn, totalSupply());
+        uint256[] memory amountsOut = _calcTokensOutGivenExactBptIn(balances, bptAmountIn, totalSupply());
         return (bptAmountIn, amountsOut);
+    }
+
+    function _calcTokensOutGivenExactBptIn(
+        uint256[] memory balances,
+        uint256 bptAmountIn,
+        uint256 totalBPT
+    ) internal pure returns (uint256[] memory) {
+        return 1;
     }
 
     function _exitBPTInForExactTokensOut(
@@ -708,10 +848,10 @@ contract WETHBALMock is ERC20Pausable {
         // This exit function is disabled if the contract is paused.
 
         (uint256[] memory amountsOut, uint256 maxBPTAmountIn) = userData.bptInForExactTokensOut();
-        InputHelpers.ensureInputLengthMatch(amountsOut.length, 2);
+        // InputHelpers.ensureInputLengthMatch(amountsOut.length, 2);
         _upscaleArray(amountsOut);
 
-        uint256 bptAmountIn = WeightedMath._calcBptInGivenExactTokensOut(
+        uint256 bptAmountIn = _calcBptInGivenExactTokensOut(
             balances,
             normalizedWeights,
             amountsOut,
@@ -723,21 +863,34 @@ contract WETHBALMock is ERC20Pausable {
         return (bptAmountIn, amountsOut);
     }
 
+    function _calcBptInGivenExactTokensOut(
+        uint256[] memory balances,
+        uint256[] memory normalizedWeights,
+        uint256[] memory amountsOut,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        return 1;
+    }
+
     // Oracle functions
 
-    function getLargestSafeQueryWindow() external pure override returns (uint256) {
+    function getLargestSafeQueryWindow() external pure returns (uint256) {
         return 34 hours;
     }
 
-    function getLatest(Variable variable) external view override returns (uint256) {
+    function getLatest(Variable variable) external view returns (uint256) {
         int256 instantValue = _getInstantValue(variable, _miscData.oracleIndex());
         return _fromLowResLog(instantValue);
+    }
+
+    function _getInstantValue(IPriceOracle.Variable variable, uint256 index) internal view returns (int256) {
+        return 1;
     }
 
     function getTimeWeightedAverage(OracleAverageQuery[] memory queries)
         external
         view
-        override
         returns (uint256[] memory results)
     {
         results = new uint256[](queries.length);
@@ -755,10 +908,21 @@ contract WETHBALMock is ERC20Pausable {
         }
     }
 
+    function _getPastAccumulator(
+        IPriceOracle.Variable variable,
+        uint256 latestIndex,
+        uint256 ago
+    ) internal view returns (int256) {
+        return 1;
+    }
+
+    function _fromLowResLog(int256 value) internal pure returns (uint256) {
+        return 1;
+    }
+
     function getPastAccumulators(OracleAccumulatorQuery[] memory queries)
         external
         view
-        override
         returns (int256[] memory results)
     {
         results = new int256[](queries.length);
@@ -782,38 +946,38 @@ contract WETHBALMock is ERC20Pausable {
         uint256 balanceToken0,
         uint256 balanceToken1
     ) internal {
-        bytes32 miscData = _miscData;
-        if (miscData.oracleEnabled() && block.number > lastChangeBlock) {
-            int256 logSpotPrice = WeightedOracleMath._calcLogSpotPrice(
-                _normalizedWeight0,
-                balanceToken0,
-                _normalizedWeight1,
-                balanceToken1
-            );
+        // bytes32 miscData = _miscData;
+        // if (miscData.oracleEnabled() && block.number > lastChangeBlock) {
+        //     int256 logSpotPrice = WeightedOracleMath._calcLogSpotPrice(
+        //         _normalizedWeight0,
+        //         balanceToken0,
+        //         _normalizedWeight1,
+        //         balanceToken1
+        //     );
 
-            int256 logBPTPrice = WeightedOracleMath._calcLogBPTPrice(
-                _normalizedWeight0,
-                balanceToken0,
-                miscData.logTotalSupply()
-            );
+        //     int256 logBPTPrice = WeightedOracleMath._calcLogBPTPrice(
+        //         _normalizedWeight0,
+        //         balanceToken0,
+        //         miscData.logTotalSupply()
+        //     );
 
-            uint256 oracleCurrentIndex = miscData.oracleIndex();
-            uint256 oracleCurrentSampleInitialTimestamp = miscData.oracleSampleCreationTimestamp();
-            uint256 oracleUpdatedIndex = _processPriceData(
-                oracleCurrentSampleInitialTimestamp,
-                oracleCurrentIndex,
-                logSpotPrice,
-                logBPTPrice,
-                miscData.logInvariant()
-            );
+        //     uint256 oracleCurrentIndex = miscData.oracleIndex();
+        //     uint256 oracleCurrentSampleInitialTimestamp = miscData.oracleSampleCreationTimestamp();
+        //     uint256 oracleUpdatedIndex = _processPriceData(
+        //         oracleCurrentSampleInitialTimestamp,
+        //         oracleCurrentIndex,
+        //         logSpotPrice,
+        //         logBPTPrice,
+        //         miscData.logInvariant()
+        //     );
 
-            if (oracleCurrentIndex != oracleUpdatedIndex) {
-                // solhint-disable not-rely-on-time
-                miscData = miscData.setOracleIndex(oracleUpdatedIndex);
-                miscData = miscData.setOracleSampleCreationTimestamp(block.timestamp);
-                _miscData = miscData;
-            }
-        }
+        //     if (oracleCurrentIndex != oracleUpdatedIndex) {
+        //         // solhint-disable not-rely-on-time
+        //         miscData = miscData.setOracleIndex(oracleUpdatedIndex);
+        //         miscData = miscData.setOracleSampleCreationTimestamp(block.timestamp);
+        //         _miscData = miscData;
+        //     }
+        // }
     }
 
     /**
@@ -828,10 +992,14 @@ contract WETHBALMock is ERC20Pausable {
     function _cacheInvariantAndSupply() internal {
         bytes32 miscData = _miscData;
         if (miscData.oracleEnabled()) {
-            miscData = miscData.setLogInvariant(WeightedOracleMath._toLowResLog(_lastInvariant));
-            miscData = miscData.setLogTotalSupply(WeightedOracleMath._toLowResLog(totalSupply()));
+            miscData = miscData.setLogInvariant(_toLowResLog(_lastInvariant));
+            miscData = miscData.setLogTotalSupply(_toLowResLog(totalSupply()));
             _miscData = miscData;
         }
+    }
+
+    function _toLowResLog(uint256 value) internal pure returns (int256) {
+        return 1;
     }
 
     // Query functions
@@ -855,7 +1023,7 @@ contract WETHBALMock is ERC20Pausable {
         uint256 protocolSwapFeePercentage,
         bytes memory userData
     ) external returns (uint256 bptOut, uint256[] memory amountsIn) {
-        InputHelpers.ensureInputLengthMatch(balances.length, 2);
+        // InputHelpers.ensureInputLengthMatch(balances.length, 2);
 
         _queryAction(
             poolId,
@@ -893,7 +1061,7 @@ contract WETHBALMock is ERC20Pausable {
         uint256 protocolSwapFeePercentage,
         bytes memory userData
     ) external returns (uint256 bptIn, uint256[] memory amountsOut) {
-        InputHelpers.ensureInputLengthMatch(balances.length, 2);
+        // InputHelpers.ensureInputLengthMatch(balances.length, 2);
 
         _queryAction(
             poolId,
@@ -931,7 +1099,7 @@ contract WETHBALMock is ERC20Pausable {
 
         // The protocol swap fees are always paid using the token with the largest weight in the Pool. As this is the
         // token that is expected to have the largest balance, using it to pay fees should not unbalance the Pool.
-        dueProtocolFeeAmounts[_maxWeightTokenIndex] = WeightedMath._calcDueTokenProtocolSwapFeeAmount(
+        dueProtocolFeeAmounts[_maxWeightTokenIndex] = _calcDueTokenProtocolSwapFeeAmount(
             balances[_maxWeightTokenIndex],
             normalizedWeights[_maxWeightTokenIndex],
             previousInvariant,
@@ -940,6 +1108,16 @@ contract WETHBALMock is ERC20Pausable {
         );
 
         return dueProtocolFeeAmounts;
+    }
+
+    function _calcDueTokenProtocolSwapFeeAmount(
+        uint256 balance,
+        uint256 normalizedWeight,
+        uint256 previousInvariant,
+        uint256 currentInvariant,
+        uint256 protocolSwapFeePercentage
+    ) internal pure returns (uint256) {
+        return 1;
     }
 
     /**
@@ -962,7 +1140,7 @@ contract WETHBALMock is ERC20Pausable {
      */
     function getRate() public view returns (uint256) {
         // The initial BPT supply is equal to the invariant times the number of tokens.
-        return Math.mul(getInvariant(), 2).divDown(totalSupply());
+        return 2;// Math.mul(getInvariant(), 2).divDown(totalSupply());
     }
 
     // Scaling
@@ -976,7 +1154,7 @@ contract WETHBALMock is ERC20Pausable {
         uint256 tokenDecimals = ERC20(address(token)).decimals();
 
         // Tokens with more than 18 decimals are not supported.
-        uint256 decimalsDifference = Math.sub(18, tokenDecimals);
+        uint256 decimalsDifference = 18 - tokenDecimals;
         return 10**decimalsDifference;
     }
 
@@ -993,7 +1171,7 @@ contract WETHBALMock is ERC20Pausable {
      * scaling or not.
      */
     function _upscale(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return Math.mul(amount, scalingFactor);
+        return amount * scalingFactor;
     }
 
     /**
@@ -1001,8 +1179,8 @@ contract WETHBALMock is ERC20Pausable {
      * instead *mutates* the `amounts` array.
      */
     function _upscaleArray(uint256[] memory amounts) internal view {
-        amounts[0] = Math.mul(amounts[0], _scalingFactor(true));
-        amounts[1] = Math.mul(amounts[1], _scalingFactor(false));
+        amounts[0] = amounts[0] * _scalingFactor(true);
+        amounts[1] = amounts[1] * _scalingFactor(false);
     }
 
     /**
@@ -1010,7 +1188,7 @@ contract WETHBALMock is ERC20Pausable {
      * whether it needed scaling or not. The result is rounded down.
      */
     function _downscaleDown(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return Math.divDown(amount, scalingFactor);
+        return 2;//Math.divDown(amount, scalingFactor);
     }
 
     /**
@@ -1018,8 +1196,8 @@ contract WETHBALMock is ERC20Pausable {
      * but instead *mutates* the `amounts` array.
      */
     function _downscaleDownArray(uint256[] memory amounts) internal view {
-        amounts[0] = Math.divDown(amounts[0], _scalingFactor(true));
-        amounts[1] = Math.divDown(amounts[1], _scalingFactor(false));
+        amounts[0] = 2;//Math.divDown(amounts[0], _scalingFactor(true));
+        amounts[1] = 2;//Math.divDown(amounts[1], _scalingFactor(false));
     }
 
     /**
@@ -1027,7 +1205,7 @@ contract WETHBALMock is ERC20Pausable {
      * whether it needed scaling or not. The result is rounded up.
      */
     function _downscaleUp(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return Math.divUp(amount, scalingFactor);
+        return 3;//Math.divUp(amount, scalingFactor);
     }
 
     /**
@@ -1035,11 +1213,11 @@ contract WETHBALMock is ERC20Pausable {
      * but instead *mutates* the `amounts` array.
      */
     function _downscaleUpArray(uint256[] memory amounts) internal view {
-        amounts[0] = Math.divUp(amounts[0], _scalingFactor(true));
-        amounts[1] = Math.divUp(amounts[1], _scalingFactor(false));
+        amounts[0] = 3;//Math.divUp(amounts[0], _scalingFactor(true));
+        amounts[1] = 3;//Math.divUp(amounts[1], _scalingFactor(false));
     }
 
-    function _getAuthorizer() internal view override returns (IAuthorizer) {
+    function _getAuthorizer() internal view  returns (IAuthorizer) {
         // Access control management is delegated to the Vault's Authorizer. This lets Balancer Governance manage which
         // accounts can call permissioned functions: for example, to perform emergency pauses.
         // If the owner is delegated, then *all* permissioned functions, including `setSwapFeePercentage`, will be under
@@ -1098,8 +1276,8 @@ contract WETHBALMock is ERC20Pausable {
 
     function approve(address spender, uint256 amount)
         public
-        virtual
-        override
+        virtual 
+        override       
         returns (bool)
     {
         _approve(_msgSender(), spender, amount);
@@ -1152,4 +1330,205 @@ contract WETHBALMock is ERC20Pausable {
         emit Approval(owner, spender, amount);
     }
 
+
+    function totalSupply() public view override returns (uint256) {
+        return 100;//_totalSupply;
+    }
+
+    function _require(bool condition, uint256 errorCode) public pure {
+        if (!condition) _revert(errorCode);
+    }
+
+    function _revert(uint256 errorCode) public pure {}
+
+    function _burnPoolTokens(address sender, uint256 amount) internal {}
+
+}
+
+interface IPriceOracle {
+    // The three values that can be queried:
+    //
+    // - PAIR_PRICE: the price of the tokens in the Pool, expressed as the price of the second token in units of the
+    //   first token. For example, if token A is worth $2, and token B is worth $4, the pair price will be 2.0.
+    //   Note that the price is computed *including* the tokens decimals. This means that the pair price of a Pool with
+    //   DAI and USDC will be close to 1.0, despite DAI having 18 decimals and USDC 6.
+    //
+    // - BPT_PRICE: the price of the Pool share token (BPT), in units of the first token.
+    //   Note that the price is computed *including* the tokens decimals. This means that the BPT price of a Pool with
+    //   USDC in which BPT is worth $5 will be 5.0, despite the BPT having 18 decimals and USDC 6.
+    //
+    // - INVARIANT: the value of the Pool's invariant, which serves as a measure of its liquidity.
+    enum Variable { PAIR_PRICE, BPT_PRICE, INVARIANT }
+
+    /**
+     * @dev Returns the time average weighted price corresponding to each of `queries`. Prices are represented as 18
+     * decimal fixed point values.
+     */
+    function getTimeWeightedAverage(OracleAverageQuery[] memory queries)
+        external
+        view
+        returns (uint256[] memory results);
+
+    /**
+     * @dev Returns latest sample of `variable`. Prices are represented as 18 decimal fixed point values.
+     */
+    function getLatest(Variable variable) external view returns (uint256);
+
+    /**
+     * @dev Information for a Time Weighted Average query.
+     *
+     * Each query computes the average over a window of duration `secs` seconds that ended `ago` seconds ago. For
+     * example, the average over the past 30 minutes is computed by settings secs to 1800 and ago to 0. If secs is 1800
+     * and ago is 1800 as well, the average between 60 and 30 minutes ago is computed instead.
+     */
+    struct OracleAverageQuery {
+        Variable variable;
+        uint256 secs;
+        uint256 ago;
+    }
+
+    /**
+     * @dev Returns largest time window that can be safely queried, where 'safely' means the Oracle is guaranteed to be
+     * able to produce a result and not revert.
+     *
+     * If a query has a non-zero `ago` value, then `secs + ago` (the oldest point in time) must be smaller than this
+     * value for 'safe' queries.
+     */
+    function getLargestSafeQueryWindow() external view returns (uint256);
+
+    /**
+     * @dev Returns the accumulators corresponding to each of `queries`.
+     */
+    function getPastAccumulators(OracleAccumulatorQuery[] memory queries)
+        external
+        view
+        returns (int256[] memory results);
+
+    /**
+     * @dev Information for an Accumulator query.
+     *
+     * Each query estimates the accumulator at a time `ago` seconds ago.
+     */
+    struct OracleAccumulatorQuery {
+        Variable variable;
+        uint256 ago;
+    }
+}
+
+
+
+library Errors {
+    // Math
+    uint256 internal constant ADD_OVERFLOW = 0;
+    uint256 internal constant SUB_OVERFLOW = 1;
+    uint256 internal constant SUB_UNDERFLOW = 2;
+    uint256 internal constant MUL_OVERFLOW = 3;
+    uint256 internal constant ZERO_DIVISION = 4;
+    uint256 internal constant DIV_INTERNAL = 5;
+    uint256 internal constant X_OUT_OF_BOUNDS = 6;
+    uint256 internal constant Y_OUT_OF_BOUNDS = 7;
+    uint256 internal constant PRODUCT_OUT_OF_BOUNDS = 8;
+    uint256 internal constant INVALID_EXPONENT = 9;
+
+    // Input
+    uint256 internal constant OUT_OF_BOUNDS = 100;
+    uint256 internal constant UNSORTED_ARRAY = 101;
+    uint256 internal constant UNSORTED_TOKENS = 102;
+    uint256 internal constant INPUT_LENGTH_MISMATCH = 103;
+    uint256 internal constant ZERO_TOKEN = 104;
+
+    // Shared pools
+    uint256 internal constant MIN_TOKENS = 200;
+    uint256 internal constant MAX_TOKENS = 201;
+    uint256 internal constant MAX_SWAP_FEE_PERCENTAGE = 202;
+    uint256 internal constant MIN_SWAP_FEE_PERCENTAGE = 203;
+    uint256 internal constant MINIMUM_BPT = 204;
+    uint256 internal constant CALLER_NOT_VAULT = 205;
+    uint256 internal constant UNINITIALIZED = 206;
+    uint256 internal constant BPT_IN_MAX_AMOUNT = 207;
+    uint256 internal constant BPT_OUT_MIN_AMOUNT = 208;
+    uint256 internal constant EXPIRED_PERMIT = 209;
+
+    // Pools
+    uint256 internal constant MIN_AMP = 300;
+    uint256 internal constant MAX_AMP = 301;
+    uint256 internal constant MIN_WEIGHT = 302;
+    uint256 internal constant MAX_STABLE_TOKENS = 303;
+    uint256 internal constant MAX_IN_RATIO = 304;
+    uint256 internal constant MAX_OUT_RATIO = 305;
+    uint256 internal constant MIN_BPT_IN_FOR_TOKEN_OUT = 306;
+    uint256 internal constant MAX_OUT_BPT_FOR_TOKEN_IN = 307;
+    uint256 internal constant NORMALIZED_WEIGHT_INVARIANT = 308;
+    uint256 internal constant INVALID_TOKEN = 309;
+    uint256 internal constant UNHANDLED_JOIN_KIND = 310;
+    uint256 internal constant ZERO_INVARIANT = 311;
+    uint256 internal constant ORACLE_INVALID_SECONDS_QUERY = 312;
+    uint256 internal constant ORACLE_NOT_INITIALIZED = 313;
+    uint256 internal constant ORACLE_QUERY_TOO_OLD = 314;
+    uint256 internal constant ORACLE_INVALID_INDEX = 315;
+    uint256 internal constant ORACLE_BAD_SECS = 316;
+
+    // Lib
+    uint256 internal constant REENTRANCY = 400;
+    uint256 internal constant SENDER_NOT_ALLOWED = 401;
+    uint256 internal constant PAUSED = 402;
+    uint256 internal constant PAUSE_WINDOW_EXPIRED = 403;
+    uint256 internal constant MAX_PAUSE_WINDOW_DURATION = 404;
+    uint256 internal constant MAX_BUFFER_PERIOD_DURATION = 405;
+    uint256 internal constant INSUFFICIENT_BALANCE = 406;
+    uint256 internal constant INSUFFICIENT_ALLOWANCE = 407;
+    uint256 internal constant ERC20_TRANSFER_FROM_ZERO_ADDRESS = 408;
+    uint256 internal constant ERC20_TRANSFER_TO_ZERO_ADDRESS = 409;
+    uint256 internal constant ERC20_MINT_TO_ZERO_ADDRESS = 410;
+    uint256 internal constant ERC20_BURN_FROM_ZERO_ADDRESS = 411;
+    uint256 internal constant ERC20_APPROVE_FROM_ZERO_ADDRESS = 412;
+    uint256 internal constant ERC20_APPROVE_TO_ZERO_ADDRESS = 413;
+    uint256 internal constant ERC20_TRANSFER_EXCEEDS_ALLOWANCE = 414;
+    uint256 internal constant ERC20_DECREASED_ALLOWANCE_BELOW_ZERO = 415;
+    uint256 internal constant ERC20_TRANSFER_EXCEEDS_BALANCE = 416;
+    uint256 internal constant ERC20_BURN_EXCEEDS_ALLOWANCE = 417;
+    uint256 internal constant SAFE_ERC20_CALL_FAILED = 418;
+    uint256 internal constant ADDRESS_INSUFFICIENT_BALANCE = 419;
+    uint256 internal constant ADDRESS_CANNOT_SEND_VALUE = 420;
+    uint256 internal constant SAFE_CAST_VALUE_CANT_FIT_INT256 = 421;
+    uint256 internal constant GRANT_SENDER_NOT_ADMIN = 422;
+    uint256 internal constant REVOKE_SENDER_NOT_ADMIN = 423;
+    uint256 internal constant RENOUNCE_SENDER_NOT_ALLOWED = 424;
+    uint256 internal constant BUFFER_PERIOD_EXPIRED = 425;
+
+    // Vault
+    uint256 internal constant INVALID_POOL_ID = 500;
+    uint256 internal constant CALLER_NOT_POOL = 501;
+    uint256 internal constant SENDER_NOT_ASSET_MANAGER = 502;
+    uint256 internal constant USER_DOESNT_ALLOW_RELAYER = 503;
+    uint256 internal constant INVALID_SIGNATURE = 504;
+    uint256 internal constant EXIT_BELOW_MIN = 505;
+    uint256 internal constant JOIN_ABOVE_MAX = 506;
+    uint256 internal constant SWAP_LIMIT = 507;
+    uint256 internal constant SWAP_DEADLINE = 508;
+    uint256 internal constant CANNOT_SWAP_SAME_TOKEN = 509;
+    uint256 internal constant UNKNOWN_AMOUNT_IN_FIRST_SWAP = 510;
+    uint256 internal constant MALCONSTRUCTED_MULTIHOP_SWAP = 511;
+    uint256 internal constant INTERNAL_BALANCE_OVERFLOW = 512;
+    uint256 internal constant INSUFFICIENT_INTERNAL_BALANCE = 513;
+    uint256 internal constant INVALID_ETH_INTERNAL_BALANCE = 514;
+    uint256 internal constant INVALID_POST_LOAN_BALANCE = 515;
+    uint256 internal constant INSUFFICIENT_ETH = 516;
+    uint256 internal constant UNALLOCATED_ETH = 517;
+    uint256 internal constant ETH_TRANSFER = 518;
+    uint256 internal constant CANNOT_USE_ETH_SENTINEL = 519;
+    uint256 internal constant TOKENS_MISMATCH = 520;
+    uint256 internal constant TOKEN_NOT_REGISTERED = 521;
+    uint256 internal constant TOKEN_ALREADY_REGISTERED = 522;
+    uint256 internal constant TOKENS_ALREADY_SET = 523;
+    uint256 internal constant TOKENS_LENGTH_MUST_BE_2 = 524;
+    uint256 internal constant NONZERO_TOKEN_BALANCE = 525;
+    uint256 internal constant BALANCE_TOTAL_OVERFLOW = 526;
+    uint256 internal constant POOL_NO_TOKENS = 527;
+    uint256 internal constant INSUFFICIENT_FLASH_LOAN_BALANCE = 528;
+
+    // Fees
+    uint256 internal constant SWAP_FEE_PERCENTAGE_TOO_HIGH = 600;
+    uint256 internal constant FLASH_LOAN_FEE_PERCENTAGE_TOO_HIGH = 601;
+    uint256 internal constant INSUFFICIENT_FLASH_LOAN_FEE_AMOUNT = 602;
 }
