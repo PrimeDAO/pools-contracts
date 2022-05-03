@@ -29,8 +29,10 @@ pragma experimental ABIEncoderV2;
 // import "../vault/interfaces/IBasePool.sol";
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./IVault.sol";
-
+import "./BalancerErrors.sol";
+import "./BalancerPoolToken.sol";
 
 
 interface IBasePool {//is IPoolSwapStructs {
@@ -98,7 +100,48 @@ interface IBasePool {//is IPoolSwapStructs {
     ) external returns (uint256[] memory amountsOut, uint256[] memory dueProtocolFeeAmounts);
 }
 
+abstract contract Authentication {
+    bytes32 private immutable _actionIdDisambiguator;
 
+    /**
+     * @dev The main purpose of the `actionIdDisambiguator` is to prevent accidental function selector collisions in
+     * multi contract systems.
+     *
+     * There are two main uses for it:
+     *  - if the contract is a singleton, any unique identifier can be used to make the associated action identifiers
+     *    unique. The contract's own address is a good option.
+     *  - if the contract belongs to a family that shares action identifiers for the same functions, an identifier
+     *    shared by the entire family (and no other contract) should be used instead.
+     */
+    constructor(bytes32 actionIdDisambiguator) {
+        _actionIdDisambiguator = actionIdDisambiguator;
+    }
+
+    /**
+     * @dev Reverts unless the caller is allowed to call this function. Should only be applied to external functions.
+     */
+    modifier authenticate() {
+        _authenticateCaller();
+        _;
+    }
+
+    /**
+     * @dev Reverts unless the caller is allowed to call the entry point function.
+     */
+    function _authenticateCaller() internal view {
+        bytes32 actionId = getActionId(msg.sig);
+        // _require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
+    }
+
+    function getActionId(bytes4 selector) public view override returns (bytes32) {
+        // Each external function is dynamically assigned an action identifier as the hash of the disambiguator and the
+        // function selector. Disambiguation is necessary to avoid potential collisions in the function selectors of
+        // multiple contracts.
+        return keccak256(abi.encodePacked(_actionIdDisambiguator, selector));
+    }
+
+    function _canPerform(bytes32 actionId, address user) internal view virtual returns (bool);
+}
 
 // This contract relies on tons of immutable state variables to perform efficient lookup, without resorting to storage
 // reads. Because immutable arrays are not supported, we instead declare a fixed set of state variables plus a total
@@ -121,7 +164,62 @@ interface IBasePool {//is IPoolSwapStructs {
  * and implement the swap callbacks themselves.
  */
 // abstract contract BasePool is IBasePool, BasePoolAuthorization, BalancerPoolToken, TemporarilyPausable {
-abstract contract BasePool is IBasePool, ERC20Pausable {
+abstract contract BasePoolMock is IBasePool, BalancerPoolToken{//}, ERC20Pausable {
+
+
+    address private immutable _owner;
+
+    address private constant _DELEGATE_OWNER = 0xBA1BA1ba1BA1bA1bA1Ba1BA1ba1BA1bA1ba1ba1B;
+
+    // constructor(address owner) {
+    //     _owner = owner;
+    // }
+
+    function getOwner() public view returns (address) {
+        return _owner;
+    }
+
+    function getAuthorizer() external view returns (IAuthorizer) {
+        return _getAuthorizer();
+    }
+
+    function _canPerform(bytes32 actionId, address account) internal view returns (bool) {
+        if ((getOwner() != _DELEGATE_OWNER) && _isOwnerOnlyAction(actionId)) {
+            // Only the owner can perform "owner only" actions, unless the owner is delegated.
+            return msg.sender == getOwner();
+        } else {
+            // Non-owner actions are always processed via the Authorizer, as "owner only" ones are when delegated.
+            return _getAuthorizer().canPerform(actionId, account, address(this));
+        }
+    }
+
+    //interface IAuthentication 
+    function getActionId(bytes4 selector) public view virtual returns (bytes32);
+
+    function _isOwnerOnlyAction(bytes32 actionId) private view returns (bool) {
+        // This implementation hardcodes the setSwapFeePercentage action identifier.
+        return actionId == getActionId(BasePoolMock.setSwapFeePercentage.selector);
+    }
+
+    // function _getAuthorizer() internal view virtual returns (IAuthorizer);
+
+
+    modifier authenticate() {
+        _authenticateCaller();
+        _;
+    }
+
+    function _authenticateCaller() internal view {
+        bytes32 actionId = getActionId(msg.sig);
+        _require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
+    }
+
+
+
+
+
+
+
     // using FixedPoint for uint256;
 
     uint256 private constant _MIN_TOKENS = 2;
@@ -179,20 +277,20 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
         // simpler management of permissions (such as being able to manage granting the 'set fee percentage' action in
         // any Pool created by the same factory), while still making action identifiers unique among different factories
         // if the selectors match, preventing accidental errors.
-        Authentication(bytes32(uint256(msg.sender)))
+        // Authentication(bytes32(uint256(msg.sender)))
         BalancerPoolToken(name, symbol)
-        BasePoolAuthorization(owner)
-        TemporarilyPausable(pauseWindowDuration, bufferPeriodDuration)
+        // BasePoolAuthorization(owner)
+        // TemporarilyPausable(pauseWindowDuration, bufferPeriodDuration)
     {
         _require(tokens.length >= _MIN_TOKENS, Errors.MIN_TOKENS);
         _require(tokens.length <= _MAX_TOKENS, Errors.MAX_TOKENS);
 
-        // The Vault only requires the token list to be ordered for the Two Token Pools specialization. However,
+        // The Vault only _requires the token list to be ordered for the Two Token Pools specialization. However,
         // to make the developer experience consistent, we are requiring this condition for all the native pools.
         // Also, since these Pools will register tokens only once, we can ensure the Pool tokens will follow the same
         // order. We rely on this property to make Pools simpler to write, as it lets us assume that the
         // order of token-specific parameters (such as token weights) will not change.
-        InputHelpers.ensureArrayIsSorted(tokens);
+        // InputHelpers.ensureArrayIsSorted(tokens);
 
         _setSwapFeePercentage(swapFeePercentage);
 
@@ -207,23 +305,23 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
         _totalTokens = tokens.length;
 
         // Immutable variables cannot be initialized inside an if statement, so we must do conditional assignments
-        _token0 = tokens.length > 0 ? tokens[0] : IERC20(0);
-        _token1 = tokens.length > 1 ? tokens[1] : IERC20(0);
-        _token2 = tokens.length > 2 ? tokens[2] : IERC20(0);
-        _token3 = tokens.length > 3 ? tokens[3] : IERC20(0);
-        _token4 = tokens.length > 4 ? tokens[4] : IERC20(0);
-        _token5 = tokens.length > 5 ? tokens[5] : IERC20(0);
-        _token6 = tokens.length > 6 ? tokens[6] : IERC20(0);
-        _token7 = tokens.length > 7 ? tokens[7] : IERC20(0);
+        // _token0 = tokens.length > 0 ? tokens[0] : IERC20(0);
+        // _token1 = tokens.length > 1 ? tokens[1] : IERC20(0);
+        // _token2 = tokens.length > 2 ? tokens[2] : IERC20(0);
+        // _token3 = tokens.length > 3 ? tokens[3] : IERC20(0);
+        // _token4 = tokens.length > 4 ? tokens[4] : IERC20(0);
+        // _token5 = tokens.length > 5 ? tokens[5] : IERC20(0);
+        // _token6 = tokens.length > 6 ? tokens[6] : IERC20(0);
+        // _token7 = tokens.length > 7 ? tokens[7] : IERC20(0);
 
-        _scalingFactor0 = tokens.length > 0 ? _computeScalingFactor(tokens[0]) : 0;
-        _scalingFactor1 = tokens.length > 1 ? _computeScalingFactor(tokens[1]) : 0;
-        _scalingFactor2 = tokens.length > 2 ? _computeScalingFactor(tokens[2]) : 0;
-        _scalingFactor3 = tokens.length > 3 ? _computeScalingFactor(tokens[3]) : 0;
-        _scalingFactor4 = tokens.length > 4 ? _computeScalingFactor(tokens[4]) : 0;
-        _scalingFactor5 = tokens.length > 5 ? _computeScalingFactor(tokens[5]) : 0;
-        _scalingFactor6 = tokens.length > 6 ? _computeScalingFactor(tokens[6]) : 0;
-        _scalingFactor7 = tokens.length > 7 ? _computeScalingFactor(tokens[7]) : 0;
+        // _scalingFactor0 = tokens.length > 0 ? _computeScalingFactor(tokens[0]) : 0;
+        // _scalingFactor1 = tokens.length > 1 ? _computeScalingFactor(tokens[1]) : 0;
+        // _scalingFactor2 = tokens.length > 2 ? _computeScalingFactor(tokens[2]) : 0;
+        // _scalingFactor3 = tokens.length > 3 ? _computeScalingFactor(tokens[3]) : 0;
+        // _scalingFactor4 = tokens.length > 4 ? _computeScalingFactor(tokens[4]) : 0;
+        // _scalingFactor5 = tokens.length > 5 ? _computeScalingFactor(tokens[5]) : 0;
+        // _scalingFactor6 = tokens.length > 6 ? _computeScalingFactor(tokens[6]) : 0;
+        // _scalingFactor7 = tokens.length > 7 ? _computeScalingFactor(tokens[7]) : 0;
     }
 
     // Getters / Setters
@@ -244,6 +342,22 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
         return _swapFeePercentage;
     }
 
+    //----------------------
+    modifier whenNotPaused() {
+        _ensureNotPaused();
+        _;
+    }
+
+    function _ensureNotPaused() internal view {
+        _require(_isNotPaused(), Errors.PAUSED);
+    }
+
+    function _isNotPaused() internal view returns (bool) {
+        // After the Buffer Period, the (inexpensive) timestamp check short-circuits the storage access.
+        return true;
+    }
+    //----------------------
+
     // Caller must be approved by the Vault's Authorizer
     function setSwapFeePercentage(uint256 swapFeePercentage) external virtual authenticate whenNotPaused {
         _setSwapFeePercentage(swapFeePercentage);
@@ -260,6 +374,9 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
     // Caller must be approved by the Vault's Authorizer
     function setPaused(bool paused) external authenticate {
         _setPaused(paused);
+    }
+
+    function _setPaused(bool paused) internal {
     }
 
     // Join / Exit Hooks
@@ -374,7 +491,7 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
         uint256 protocolSwapFeePercentage,
         bytes memory userData
     ) external returns (uint256 bptOut, uint256[] memory amountsIn) {
-        InputHelpers.ensureInputLengthMatch(balances.length, _getTotalTokens());
+        // InputHelpers.ensureInputLengthMatch(balances.length, _getTotalTokens());
 
         _queryAction(
             poolId,
@@ -412,7 +529,7 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
         uint256 protocolSwapFeePercentage,
         bytes memory userData
     ) external returns (uint256 bptIn, uint256[] memory amountsOut) {
-        InputHelpers.ensureInputLengthMatch(balances.length, _getTotalTokens());
+        // InputHelpers.ensureInputLengthMatch(balances.length, _getTotalTokens());
 
         _queryAction(
             poolId,
@@ -529,7 +646,7 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
      */
     function _addSwapFeeAmount(uint256 amount) internal view returns (uint256) {
         // This returns amount + fee amount, so we round up (favoring a higher fee amount).
-        return amount.divUp(_swapFeePercentage.complement());
+        return 1;//amount.divUp(_swapFeePercentage.complement());
     }
 
     /**
@@ -537,12 +654,17 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
      */
     function _subtractSwapFeeAmount(uint256 amount) internal view returns (uint256) {
         // This returns amount - fee amount, so we round up (favoring a higher fee amount).
-        uint256 feeAmount = amount.mulUp(_swapFeePercentage);
-        return amount.sub(feeAmount);
+        // uint256 feeAmount = amount.mulUp(_swapFeePercentage);
+        return 1;//amount.sub(feeAmount);
     }
 
     // Scaling
 
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        _require(b <= a, Errors.SUB_OVERFLOW);
+        uint256 c = a - b;
+        return c;
+    }
     /**
      * @dev Returns a scaling factor that, when multiplied to a token amount for `token`, normalizes its balance as if
      * it had 18 decimals.
@@ -552,7 +674,7 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
         uint256 tokenDecimals = ERC20(address(token)).decimals();
 
         // Tokens with more than 18 decimals are not supported.
-        uint256 decimalsDifference = Math.sub(18, tokenDecimals);
+        uint256 decimalsDifference = sub(18, tokenDecimals);
         return 10**decimalsDifference;
     }
 
@@ -598,12 +720,17 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
         return scalingFactors;
     }
 
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a * b;
+        _require(a == 0 || c / a == b, Errors.MUL_OVERFLOW);
+        return c;
+    }
     /**
      * @dev Applies `scalingFactor` to `amount`, resulting in a larger or equal value depending on whether it needed
      * scaling or not.
      */
     function _upscale(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return Math.mul(amount, scalingFactor);
+        return mul(amount, scalingFactor);
     }
 
     /**
@@ -612,7 +739,7 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
      */
     function _upscaleArray(uint256[] memory amounts, uint256[] memory scalingFactors) internal view {
         for (uint256 i = 0; i < _getTotalTokens(); ++i) {
-            amounts[i] = Math.mul(amounts[i], scalingFactors[i]);
+            amounts[i] = mul(amounts[i], scalingFactors[i]);
         }
     }
 
@@ -621,7 +748,7 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
      * whether it needed scaling or not. The result is rounded down.
      */
     function _downscaleDown(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return Math.divDown(amount, scalingFactor);
+        return 1;//Math.divDown(amount, scalingFactor);
     }
 
     /**
@@ -629,9 +756,9 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
      * *mutates* the `amounts` array.
      */
     function _downscaleDownArray(uint256[] memory amounts, uint256[] memory scalingFactors) internal view {
-        for (uint256 i = 0; i < _getTotalTokens(); ++i) {
-            amounts[i] = Math.divDown(amounts[i], scalingFactors[i]);
-        }
+        // for (uint256 i = 0; i < _getTotalTokens(); ++i) {
+        //     amounts[i] = Math.divDown(amounts[i], scalingFactors[i]);
+        // }
     }
 
     /**
@@ -639,7 +766,7 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
      * whether it needed scaling or not. The result is rounded up.
      */
     function _downscaleUp(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return Math.divUp(amount, scalingFactor);
+        return 1;//Math.divUp(amount, scalingFactor);
     }
 
     /**
@@ -647,12 +774,12 @@ abstract contract BasePool is IBasePool, ERC20Pausable {
      * *mutates* the `amounts` array.
      */
     function _downscaleUpArray(uint256[] memory amounts, uint256[] memory scalingFactors) internal view {
-        for (uint256 i = 0; i < _getTotalTokens(); ++i) {
-            amounts[i] = Math.divUp(amounts[i], scalingFactors[i]);
-        }
+        // for (uint256 i = 0; i < _getTotalTokens(); ++i) {
+        //     amounts[i] = Math.divUp(amounts[i], scalingFactors[i]);
+        // }
     }
 
-    function _getAuthorizer() internal view override returns (IAuthorizer) {
+    function _getAuthorizer() internal view returns (IAuthorizer) {
         // Access control management is delegated to the Vault's Authorizer. This lets Balancer Governance manage which
         // accounts can call permissioned functions: for example, to perform emergency pauses.
         // If the owner is delegated, then *all* permissioned functions, including `setSwapFeePercentage`, will be under

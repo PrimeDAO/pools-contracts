@@ -3,12 +3,16 @@
 // solium-disable linebreak-style
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 
 import "./IVault.sol";
+import "./BalancerPoolToken.sol";
+// import "./BalancerErrors.sol";
 
-contract WETHBALMock is ERC20 {
+
+contract WETHBALMock is BalancerPoolToken {//}, ERC20Pausable {
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -23,8 +27,8 @@ contract WETHBALMock is ERC20 {
     bytes32 internal _miscData;
     uint256 private _lastInvariant;
 
-    // IVault private immutable _vault;
-    IERC20 private  _vault;
+    IVault private  _vault;
+    // IERC20 private  _vault;
 
     bytes32 private  _poolId;
 
@@ -44,13 +48,21 @@ contract WETHBALMock is ERC20 {
     uint256 internal  _scalingFactor0;
     uint256 internal  _scalingFactor1;
 
+    bool private _paused;
+    uint256 internal constant _MIN_WEIGHT = 0.01e18;
+    uint256 internal constant ONE = 1e18; // 18 decimal places
+
+
+    address private immutable _owner;
+    address private constant _DELEGATE_OWNER = 0xBA1BA1ba1BA1bA1bA1Ba1BA1ba1BA1bA1ba1ba1B;
+
     event OracleEnabledChanged(bool enabled);
     event SwapFeePercentageChanged(uint256 swapFeePercentage);
     event PausedStateChanged(bool paused);
 
     struct NewPoolParams {
-        // IVault vault;
-        IERC20 vault;
+        IVault vault;
+        // IERC20 vault;
         string name;
         string symbol;
         IERC20 token0;
@@ -75,9 +87,57 @@ contract WETHBALMock is ERC20 {
         uint256 ago;
     }
 
+
+    constructor(NewPoolParams memory params)
+        // Base Pools are expected to be deployed using factories. By using the factory address as the action
+        // disambiguator, we make all Pools deployed by the same factory share action identifiers. This allows for
+        // simpler management of permissions (such as being able to manage granting the 'set fee percentage' action in
+        // any Pool created by the same factory), while still making action identifiers unique among different factories
+        // if the selectors match, preventing accidental errors.
+        // Authentication(bytes32(uint256(msg.sender)))
+        BalancerPoolToken(params.name, params.symbol)
+        // BasePoolAuthorization(params.owner)
+        // ERC20Pausable(params.pauseWindowDuration, params.bufferPeriodDuration)
+    {
+        _owner = msg.sender;
+        _setOracleEnabled(params.oracleEnabled);
+        _setSwapFeePercentage(params.swapFeePercentage);
+
+        bytes32 poolId = params.vault.registerPool(IVault.PoolSpecialization.TWO_TOKEN);
+
+        // Pass in zero addresses for Asset Managers
+        IERC20[] memory tokens = new IERC20[](2);
+        tokens[0] = params.token0;
+        tokens[1] = params.token1;
+        params.vault.registerTokens(poolId, tokens, new address[](2));
+
+        // Set immutable state variables - these cannot be read from during construction
+        _vault = params.vault;
+        _poolId = poolId;
+
+        _token0 = params.token0;
+        _token1 = params.token1;
+
+        _scalingFactor0 = _computeScalingFactor(params.token0);
+        _scalingFactor1 = _computeScalingFactor(params.token1);
+
+        // Ensure each normalized weight is above them minimum and find the token index of the maximum weight
+        require(params.normalizedWeight0 >= _MIN_WEIGHT, Errors.MIN_WEIGHT);
+        require(params.normalizedWeight1 >= _MIN_WEIGHT, Errors.MIN_WEIGHT);
+
+        // Ensure that the normalized weights sum to ONE
+        uint256 normalizedSum = params.normalizedWeight0 + params.normalizedWeight1;
+        require(normalizedSum == ONE, Errors.NORMALIZED_WEIGHT_INVARIANT);
+
+        _normalizedWeight0 = params.normalizedWeight0;
+        _normalizedWeight1 = params.normalizedWeight1;
+        _maxWeightTokenIndex = params.normalizedWeight0 >= params.normalizedWeight1 ? 0 : 1;
+    }
+
+
     modifier onlyVault(bytes32 poolId) {
-        _require(msg.sender == address(getVault()), Errors.CALLER_NOT_VAULT);
-        _require(poolId == getPoolId(), Errors.INVALID_POOL_ID);
+        require(msg.sender == address(getVault()), Errors.CALLER_NOT_VAULT);
+        require(poolId == getPoolId(), Errors.INVALID_POOL_ID);
         _;
     }
 
@@ -85,21 +145,16 @@ contract WETHBALMock is ERC20 {
         _ensureNotPaused();
         _;
     }
+
     function _ensureNotPaused() internal view {
-        _require(_isNotPaused(), Errors.PAUSED);
+        require(_isNotPaused(), Errors.PAUSED);
     }
 
     enum Variable { PAIR_PRICE, BPT_PRICE, INVARIANT }
 
-    constructor(string memory _name, string memory _symbol)
-        ERC20(_name, _symbol)
-    {
-        _balances[msg.sender] += 20000000000000000000000;
-    }
-
     // Getters / Setters
 
-    function getVault() public view returns (IERC20){//IVault) {
+    function getVault() public view returns (IVault) {
         return _vault;
     }
 
@@ -107,29 +162,29 @@ contract WETHBALMock is ERC20 {
         return _poolId;
     }
 
-    function getMiscData()
-        external
-        view
-        returns (
-            int256 logInvariant,
-            int256 logTotalSupply,
-            uint256 oracleSampleCreationTimestamp,
-            uint256 oracleIndex,
-            bool oracleEnabled,
-            uint256 swapFeePercentage
-        )
-    {
-        bytes32 miscData = _miscData;
-        logInvariant = 1;//miscData.logInvariant();
-        logTotalSupply = 1;//miscData.logTotalSupply();
-        oracleSampleCreationTimestamp = 1;//miscData.oracleSampleCreationTimestamp();
-        oracleIndex = 1;//miscData.oracleIndex();
-        oracleEnabled = true;//miscData.oracleEnabled();
-        swapFeePercentage = 1;//miscData.swapFeePercentage();
-    }
+    // function getMiscData()
+    //     external
+    //     view
+    //     returns (
+    //         int256 logInvariant,
+    //         int256 logTotalSupply,
+    //         uint256 oracleSampleCreationTimestamp,
+    //         uint256 oracleIndex,
+    //         bool oracleEnabled,
+    //         uint256 swapFeePercentage
+    //     )
+    // {
+    //     bytes32 miscData = _miscData;
+    //     logInvariant = 1;
+    //     logTotalSupply = 1;
+    //     oracleSampleCreationTimestamp = 1;
+    //     oracleIndex = 1;
+    //     oracleEnabled = true;
+    //     swapFeePercentage = 1;
+    // }
 
     function getSwapFeePercentage() public view returns (uint256) {
-        return 1;//_miscData.swapFeePercentage();
+        return 1;
     }
 
     // Caller must be approved by the Vault's Authorizer
@@ -138,25 +193,17 @@ contract WETHBALMock is ERC20 {
     }
 
     function _setSwapFeePercentage(uint256 swapFeePercentage) private {
-
-        // _miscData = _miscData.setSwapFeePercentage(swapFeePercentage);
         emit SwapFeePercentageChanged(swapFeePercentage);
     }
 
-    /**
-     * @dev Reverts unless the caller is allowed to call this function. Should only be applied to external functions.
-     */
     modifier authenticate() {
         _authenticateCaller();
         _;
     }
 
-    /**
-     * @dev Reverts unless the caller is allowed to call the entry point function.
-     */
     function _authenticateCaller() internal view {
         bytes32 actionId = getActionId(msg.sig);
-        _require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
+        require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
     }
 
     function getActionId(bytes4 selector) public view  returns (bytes32) {
@@ -184,18 +231,17 @@ contract WETHBALMock is ERC20 {
     }
 
     function _setOracleEnabled(bool enabled) internal {
-        // _miscData = _miscData.setOracleEnabled(enabled);
         emit OracleEnabledChanged(enabled);
     }
 
     function _setPaused(bool paused) internal {
         // if (paused) {
-        //     _require(block.timestamp < _getPauseWindowEndTime(), Errors.PAUSE_WINDOW_EXPIRED);
+        //     require(block.timestamp < _getPauseWindowEndTime(), Errors.PAUSE_WINDOW_EXPIRED);
         // } else {
-        //     _require(block.timestamp < _getBufferPeriodEndTime(), Errors.BUFFER_PERIOD_EXPIRED);
+        //     require(block.timestamp < _getBufferPeriodEndTime(), Errors.BUFFER_PERIOD_EXPIRED);
         // }
+        _paused = paused;
 
-        // _paused = paused;
         emit PausedStateChanged(paused);
     }
 
@@ -234,14 +280,7 @@ contract WETHBALMock is ERC20 {
      * @dev Returns the current value of the invariant.
      */
     function getInvariant() public view returns (uint256) {
-        // (, uint256[] memory balances, ) = getVault().getPoolTokens(getPoolId());
-
-        // // Since the Pool hooks always work with upscaled balances, we manually
-        // // upscale here for consistency
-        // _upscaleArray(balances);
-
-        // uint256[] memory normalizedWeights = _normalizedWeights();
-        return 1;//_calculateInvariant(normalizedWeights, balances);
+        return 1;
     }
 
     // Swap Hooks
@@ -392,52 +431,6 @@ contract WETHBALMock is ERC20 {
         whenNotPaused
         returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts)
     {
-        // All joins, including initializations, are disabled while the contract is paused.
-
-        // uint256 bptAmountOut;
-        // if (totalSupply() == 0) {
-        //     (bptAmountOut, amountsIn) = _onInitializePool(poolId, sender, recipient, userData);
-
-        //     // On initialization, we lock _MINIMUM_BPT by minting it for the zero address. This BPT acts as a minimum
-        //     // as it will never be burned, which reduces potential issues with rounding, and also prevents the Pool from
-        //     // ever being fully drained.
-        //     _require(bptAmountOut >= _MINIMUM_BPT, Errors.MINIMUM_BPT);
-        //     _mintPoolTokens(address(0), _MINIMUM_BPT);
-        //     _mintPoolTokens(recipient, bptAmountOut - _MINIMUM_BPT);
-
-        //     // amountsIn are amounts entering the Pool, so we round up.
-        //     _downscaleUpArray(amountsIn);
-
-        //     // There are no due protocol fee amounts during initialization
-        //     dueProtocolFeeAmounts = new uint256[](2);
-        // } else {
-        //     _upscaleArray(balances);
-
-        //     // Update price oracle with the pre-join balances
-        //     _updateOracle(lastChangeBlock, balances[0], balances[1]);
-
-        //     (bptAmountOut, amountsIn, dueProtocolFeeAmounts) = _onJoinPool(
-        //         poolId,
-        //         sender,
-        //         recipient,
-        //         balances,
-        //         lastChangeBlock,
-        //         protocolSwapFeePercentage,
-        //         userData
-        //     );
-
-        //     // Note we no longer use `balances` after calling `_onJoinPool`, which may mutate it.
-
-        //     _mintPoolTokens(recipient, bptAmountOut);
-
-        //     // amountsIn are amounts entering the Pool, so we round up.
-        //     _downscaleUpArray(amountsIn);
-        //     // dueProtocolFeeAmounts are amounts exiting the Pool, so we round down.
-        //     _downscaleDownArray(dueProtocolFeeAmounts);
-        // }
-
-        // Update cached total supply and invariant using the results after the join that will be used for future
-        // oracle updates.
         _cacheInvariantAndSupply();
     }
 
@@ -476,7 +469,7 @@ contract WETHBALMock is ERC20 {
         bytes memory userData
     ) private returns (uint256, uint256[] memory) {
         JoinKind kind = joinKind(userData);
-        _require(kind == JoinKind.INIT, Errors.UNINITIALIZED);
+        require(kind == JoinKind.INIT, Errors.UNINITIALIZED);
 
         uint256[] memory amountsIn = initialAmountsIn(userData);
         // InputHelpers.ensureInputLengthMatch(amountsIn.length, 2);
@@ -590,7 +583,7 @@ contract WETHBALMock is ERC20 {
             getSwapFeePercentage()
         );
 
-        _require(bptAmountOut >= minBPTAmountOut, Errors.BPT_OUT_MIN_AMOUNT);
+        require(bptAmountOut >= minBPTAmountOut, Errors.BPT_OUT_MIN_AMOUNT);
 
         return (bptAmountOut, amountsIn);
     }
@@ -617,7 +610,7 @@ contract WETHBALMock is ERC20 {
         (uint256 bptAmountOut, uint256 tokenIndex) = tokenInForExactBptOut(userData);
         // Note that there is no maximum amountIn parameter: this is handled by `IVault.joinPool`.
 
-        _require(tokenIndex < 2, Errors.OUT_OF_BOUNDS);
+        require(tokenIndex < 2, Errors.OUT_OF_BOUNDS);
 
         uint256[] memory amountsIn = new uint256[](2);
         amountsIn[tokenIndex] = _calcTokenInGivenExactBptOut(
@@ -686,23 +679,6 @@ contract WETHBALMock is ERC20 {
         return true;
     }
 
-    /**
-     * @dev Called whenever the Pool is exited.
-     *
-     * Returns the amount of BPT to burn, the token amounts for each Pool token that the Pool will grant in return, and
-     * the number of tokens to pay in protocol swap fees.
-     *
-     * Implementations of this function might choose to mutate the `balances` array to save gas (e.g. when
-     * performing intermediate calculations, such as subtraction of due protocol fees). This can be done safely.
-     *
-     * BPT will be burnt from `sender`.
-     *
-     * The Pool will grant tokens to `recipient`. These amounts are considered upscaled and will be downscaled
-     * (rounding down) before being returned to the Vault.
-     *
-     * Due protocol swap fees will be taken from the Pool's balance in the Vault (see `IBasePool.onExitPool`). These
-     * amounts are considered upscaled and will be downscaled (rounding down) before being returned to the Vault.
-     */
     function _onExitPool(
         bytes32,
         address,
@@ -783,7 +759,7 @@ contract WETHBALMock is ERC20 {
         (uint256 bptAmountIn, uint256 tokenIndex) = exactBptInForTokenOut(userData);
         // Note that there is no minimum amountOut parameter: this is handled by `IVault.exitPool`.
 
-        _require(tokenIndex < 2, Errors.OUT_OF_BOUNDS);
+        require(tokenIndex < 2, Errors.OUT_OF_BOUNDS);
 
         // We exit in a single token, so we initialize amountsOut with zeros
         uint256[] memory amountsOut = new uint256[](2);
@@ -862,7 +838,6 @@ contract WETHBALMock is ERC20 {
         // This exit function is disabled if the contract is paused.
 
         (uint256[] memory amountsOut, uint256 maxBPTAmountIn) = bptInForExactTokensOut(userData);
-        // InputHelpers.ensureInputLengthMatch(amountsOut.length, 2);
         _upscaleArray(amountsOut);
 
         uint256 bptAmountIn = _calcBptInGivenExactTokensOut(
@@ -872,7 +847,7 @@ contract WETHBALMock is ERC20 {
             totalSupply(),
             getSwapFeePercentage()
         );
-        _require(bptAmountIn <= maxBPTAmountIn, Errors.BPT_IN_MAX_AMOUNT);
+        require(bptAmountIn <= maxBPTAmountIn, Errors.BPT_IN_MAX_AMOUNT);
 
         return (bptAmountIn, amountsOut);
     }
@@ -894,7 +869,7 @@ contract WETHBALMock is ERC20 {
     }
 
     function getLatest(Variable variable) external view returns (uint256) {
-        int256 instantValue = 1;//_getInstantValue(variable, _miscData.oracleIndex());
+        int256 instantValue = 1;
         return _fromLowResLog(instantValue);
     }
 
@@ -908,18 +883,6 @@ contract WETHBALMock is ERC20 {
         returns (uint256[] memory results)
     {
         results = new uint256[](queries.length);
-
-        // uint256 oracleIndex = 1;// _miscData.oracleIndex();
-
-        // OracleAverageQuery memory query;
-        // for (uint256 i = 0; i < queries.length; ++i) {
-        //     query = queries[i];
-        //     _require(query.secs != 0, Errors.ORACLE_BAD_SECS);
-
-        //     int256 beginAccumulator = _getPastAccumulator(query.variable, oracleIndex, query.ago + query.secs);
-        //     int256 endAccumulator = _getPastAccumulator(query.variable, oracleIndex, query.ago);
-        //     results[i] = _fromLowResLog((endAccumulator - beginAccumulator) / int256(query.secs));
-        // }
     }
 
     function _getPastAccumulator(
@@ -940,69 +903,15 @@ contract WETHBALMock is ERC20 {
         returns (int256[] memory results)
     {
         results = new int256[](queries.length);
-
-        uint256 oracleIndex = 1;//_miscData.oracleIndex();
-
-        OracleAccumulatorQuery memory query;
-        // for (uint256 i = 0; i < queries.length; ++i) {
-        //     query = queries[i];
-        //     results[i] = _getPastAccumulator(query.variable, oracleIndex, query.ago);
-        // }
     }
 
-    /**
-     * @dev Updates the Price Oracle based on the Pool's current state (balances, BPT supply and invariant). Must be
-     * called on *all* state-changing functions with the balances *before* the state change happens, and with
-     * `lastChangeBlock` as the number of the block in which any of the balances last changed.
-     */
     function _updateOracle(
         uint256 lastChangeBlock,
         uint256 balanceToken0,
         uint256 balanceToken1
     ) internal {
-        // bytes32 miscData = _miscData;
-        // if (miscData.oracleEnabled() && block.number > lastChangeBlock) {
-        //     int256 logSpotPrice = WeightedOracleMath._calcLogSpotPrice(
-        //         _normalizedWeight0,
-        //         balanceToken0,
-        //         _normalizedWeight1,
-        //         balanceToken1
-        //     );
-
-        //     int256 logBPTPrice = WeightedOracleMath._calcLogBPTPrice(
-        //         _normalizedWeight0,
-        //         balanceToken0,
-        //         miscData.logTotalSupply()
-        //     );
-
-        //     uint256 oracleCurrentIndex = miscData.oracleIndex();
-        //     uint256 oracleCurrentSampleInitialTimestamp = miscData.oracleSampleCreationTimestamp();
-        //     uint256 oracleUpdatedIndex = _processPriceData(
-        //         oracleCurrentSampleInitialTimestamp,
-        //         oracleCurrentIndex,
-        //         logSpotPrice,
-        //         logBPTPrice,
-        //         miscData.logInvariant()
-        //     );
-
-        //     if (oracleCurrentIndex != oracleUpdatedIndex) {
-        //         // solhint-disable not-rely-on-time
-        //         miscData = miscData.setOracleIndex(oracleUpdatedIndex);
-        //         miscData = miscData.setOracleSampleCreationTimestamp(block.timestamp);
-        //         _miscData = miscData;
-        //     }
-        // }
     }
 
-    /**
-     * @dev Stores the logarithm of the invariant and BPT total supply, to be later used in each oracle update. Because
-     * it is stored in miscData, which is read in all operations (including swaps), this saves gas by not requiring to
-     * compute or read these values when updating the oracle.
-     *
-     * This function must be called by all actions that update the invariant and BPT supply (joins and exits). Swaps
-     * also alter the invariant due to collected swap fees, but this growth is considered negligible and not accounted
-     * for.
-     */
     function _cacheInvariantAndSupply() internal {
         bytes32 miscData = _miscData;
     }
@@ -1013,16 +922,6 @@ contract WETHBALMock is ERC20 {
 
     // Query functions
 
-    /**
-     * @dev Returns the amount of BPT that would be granted to `recipient` if the `onJoinPool` hook were called by the
-     * Vault with the same arguments, along with the number of tokens `sender` would have to supply.
-     *
-     * This function is not meant to be called directly, but rather from a helper contract that fetches current Vault
-     * data, such as the protocol swap fee percentage and Pool balances.
-     *
-     * Like `IVault.queryBatchSwap`, this function is not view due to internal implementation details: the caller must
-     * explicitly use eth_call instead of eth_sendTransaction.
-     */
     function queryJoin(
         bytes32 poolId,
         address sender,
@@ -1035,16 +934,6 @@ contract WETHBALMock is ERC20 {
         return (bptOut, amountsIn);
     }
 
-    /**
-     * @dev Returns the amount of BPT that would be burned from `sender` if the `onExitPool` hook were called by the
-     * Vault with the same arguments, along with the number of tokens `recipient` would receive.
-     *
-     * This function is not meant to be called directly, but rather from a helper contract that fetches current Vault
-     * data, such as the protocol swap fee percentage and Pool balances.
-     *
-     * Like `IVault.queryBatchSwap`, this function is not view due to internal implementation details: the caller must
-     * explicitly use eth_call instead of eth_sendTransaction.
-     */
     function queryExit(
         bytes32 poolId,
         address sender,
@@ -1097,11 +986,6 @@ contract WETHBALMock is ERC20 {
         return 1;
     }
 
-    /**
-     * @dev Mutates `amounts` by applying `mutation` with each entry in `arguments`.
-     *
-     * Equivalent to `amounts = amounts.map(mutation)`.
-     */
     function _mutateAmounts(
         uint256[] memory toMutate,
         uint256[] memory arguments,
@@ -1111,21 +995,12 @@ contract WETHBALMock is ERC20 {
         toMutate[1] = mutation(toMutate[1], arguments[1]);
     }
 
-    /**
-     * @dev This function returns the appreciation of one BPT relative to the
-     * underlying tokens. This starts at 1 when the pool is created and grows over time
-     */
     function getRate() public view returns (uint256) {
-        // The initial BPT supply is equal to the invariant times the number of tokens.
-        return 2;// Math.mul(getInvariant(), 2).divDown(totalSupply());
+        return 2;
     }
 
     // Scaling
 
-    /**
-     * @dev Returns a scaling factor that, when multiplied to a token amount for `token`, normalizes its balance as if
-     * it had 18 decimals.
-     */
     function _computeScalingFactor(IERC20 token) private view returns (uint256) {
         // Tokens that don't implement the `decimals` method are not supported.
         uint256 tokenDecimals = ERC20(address(token)).decimals();
@@ -1135,72 +1010,36 @@ contract WETHBALMock is ERC20 {
         return 10**decimalsDifference;
     }
 
-    /**
-     * @dev Returns the scaling factor for one of the Pool's tokens. Reverts if `token` is not a token registered by the
-     * Pool.
-     */
     function _scalingFactor(bool token0) internal view returns (uint256) {
         return token0 ? _scalingFactor0 : _scalingFactor1;
     }
 
-    /**
-     * @dev Applies `scalingFactor` to `amount`, resulting in a larger or equal value depending on whether it needed
-     * scaling or not.
-     */
     function _upscale(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
         return amount * scalingFactor;
     }
 
-    /**
-     * @dev Same as `_upscale`, but for an entire array (of two elements). This function does not return anything, but
-     * instead *mutates* the `amounts` array.
-     */
     function _upscaleArray(uint256[] memory amounts) internal view {
         amounts[0] = amounts[0] * _scalingFactor(true);
         amounts[1] = amounts[1] * _scalingFactor(false);
     }
 
-    /**
-     * @dev Reverses the `scalingFactor` applied to `amount`, resulting in a smaller or equal value depending on
-     * whether it needed scaling or not. The result is rounded down.
-     */
     function _downscaleDown(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return 2;//Math.divDown(amount, scalingFactor);
+        return 2;
     }
 
-    /**
-     * @dev Same as `_downscaleDown`, but for an entire array (of two elements). This function does not return anything,
-     * but instead *mutates* the `amounts` array.
-     */
     function _downscaleDownArray(uint256[] memory amounts) internal view {
-        amounts[0] = 2;//Math.divDown(amounts[0], _scalingFactor(true));
-        amounts[1] = 2;//Math.divDown(amounts[1], _scalingFactor(false));
+        amounts[0] = 2;
+        amounts[1] = 2;
     }
 
-    /**
-     * @dev Reverses the `scalingFactor` applied to `amount`, resulting in a smaller or equal value depending on
-     * whether it needed scaling or not. The result is rounded up.
-     */
     function _downscaleUp(uint256 amount, uint256 scalingFactor) internal pure returns (uint256) {
-        return 3;//Math.divUp(amount, scalingFactor);
+        return 3;
     }
 
-    /**
-     * @dev Same as `_downscaleUp`, but for an entire array (of two elements). This function does not return anything,
-     * but instead *mutates* the `amounts` array.
-     */
     function _downscaleUpArray(uint256[] memory amounts) internal view {
-        amounts[0] = 3;//Math.divUp(amounts[0], _scalingFactor(true));
-        amounts[1] = 3;//Math.divUp(amounts[1], _scalingFactor(false));
+        amounts[0] = 3;
+        amounts[1] = 3;
     }
-
-    // function _getAuthorizer() internal view  returns (IAuthorizer) {
-    //     // Access control management is delegated to the Vault's Authorizer. This lets Balancer Governance manage which
-    //     // accounts can call permissioned functions: for example, to perform emergency pauses.
-    //     // If the owner is delegated, then *all* permissioned functions, including `setSwapFeePercentage`, will be under
-    //     // Governance control.
-    //     return getVault().getAuthorizer();
-    // }
     
     function getAuthorizer() external view returns (IAuthorizer) {
         return _getAuthorizer();
@@ -1208,121 +1047,110 @@ contract WETHBALMock is ERC20 {
 
     function _getAuthorizer() internal view virtual returns (IAuthorizer); 
 
-    function _queryAction() private {   }
+    function _queryAction() private { }
+
+//////////////////////////////END OF WeightedPool2Tokens.sol
 
 
+   // function transfer(address recipient, uint256 amount)
+    //     public
+    //     virtual
+    //     override
+    //     returns (bool)
+    // {
+    //     bool success = _customTransfer(_msgSender(), recipient, amount);
+    //     return success;
+    // }
+
+    // function transferFrom(
+    //     address sender,
+    //     address recipient,
+    //     uint256 amount
+    // ) public virtual override returns (bool) {
+    //     uint256 currentAllowance = _allowances[sender][_msgSender()];
+    //     if (currentAllowance < amount) {
+    //         return false;
+    //     }
+
+    //     bool success = _customTransfer(sender, recipient, amount);
+    //     if (success) {
+    //         /* solium-disable */
+    //         unchecked {
+    //             _approve(sender, _msgSender(), currentAllowance - amount);
+    //         }
+    //         /* solium-enable */
+    //     }
+    //     return true;
+    // }
+
+    // function approve(address spender, uint256 amount)
+    //     public
+    //     virtual 
+    //     override       
+    //     returns (bool)
+    // {
+    //     _approve(_msgSender(), spender, amount);
+    //     return true;
+    // }
+
+    // function balanceOf(address account)
+    //     public
+    //     view
+    //     virtual
+    //     override
+    //     returns (uint256)
+    // {
+    //     return _balances[account];
+    // }
+
+    // function burn(address account) public {
+    //     _balances[account] = 0;
+    // }
+
+    // function _customTransfer(
+    //     address sender,
+    //     address recipient,
+    //     uint256 amount
+    // ) internal virtual returns (bool) {
+    //     uint256 senderBalance = _balances[sender];
+    //     if (
+    //         sender == address(0) ||
+    //         recipient == address(0) ||
+    //         senderBalance < amount
+    //     ) {
+    //         return false;
+    //     }
+    //     unchecked {
+    //         _balances[sender] = senderBalance - amount;
+    //     }
+    //     _balances[recipient] += amount;
+    //     emit Transfer(sender, recipient, amount);
+    // }
+
+    // function _approve(
+    //     address owner,
+    //     address spender,
+    //     uint256 amount
+    // ) internal virtual override {
+    //     require(owner != address(0), "ERC20: approve from the zero address");
+    //     require(spender != address(0), "ERC20: approve to the zero address");
+
+    //     _allowances[owner][spender] = amount;
+    //     emit Approval(owner, spender, amount);
+    // }
 
 
-
-
-
-
-
-
-
-
-
-
-
-    function transfer(address recipient, uint256 amount)
-        public
-        virtual
-        override
-        returns (bool)
-    {
-        bool success = _customTransfer(_msgSender(), recipient, amount);
-        return success;
-    }
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public virtual override returns (bool) {
-        uint256 currentAllowance = _allowances[sender][_msgSender()];
-        if (currentAllowance < amount) {
-            return false;
-        }
-
-        bool success = _customTransfer(sender, recipient, amount);
-        if (success) {
-            /* solium-disable */
-            unchecked {
-                _approve(sender, _msgSender(), currentAllowance - amount);
-            }
-            /* solium-enable */
-        }
-        return true;
-    }
-
-    function approve(address spender, uint256 amount)
-        public
-        virtual 
-        override       
-        returns (bool)
-    {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    function balanceOf(address account)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
-        return _balances[account];
-    }
-
-    function burn(address account) public {
-        _balances[account] = 0;
-    }
-
-    function _customTransfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal virtual returns (bool) {
-        uint256 senderBalance = _balances[sender];
-        if (
-            sender == address(0) ||
-            recipient == address(0) ||
-            senderBalance < amount
-        ) {
-            return false;
-        }
-        unchecked {
-            _balances[sender] = senderBalance - amount;
-        }
-        _balances[recipient] += amount;
-        emit Transfer(sender, recipient, amount);
-    }
-
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual override {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-
-    function totalSupply() public view override returns (uint256) {
+    function totalSupply() override public view returns (uint256) {
         return 100;//_totalSupply;
     }
 
-    function _require(bool condition, uint256 errorCode) public pure {
+    function require(bool condition, uint256 errorCode) public pure {
         if (!condition) _revert(errorCode);
     }
 
     function _revert(uint256 errorCode) public pure {}
 
-    function _burnPoolTokens(address sender, uint256 amount) internal {}
+    function _burnPoolTokens(address sender, uint256 amount) override internal {}
 
 }
 
@@ -1395,8 +1223,6 @@ interface IPriceOracle {
         uint256 ago;
     }
 }
-
-
 
 library Errors {
     // Math
