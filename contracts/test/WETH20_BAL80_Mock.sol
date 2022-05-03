@@ -34,6 +34,31 @@ pragma experimental ABIEncoderV2;
 
 // import "../../vault/interfaces/IMinimalSwapInfoPool.sol";
 // import "../IPriceOracle.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IIAuthorizer {
+    /**
+     * @dev Returns true if `account` can perform the action described by `actionId` in the contract `where`.
+     */
+    function canPerform(
+        bytes32 actionId,
+        address account,
+        address where
+    ) external view returns (bool);
+}
+
+
+enum Variable { PAIR_PRICE, BPT_PRICE, INVARIANT }
+
+struct OracleAverageQuery {
+    Variable variable;
+    uint256 secs;
+    uint256 ago;
+}
+struct OracleAccumulatorQuery {
+    Variable variable;
+    uint256 ago;
+}
 
 contract WeightedPool2Tokens /*is
     IMinimalSwapInfoPool,
@@ -59,7 +84,9 @@ contract WeightedPool2Tokens /*is
     bytes32 internal _miscData;
     uint256 private _lastInvariant;
 
-    IVault private immutable _vault;
+    // IVault private immutable _vault;
+    IERC20 private immutable _vault;
+
     bytes32 private immutable _poolId;
 
     IERC20 internal immutable _token0;
@@ -88,7 +115,8 @@ contract WeightedPool2Tokens /*is
     }
 
     struct NewPoolParams {
-        IVault vault;
+        // IVault vault;
+        IERC20 vault;
         string name;
         string symbol;
         IERC20 token0;
@@ -108,10 +136,11 @@ contract WeightedPool2Tokens /*is
         // simpler management of permissions (such as being able to manage granting the 'set fee percentage' action in
         // any Pool created by the same factory), while still making action identifiers unique among different factories
         // if the selectors match, preventing accidental errors.
-        Authentication(bytes32(uint256(msg.sender)))
-        BalancerPoolToken(params.name, params.symbol)
-        BasePoolAuthorization(params.owner)
-        TemporarilyPausable(params.pauseWindowDuration, params.bufferPeriodDuration)
+
+        // Authentication(bytes32(uint256(msg.sender)))
+        // BalancerPoolToken(params.name, params.symbol)
+        // BasePoolAuthorization(params.owner)
+        // TemporarilyPausable(params.pauseWindowDuration, params.bufferPeriodDuration)
     {
         _setOracleEnabled(params.oracleEnabled);
         _setSwapFeePercentage(params.swapFeePercentage);
@@ -149,7 +178,7 @@ contract WeightedPool2Tokens /*is
 
     // Getters / Setters
 
-    function getVault() public view returns (IVault) {
+    function getVault() public view returns (IERC20){//IVault) {
         return _vault;
     }
 
@@ -183,7 +212,7 @@ contract WeightedPool2Tokens /*is
     }
 
     // Caller must be approved by the Vault's Authorizer
-    function setSwapFeePercentage(uint256 swapFeePercentage) external virtual authenticate whenNotPaused {
+    function setSwapFeePercentage(uint256 swapFeePercentage) external virtual {//authenticate whenNotPaused {
         _setSwapFeePercentage(swapFeePercentage);
     }
 
@@ -201,7 +230,7 @@ contract WeightedPool2Tokens /*is
      *
      * Note that the Oracle can only be enabled - it can never be disabled.
      */
-    function enableOracle() external whenNotPaused authenticate {
+    function enableOracle() external {//whenNotPaused authenticate {
         _setOracleEnabled(true);
 
         // Cache log invariant and supply only if the pool was initialized
@@ -216,7 +245,7 @@ contract WeightedPool2Tokens /*is
     }
 
     // Caller must be approved by the Vault's Authorizer
-    function setPaused(bool paused) external authenticate {
+    function setPaused(bool paused) external {//authenticate {
         _setPaused(paused);
     }
 
@@ -250,16 +279,17 @@ contract WeightedPool2Tokens /*is
         _upscaleArray(balances);
 
         uint256[] memory normalizedWeights = _normalizedWeights();
-        return WeightedMath._calculateInvariant(normalizedWeights, balances);
+        return _calculateInvariant(normalizedWeights, balances);
     }
 
     // Swap Hooks
 
     function onSwap(
-        SwapRequest memory request,
+        // SwapRequest memory request,
+        string memory request,
         uint256 balanceTokenIn,
         uint256 balanceTokenOut
-    ) external virtual override whenNotPaused onlyVault(request.poolId) returns (uint256) {
+    ) external virtual override returns (uint256) {//whenNotPaused onlyVault(request.poolId) returns (uint256) {
         bool tokenInIsToken0 = request.tokenIn == _token0;
 
         uint256 scalingFactorTokenIn = _scalingFactor(tokenInIsToken0);
@@ -316,7 +346,8 @@ contract WeightedPool2Tokens /*is
     }
 
     function _onSwapGivenIn(
-        SwapRequest memory swapRequest,
+        // SwapRequest memory swapRequest,
+        string memory swapRequest,
         uint256 currentBalanceTokenIn,
         uint256 currentBalanceTokenOut,
         uint256 normalizedWeightIn,
@@ -324,7 +355,7 @@ contract WeightedPool2Tokens /*is
     ) private pure returns (uint256) {
         // Swaps are disabled while the contract is paused.
         return
-            WeightedMath._calcOutGivenIn(
+            _calcOutGivenIn(
                 currentBalanceTokenIn,
                 normalizedWeightIn,
                 currentBalanceTokenOut,
@@ -334,7 +365,8 @@ contract WeightedPool2Tokens /*is
     }
 
     function _onSwapGivenOut(
-        SwapRequest memory swapRequest,
+        // SwapRequest memory swapRequest,
+        string memory swapRequest,
         uint256 currentBalanceTokenIn,
         uint256 currentBalanceTokenOut,
         uint256 normalizedWeightIn,
@@ -342,7 +374,7 @@ contract WeightedPool2Tokens /*is
     ) private pure returns (uint256) {
         // Swaps are disabled while the contract is paused.
         return
-            WeightedMath._calcInGivenOut(
+            _calcInGivenOut(
                 currentBalanceTokenIn,
                 normalizedWeightIn,
                 currentBalanceTokenOut,
@@ -365,8 +397,8 @@ contract WeightedPool2Tokens /*is
         external
         virtual
         override
-        onlyVault(poolId)
-        whenNotPaused
+       // onlyVault(poolId)
+       // whenNotPaused
         returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts)
     {
         // All joins, including initializations, are disabled while the contract is paused.
@@ -437,23 +469,26 @@ contract WeightedPool2Tokens /*is
         address,
         bytes memory userData
     ) private returns (uint256, uint256[] memory) {
-        WeightedPool.JoinKind kind = userData.joinKind();
-        _require(kind == WeightedPool.JoinKind.INIT, Errors.UNINITIALIZED);
+        // WeightedPool.JoinKind kind = userData.joinKind();
+        // _require(kind == WeightedPool.JoinKind.INIT, Errors.UNINITIALIZED);
 
-        uint256[] memory amountsIn = userData.initialAmountsIn();
-        InputHelpers.ensureInputLengthMatch(amountsIn.length, 2);
-        _upscaleArray(amountsIn);
+        // uint256[] memory amountsIn = userData.initialAmountsIn();
+        // InputHelpers.ensureInputLengthMatch(amountsIn.length, 2);
+        // _upscaleArray(amountsIn);
 
-        uint256[] memory normalizedWeights = _normalizedWeights();
+        // uint256[] memory normalizedWeights = _normalizedWeights();
 
-        uint256 invariantAfterJoin = WeightedMath._calculateInvariant(normalizedWeights, amountsIn);
+        // uint256 invariantAfterJoin = _calculateInvariant(normalizedWeights, amountsIn);
 
-        // Set the initial BPT to the value of the invariant times the number of tokens. This makes BPT supply more
-        // consistent in Pools with similar compositions but different number of tokens.
-        uint256 bptAmountOut = Math.mul(invariantAfterJoin, 2);
+        // // Set the initial BPT to the value of the invariant times the number of tokens. This makes BPT supply more
+        // // consistent in Pools with similar compositions but different number of tokens.
+        // uint256 bptAmountOut = Math.mul(invariantAfterJoin, 2);
 
-        _lastInvariant = invariantAfterJoin;
+        // _lastInvariant = invariantAfterJoin;
 
+
+        uint256[] memory amountsIn = 1;
+        uint256 bptAmountOut = 2;
         return (bptAmountOut, amountsIn);
     }
 
@@ -495,7 +530,7 @@ contract WeightedPool2Tokens /*is
         // Due protocol swap fee amounts are computed by measuring the growth of the invariant between the previous join
         // or exit event and now - the invariant's growth is due exclusively to swap fees. This avoids spending gas
         // computing them on each individual swap
-        uint256 invariantBeforeJoin = WeightedMath._calculateInvariant(normalizedWeights, balances);
+        uint256 invariantBeforeJoin = _calculateInvariant(normalizedWeights, balances);
 
         uint256[] memory dueProtocolFeeAmounts = _getDueProtocolFeeAmounts(
             balances,
@@ -506,13 +541,16 @@ contract WeightedPool2Tokens /*is
         );
 
         // Update current balances by subtracting the protocol fee amounts
-        _mutateAmounts(balances, dueProtocolFeeAmounts, FixedPoint.sub);
+        // _mutateAmounts(balances, dueProtocolFeeAmounts, FixedPoint.sub);
+        balances -= dueProtocolFeeAmounts;
         (uint256 bptAmountOut, uint256[] memory amountsIn) = _doJoin(balances, normalizedWeights, userData);
 
         // Update the invariant with the balances the Pool will have after the join, in order to compute the
         // protocol swap fee amounts due in future joins and exits.
-        _mutateAmounts(balances, amountsIn, FixedPoint.add);
-        _lastInvariant = WeightedMath._calculateInvariant(normalizedWeights, balances);
+        // _mutateAmounts(balances, amountsIn, FixedPoint.add);
+        balances += amountsIn;
+        
+        _lastInvariant = _calculateInvariant(normalizedWeights, balances);
 
         return (bptAmountOut, amountsIn, dueProtocolFeeAmounts);
     }
@@ -522,15 +560,15 @@ contract WeightedPool2Tokens /*is
         uint256[] memory normalizedWeights,
         bytes memory userData
     ) private view returns (uint256, uint256[] memory) {
-        WeightedPool.JoinKind kind = userData.joinKind();
+        // WeightedPool.JoinKind kind = userData.joinKind();
 
-        if (kind == WeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT) {
-            return _joinExactTokensInForBPTOut(balances, normalizedWeights, userData);
-        } else if (kind == WeightedPool.JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT) {
-            return _joinTokenInForExactBPTOut(balances, normalizedWeights, userData);
-        } else {
-            _revert(Errors.UNHANDLED_JOIN_KIND);
-        }
+        // if (kind == WeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT) {
+        //     return _joinExactTokensInForBPTOut(balances, normalizedWeights, userData);
+        // } else if (kind == WeightedPool.JoinKind.TOKEN_IN_FOR_EXACT_BPT_OUT) {
+        //     return _joinTokenInForExactBPTOut(balances, normalizedWeights, userData);
+        // } else {
+        //     _revert(Errors.UNHANDLED_JOIN_KIND);
+        // }
     }
 
     function _joinExactTokensInForBPTOut(
@@ -543,7 +581,7 @@ contract WeightedPool2Tokens /*is
 
         _upscaleArray(amountsIn);
 
-        uint256 bptAmountOut = WeightedMath._calcBptOutGivenExactTokensIn(
+        uint256 bptAmountOut = _calcBptOutGivenExactTokensIn(
             balances,
             normalizedWeights,
             amountsIn,
@@ -567,7 +605,7 @@ contract WeightedPool2Tokens /*is
         _require(tokenIndex < 2, Errors.OUT_OF_BOUNDS);
 
         uint256[] memory amountsIn = new uint256[](2);
-        amountsIn[tokenIndex] = WeightedMath._calcTokenInGivenExactBptOut(
+        amountsIn[tokenIndex] = _calcTokenInGivenExactBptOut(
             balances[tokenIndex],
             normalizedWeights[tokenIndex],
             bptAmountOut,
@@ -663,7 +701,7 @@ contract WeightedPool2Tokens /*is
             // Due protocol swap fee amounts are computed by measuring the growth of the invariant between the previous
             // join or exit event and now - the invariant's growth is due exclusively to swap fees. This avoids
             // spending gas calculating the fees on each individual swap.
-            uint256 invariantBeforeExit = WeightedMath._calculateInvariant(normalizedWeights, balances);
+            uint256 invariantBeforeExit = _calculateInvariant(normalizedWeights, balances);
             dueProtocolFeeAmounts = _getDueProtocolFeeAmounts(
                 balances,
                 normalizedWeights,
@@ -684,8 +722,9 @@ contract WeightedPool2Tokens /*is
 
         // Update the invariant with the balances the Pool will have after the exit, in order to compute the
         // protocol swap fees due in future joins and exits.
-        _mutateAmounts(balances, amountsOut, FixedPoint.sub);
-        _lastInvariant = WeightedMath._calculateInvariant(normalizedWeights, balances);
+        // _mutateAmounts(balances, amountsOut, FixedPoint.sub);
+        balances -= amountsOut;
+        _lastInvariant = _calculateInvariant(normalizedWeights, balances);
 
         return (bptAmountIn, amountsOut, dueProtocolFeeAmounts);
     }
@@ -695,23 +734,23 @@ contract WeightedPool2Tokens /*is
         uint256[] memory normalizedWeights,
         bytes memory userData
     ) private view returns (uint256, uint256[] memory) {
-        WeightedPool.ExitKind kind = userData.exitKind();
+        // WeightedPool.ExitKind kind = userData.exitKind();
 
-        if (kind == WeightedPool.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT) {
-            return _exitExactBPTInForTokenOut(balances, normalizedWeights, userData);
-        } else if (kind == WeightedPool.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT) {
-            return _exitExactBPTInForTokensOut(balances, userData);
-        } else {
-            // ExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
-            return _exitBPTInForExactTokensOut(balances, normalizedWeights, userData);
-        }
+        // if (kind == WeightedPool.ExitKind.EXACT_BPT_IN_FOR_ONE_TOKEN_OUT) {
+        //     return _exitExactBPTInForTokenOut(balances, normalizedWeights, userData);
+        // } else if (kind == WeightedPool.ExitKind.EXACT_BPT_IN_FOR_TOKENS_OUT) {
+        //     return _exitExactBPTInForTokensOut(balances, userData);
+        // } else {
+        //     // ExitKind.BPT_IN_FOR_EXACT_TOKENS_OUT
+        //     return _exitBPTInForExactTokensOut(balances, normalizedWeights, userData);
+        // }
     }
 
     function _exitExactBPTInForTokenOut(
         uint256[] memory balances,
         uint256[] memory normalizedWeights,
         bytes memory userData
-    ) private view whenNotPaused returns (uint256, uint256[] memory) {
+    ) private view returns (uint256, uint256[] memory) {//whenNotPaused returns (uint256, uint256[] memory) {
         // This exit function is disabled if the contract is paused.
 
         (uint256 bptAmountIn, uint256 tokenIndex) = userData.exactBptInForTokenOut();
@@ -723,7 +762,7 @@ contract WeightedPool2Tokens /*is
         uint256[] memory amountsOut = new uint256[](2);
 
         // And then assign the result to the selected token
-        amountsOut[tokenIndex] = WeightedMath._calcTokenOutGivenExactBptIn(
+        amountsOut[tokenIndex] = _calcTokenOutGivenExactBptIn(
             balances[tokenIndex],
             normalizedWeights[tokenIndex],
             bptAmountIn,
@@ -747,7 +786,7 @@ contract WeightedPool2Tokens /*is
         uint256 bptAmountIn = userData.exactBptInForTokensOut();
         // Note that there is no minimum amountOut parameter: this is handled by `IVault.exitPool`.
 
-        uint256[] memory amountsOut = WeightedMath._calcTokensOutGivenExactBptIn(balances, bptAmountIn, totalSupply());
+        uint256[] memory amountsOut = _calcTokensOutGivenExactBptIn(balances, bptAmountIn, totalSupply());
         return (bptAmountIn, amountsOut);
     }
 
@@ -755,14 +794,14 @@ contract WeightedPool2Tokens /*is
         uint256[] memory balances,
         uint256[] memory normalizedWeights,
         bytes memory userData
-    ) private view whenNotPaused returns (uint256, uint256[] memory) {
+    ) private view returns (uint256, uint256[] memory) {//whenNotPaused returns (uint256, uint256[] memory) {
         // This exit function is disabled if the contract is paused.
 
         (uint256[] memory amountsOut, uint256 maxBPTAmountIn) = userData.bptInForExactTokensOut();
         InputHelpers.ensureInputLengthMatch(amountsOut.length, 2);
         _upscaleArray(amountsOut);
 
-        uint256 bptAmountIn = WeightedMath._calcBptInGivenExactTokensOut(
+        uint256 bptAmountIn = _calcBptInGivenExactTokensOut(
             balances,
             normalizedWeights,
             amountsOut,
@@ -982,7 +1021,7 @@ contract WeightedPool2Tokens /*is
 
         // The protocol swap fees are always paid using the token with the largest weight in the Pool. As this is the
         // token that is expected to have the largest balance, using it to pay fees should not unbalance the Pool.
-        dueProtocolFeeAmounts[_maxWeightTokenIndex] = WeightedMath._calcDueTokenProtocolSwapFeeAmount(
+        dueProtocolFeeAmounts[_maxWeightTokenIndex] = _calcDueTokenProtocolSwapFeeAmount(
             balances[_maxWeightTokenIndex],
             normalizedWeights[_maxWeightTokenIndex],
             previousInvariant,
@@ -1090,7 +1129,7 @@ contract WeightedPool2Tokens /*is
         amounts[1] = Math.divUp(amounts[1], _scalingFactor(false));
     }
 
-    function _getAuthorizer() internal view override returns (IAuthorizer) {
+    function _getAuthorizer() internal view override returns (IIAuthorizer) {
         // Access control management is delegated to the Vault's Authorizer. This lets Balancer Governance manage which
         // accounts can call permissioned functions: for example, to perform emergency pauses.
         // If the owner is delegated, then *all* permissioned functions, including `setSwapFeePercentage`, will be under
@@ -1216,5 +1255,392 @@ contract WeightedPool2Tokens /*is
                 revert(start, add(size, 68))
             }
         }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function _calculateInvariant(uint256[] memory normalizedWeights, uint256[] memory balances)
+        internal
+        pure
+        returns (uint256 invariant)
+    {
+        /**********************************************************************************************
+        // invariant               _____                                                             //
+        // wi = weight index i      | |      wi                                                      //
+        // bi = balance index i     | |  bi ^   = i                                                  //
+        // i = invariant                                                                             //
+        **********************************************************************************************/
+
+        invariant = FixedPoint.ONE;
+        for (uint256 i = 0; i < normalizedWeights.length; i++) {
+            invariant = invariant.mulDown(balances[i].powDown(normalizedWeights[i]));
+        }
+
+        _require(invariant > 0, Errors.ZERO_INVARIANT);
+    }
+
+    // Computes how many tokens can be taken out of a pool if `amountIn` are sent, given the
+    // current balances and weights.
+    function _calcOutGivenIn(
+        uint256 balanceIn,
+        uint256 weightIn,
+        uint256 balanceOut,
+        uint256 weightOut,
+        uint256 amountIn
+    ) internal pure returns (uint256) {
+        /**********************************************************************************************
+        // outGivenIn                                                                                //
+        // aO = amountOut                                                                            //
+        // bO = balanceOut                                                                           //
+        // bI = balanceIn              /      /            bI             \    (wI / wO) \           //
+        // aI = amountIn    aO = bO * |  1 - | --------------------------  | ^            |          //
+        // wI = weightIn               \      \       ( bI + aI )         /              /           //
+        // wO = weightOut                                                                            //
+        **********************************************************************************************/
+
+        // Amount out, so we round down overall.
+
+        // The multiplication rounds down, and the subtrahend (power) rounds up (so the base rounds up too).
+        // Because bI / (bI + aI) <= 1, the exponent rounds down.
+
+        // Cannot exceed maximum in ratio
+        _require(amountIn <= balanceIn.mulDown(_MAX_IN_RATIO), Errors.MAX_IN_RATIO);
+
+        uint256 denominator = balanceIn.add(amountIn);
+        uint256 base = balanceIn.divUp(denominator);
+        uint256 exponent = weightIn.divDown(weightOut);
+        uint256 power = base.powUp(exponent);
+
+        return balanceOut.mulDown(power.complement());
+    }
+
+    // Computes how many tokens must be sent to a pool in order to take `amountOut`, given the
+    // current balances and weights.
+    function _calcInGivenOut(
+        uint256 balanceIn,
+        uint256 weightIn,
+        uint256 balanceOut,
+        uint256 weightOut,
+        uint256 amountOut
+    ) internal pure returns (uint256) {
+        /**********************************************************************************************
+        // inGivenOut                                                                                //
+        // aO = amountOut                                                                            //
+        // bO = balanceOut                                                                           //
+        // bI = balanceIn              /  /            bO             \    (wO / wI)      \          //
+        // aI = amountIn    aI = bI * |  | --------------------------  | ^            - 1  |         //
+        // wI = weightIn               \  \       ( bO - aO )         /                   /          //
+        // wO = weightOut                                                                            //
+        **********************************************************************************************/
+
+        // Amount in, so we round up overall.
+
+        // The multiplication rounds up, and the power rounds up (so the base rounds up too).
+        // Because b0 / (b0 - a0) >= 1, the exponent rounds up.
+
+        // Cannot exceed maximum out ratio
+        _require(amountOut <= balanceOut.mulDown(_MAX_OUT_RATIO), Errors.MAX_OUT_RATIO);
+
+        uint256 base = balanceOut.divUp(balanceOut.sub(amountOut));
+        uint256 exponent = weightOut.divUp(weightIn);
+        uint256 power = base.powUp(exponent);
+
+        // Because the base is larger than one (and the power rounds up), the power should always be larger than one, so
+        // the following subtraction should never revert.
+        uint256 ratio = power.sub(FixedPoint.ONE);
+
+        return balanceIn.mulUp(ratio);
+    }
+
+    function _calcBptOutGivenExactTokensIn(
+        uint256[] memory balances,
+        uint256[] memory normalizedWeights,
+        uint256[] memory amountsIn,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        // BPT out, so we round down overall.
+
+        uint256[] memory balanceRatiosWithFee = new uint256[](amountsIn.length);
+
+        uint256 invariantRatioWithFees = 0;
+        for (uint256 i = 0; i < balances.length; i++) {
+            balanceRatiosWithFee[i] = balances[i].add(amountsIn[i]).divDown(balances[i]);
+            invariantRatioWithFees = invariantRatioWithFees.add(balanceRatiosWithFee[i].mulDown(normalizedWeights[i]));
+        }
+
+        uint256 invariantRatio = FixedPoint.ONE;
+        for (uint256 i = 0; i < balances.length; i++) {
+            uint256 amountInWithoutFee;
+
+            if (balanceRatiosWithFee[i] > invariantRatioWithFees) {
+                uint256 nonTaxableAmount = balances[i].mulDown(invariantRatioWithFees.sub(FixedPoint.ONE));
+                uint256 taxableAmount = amountsIn[i].sub(nonTaxableAmount);
+                amountInWithoutFee = nonTaxableAmount.add(taxableAmount.mulDown(FixedPoint.ONE.sub(swapFee)));
+            } else {
+                amountInWithoutFee = amountsIn[i];
+            }
+
+            uint256 balanceRatio = balances[i].add(amountInWithoutFee).divDown(balances[i]);
+
+            invariantRatio = invariantRatio.mulDown(balanceRatio.powDown(normalizedWeights[i]));
+        }
+
+        if (invariantRatio >= FixedPoint.ONE) {
+            return bptTotalSupply.mulDown(invariantRatio.sub(FixedPoint.ONE));
+        } else {
+            return 0;
+        }
+    }
+
+    function _calcTokenInGivenExactBptOut(
+        uint256 balance,
+        uint256 normalizedWeight,
+        uint256 bptAmountOut,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        /******************************************************************************************
+        // tokenInForExactBPTOut                                                                 //
+        // a = amountIn                                                                          //
+        // b = balance                      /  /    totalBPT + bptOut      \    (1 / w)       \  //
+        // bptOut = bptAmountOut   a = b * |  | --------------------------  | ^          - 1  |  //
+        // bpt = totalBPT                   \  \       totalBPT            /                  /  //
+        // w = weight                                                                            //
+        ******************************************************************************************/
+
+        // Token in, so we round up overall.
+
+        // Calculate the factor by which the invariant will increase after minting BPTAmountOut
+        uint256 invariantRatio = bptTotalSupply.add(bptAmountOut).divUp(bptTotalSupply);
+        _require(invariantRatio <= _MAX_INVARIANT_RATIO, Errors.MAX_OUT_BPT_FOR_TOKEN_IN);
+
+        // Calculate by how much the token balance has to increase to match the invariantRatio
+        uint256 balanceRatio = invariantRatio.powUp(FixedPoint.ONE.divUp(normalizedWeight));
+
+        uint256 amountInWithoutFee = balance.mulUp(balanceRatio.sub(FixedPoint.ONE));
+
+        // We can now compute how much extra balance is being deposited and used in virtual swaps, and charge swap fees
+        // accordingly.
+        uint256 taxablePercentage = normalizedWeight.complement();
+        uint256 taxableAmount = amountInWithoutFee.mulUp(taxablePercentage);
+        uint256 nonTaxableAmount = amountInWithoutFee.sub(taxableAmount);
+
+        return nonTaxableAmount.add(taxableAmount.divUp(swapFee.complement()));
+    }
+
+    function _calcBptInGivenExactTokensOut(
+        uint256[] memory balances,
+        uint256[] memory normalizedWeights,
+        uint256[] memory amountsOut,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        // BPT in, so we round up overall.
+
+        uint256[] memory balanceRatiosWithoutFee = new uint256[](amountsOut.length);
+        uint256 invariantRatioWithoutFees = 0;
+        for (uint256 i = 0; i < balances.length; i++) {
+            balanceRatiosWithoutFee[i] = balances[i].sub(amountsOut[i]).divUp(balances[i]);
+            invariantRatioWithoutFees = invariantRatioWithoutFees.add(
+                balanceRatiosWithoutFee[i].mulUp(normalizedWeights[i])
+            );
+        }
+
+        uint256 invariantRatio = FixedPoint.ONE;
+        for (uint256 i = 0; i < balances.length; i++) {
+            // Swap fees are typically charged on 'token in', but there is no 'token in' here, so we apply it to
+            // 'token out'. This results in slightly larger price impact.
+
+            uint256 amountOutWithFee;
+            if (invariantRatioWithoutFees > balanceRatiosWithoutFee[i]) {
+                uint256 nonTaxableAmount = balances[i].mulDown(invariantRatioWithoutFees.complement());
+                uint256 taxableAmount = amountsOut[i].sub(nonTaxableAmount);
+
+                amountOutWithFee = nonTaxableAmount.add(taxableAmount.divUp(swapFee.complement()));
+            } else {
+                amountOutWithFee = amountsOut[i];
+            }
+
+            uint256 balanceRatio = balances[i].sub(amountOutWithFee).divDown(balances[i]);
+
+            invariantRatio = invariantRatio.mulDown(balanceRatio.powDown(normalizedWeights[i]));
+        }
+
+        return bptTotalSupply.mulUp(invariantRatio.complement());
+    }
+
+    function _calcTokenOutGivenExactBptIn(
+        uint256 balance,
+        uint256 normalizedWeight,
+        uint256 bptAmountIn,
+        uint256 bptTotalSupply,
+        uint256 swapFee
+    ) internal pure returns (uint256) {
+        /*****************************************************************************************
+        // exactBPTInForTokenOut                                                                //
+        // a = amountOut                                                                        //
+        // b = balance                     /      /    totalBPT - bptIn       \    (1 / w)  \   //
+        // bptIn = bptAmountIn    a = b * |  1 - | --------------------------  | ^           |  //
+        // bpt = totalBPT                  \      \       totalBPT            /             /   //
+        // w = weight                                                                           //
+        *****************************************************************************************/
+
+        // Token out, so we round down overall. The multiplication rounds down, but the power rounds up (so the base
+        // rounds up). Because (totalBPT - bptIn) / totalBPT <= 1, the exponent rounds down.
+
+        // Calculate the factor by which the invariant will decrease after burning BPTAmountIn
+        uint256 invariantRatio = bptTotalSupply.sub(bptAmountIn).divUp(bptTotalSupply);
+        _require(invariantRatio >= _MIN_INVARIANT_RATIO, Errors.MIN_BPT_IN_FOR_TOKEN_OUT);
+
+        // Calculate by how much the token balance has to decrease to match invariantRatio
+        uint256 balanceRatio = invariantRatio.powUp(FixedPoint.ONE.divDown(normalizedWeight));
+
+        // Because of rounding up, balanceRatio can be greater than one. Using complement prevents reverts.
+        uint256 amountOutWithoutFee = balance.mulDown(balanceRatio.complement());
+
+        // We can now compute how much excess balance is being withdrawn as a result of the virtual swaps, which result
+        // in swap fees.
+        uint256 taxablePercentage = normalizedWeight.complement();
+
+        // Swap fees are typically charged on 'token in', but there is no 'token in' here, so we apply it
+        // to 'token out'. This results in slightly larger price impact. Fees are rounded up.
+        uint256 taxableAmount = amountOutWithoutFee.mulUp(taxablePercentage);
+        uint256 nonTaxableAmount = amountOutWithoutFee.sub(taxableAmount);
+
+        return nonTaxableAmount.add(taxableAmount.mulDown(swapFee.complement()));
+    }
+
+    function _calcTokensOutGivenExactBptIn(
+        uint256[] memory balances,
+        uint256 bptAmountIn,
+        uint256 totalBPT
+    ) internal pure returns (uint256[] memory) {
+        /**********************************************************************************************
+        // exactBPTInForTokensOut                                                                    //
+        // (per token)                                                                               //
+        // aO = amountOut                  /        bptIn         \                                  //
+        // b = balance           a0 = b * | ---------------------  |                                 //
+        // bptIn = bptAmountIn             \       totalBPT       /                                  //
+        // bpt = totalBPT                                                                            //
+        **********************************************************************************************/
+
+        // Since we're computing an amount out, we round down overall. This means rounding down on both the
+        // multiplication and division.
+
+        uint256 bptRatio = bptAmountIn.divDown(totalBPT);
+
+        uint256[] memory amountsOut = new uint256[](balances.length);
+        for (uint256 i = 0; i < balances.length; i++) {
+            amountsOut[i] = balances[i].mulDown(bptRatio);
+        }
+
+        return amountsOut;
+    }
+
+    function _calcDueTokenProtocolSwapFeeAmount(
+        uint256 balance,
+        uint256 normalizedWeight,
+        uint256 previousInvariant,
+        uint256 currentInvariant,
+        uint256 protocolSwapFeePercentage
+    ) internal pure returns (uint256) {
+        /*********************************************************************************
+        /*  protocolSwapFeePercentage * balanceToken * ( 1 - (previousInvariant / currentInvariant) ^ (1 / weightToken))
+        *********************************************************************************/
+
+        if (currentInvariant <= previousInvariant) {
+            // This shouldn't happen outside of rounding errors, but have this safeguard nonetheless to prevent the Pool
+            // from entering a locked state in which joins and exits revert while computing accumulated swap fees.
+            return 0;
+        }
+
+        // We round down to prevent issues in the Pool's accounting, even if it means paying slightly less in protocol
+        // fees to the Vault.
+
+        // Fee percentage and balance multiplications round down, while the subtrahend (power) rounds up (as does the
+        // base). Because previousInvariant / currentInvariant <= 1, the exponent rounds down.
+
+        uint256 base = previousInvariant.divUp(currentInvariant);
+        uint256 exponent = FixedPoint.ONE.divDown(normalizedWeight);
+
+        // Because the exponent is larger than one, the base of the power function has a lower bound. We cap to this
+        // value to avoid numeric issues, which means in the extreme case (where the invariant growth is larger than
+        // 1 / min exponent) the Pool will pay less in protocol fees than it should.
+        base = Math.max(base, FixedPoint.MIN_POW_BASE_FREE_EXPONENT);
+
+        uint256 power = base.powUp(exponent);
+
+        uint256 tokenAccruedFees = balance.mulDown(power.complement());
+        return tokenAccruedFees.mulDown(protocolSwapFeePercentage);
+    }
+
+
+
+
+
+
+
+
+
+
+    // Internal functions
+
+    function _mintPoolTokens(address recipient, uint256 amount) internal {
+        _balance[recipient] = _balance[recipient].add(amount);
+        _totalSupply = _totalSupply.add(amount);
+        emit Transfer(address(0), recipient, amount);
+    }
+
+    function _burnPoolTokens(address sender, uint256 amount) internal {
+        uint256 currentBalance = _balance[sender];
+        _require(currentBalance >= amount, Errors.INSUFFICIENT_BALANCE);
+
+        _balance[sender] = currentBalance - amount;
+        _totalSupply = _totalSupply.sub(amount);
+        emit Transfer(sender, address(0), amount);
+    }
+
+    function _move(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal {
+        uint256 currentBalance = _balance[sender];
+        _require(currentBalance >= amount, Errors.INSUFFICIENT_BALANCE);
+        // Prohibit transfers to the zero address to avoid confusion with the
+        // Transfer event emitted by `_burnPoolTokens`
+        _require(recipient != address(0), Errors.ERC20_TRANSFER_TO_ZERO_ADDRESS);
+
+        _balance[sender] = currentBalance - amount;
+        _balance[recipient] = _balance[recipient].add(amount);
+
+        emit Transfer(sender, recipient, amount);
+    }
+
+
+
+
+
+
+    function totalSupply() public view override returns (uint256) {
+        return _totalSupply;
+    }
+
+    function _require(bool condition, uint256 errorCode) public pure {
+        if (!condition) _revert(errorCode);
     }
 }
