@@ -28,6 +28,8 @@ pragma experimental ABIEncoderV2;
 // import "../../lib/helpers/ITemporarilyPausable.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./BalancerErrors.sol";
+
 
 pragma solidity ^0.8.0;
 
@@ -853,7 +855,7 @@ interface IVault is ISignaturesValidator, ITemporarilyPausable {
 //////////////
 
 //File 14 of 42 : IMinimalSwapInfoPool.sol
-interface IMinimalSwapInfoPool{//} is IBasePool {
+interface IMinimalSwapInfoPool{
 
     // Swap Hooks
     struct SwapRequest {
@@ -873,6 +875,28 @@ interface IMinimalSwapInfoPool{//} is IBasePool {
         uint256 currentBalanceTokenIn,
         uint256 currentBalanceTokenOut
     ) external returns (uint256 amount);
+
+
+//--IBasePool
+    function onJoinPool(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts);
+
+    function onExitPool(
+        bytes32 poolId,
+        address sender,
+        address recipient,
+        uint256[] memory balances,
+        uint256 lastChangeBlock,
+        uint256 protocolSwapFeePercentage,
+        bytes memory userData
+    ) external returns (uint256[] memory amountsOut, uint256[] memory dueProtocolFeeAmounts);
 }
 
 
@@ -946,4 +970,94 @@ interface IPriceOracle {
         Variable variable;
         uint256 ago;
     }
+}
+
+
+//
+
+interface IAuthentication {
+    /**
+     * @dev Returns the action identifier associated with the external function described by `selector`.
+     */
+    function getActionId(bytes4 selector) external view returns (bytes32);
+}
+
+abstract contract Authentication is IAuthentication {
+    bytes32 private immutable _actionIdDisambiguator;
+
+    /**
+     * @dev The main purpose of the `actionIdDisambiguator` is to prevent accidental function selector collisions in
+     * multi contract systems.
+     *
+     * There are two main uses for it:
+     *  - if the contract is a singleton, any unique identifier can be used to make the associated action identifiers
+     *    unique. The contract's own address is a good option.
+     *  - if the contract belongs to a family that shares action identifiers for the same functions, an identifier
+     *    shared by the entire family (and no other contract) should be used instead.
+     */
+    constructor(bytes32 actionIdDisambiguator) {
+        _actionIdDisambiguator = actionIdDisambiguator;
+    }
+
+    /**
+     * @dev Reverts unless the caller is allowed to call this function. Should only be applied to external functions.
+     */
+    modifier authenticate() {
+        _authenticateCaller();
+        _;
+    }
+
+    /**
+     * @dev Reverts unless the caller is allowed to call the entry point function.
+     */
+    function _authenticateCaller() internal view {
+        bytes32 actionId = getActionId(msg.sig);
+        _require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
+    }
+
+    function getActionId(bytes4 selector) public view override returns (bytes32) {
+        // Each external function is dynamically assigned an action identifier as the hash of the disambiguator and the
+        // function selector. Disambiguation is necessary to avoid potential collisions in the function selectors of
+        // multiple contracts.
+        return keccak256(abi.encodePacked(_actionIdDisambiguator, selector));
+    }
+
+    function _canPerform(bytes32 actionId, address user) internal view virtual returns (bool);
+}
+
+
+
+abstract contract BasePoolAuthorization is Authentication {
+    address private immutable _owner;
+
+    address private constant _DELEGATE_OWNER = 0xBA1BA1ba1BA1bA1bA1Ba1BA1ba1BA1bA1ba1ba1B;
+
+    constructor(address owner) {
+        _owner = owner;
+    }
+
+    function getOwner() public view returns (address) {
+        return _owner;
+    }
+
+    function getAuthorizer() external view returns (IAuthorizer) {
+        return _getAuthorizer();
+    }
+
+    function _canPerform(bytes32 actionId, address account) internal view override returns (bool) {
+        if ((getOwner() != _DELEGATE_OWNER) && _isOwnerOnlyAction(actionId)) {
+            // Only the owner can perform "owner only" actions, unless the owner is delegated.
+            return msg.sender == getOwner();
+        } else {
+            // Non-owner actions are always processed via the Authorizer, as "owner only" ones are when delegated.
+            return _getAuthorizer().canPerform(actionId, account, address(this));
+        }
+    }
+
+    function _isOwnerOnlyAction(bytes32 actionId) private view returns (bool) {
+        // This implementation hardcodes the setSwapFeePercentage action identifier.
+        return true;//actionId == getActionId(BasePool.setSwapFeePercentage.selector);
+    }
+
+    function _getAuthorizer() internal view virtual returns (IAuthorizer);
 }

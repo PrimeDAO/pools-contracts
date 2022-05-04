@@ -11,7 +11,7 @@ import "./IVault.sol";
 import "./BalancerPoolToken.sol";
 import "./BalancerErrors.sol";
 
-contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, ITemporarilyPausable, IAuthorizer {//}, ERC20Pausable {
+contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle,BasePoolAuthorization, ITemporarilyPausable {//}, ERC20Pausable {
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -57,7 +57,7 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
 
     event OracleEnabledChanged(bool enabled);
     event SwapFeePercentageChanged(uint256 swapFeePercentage);
-    event PausedStateChanged(bool paused);
+    // event PausedStateChanged(bool paused);
 
     struct NewPoolParams {
         IVault vault;
@@ -93,9 +93,9 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
         // simpler management of permissions (such as being able to manage granting the 'set fee percentage' action in
         // any Pool created by the same factory), while still making action identifiers unique among different factories
         // if the selectors match, preventing accidental errors.
-        // Authentication(bytes32(uint256(msg.sender)))
+        Authentication(bytes32(uint256(msg.sender)))
         BalancerPoolToken(params.name, params.symbol)
-        // BasePoolAuthorization(params.owner)
+        BasePoolAuthorization(params.owner)
         // ERC20Pausable(params.pauseWindowDuration, params.bufferPeriodDuration)
     {
         _owner = msg.sender;
@@ -195,25 +195,26 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
         emit SwapFeePercentageChanged(swapFeePercentage);
     }
 
-    modifier authenticate() {
-        _authenticateCaller();
-        _;
-    }
+//-----------------------
+    // modifier authenticate() {
+    //     _authenticateCaller();
+    //     _;
+    // }
 
-    function _authenticateCaller() internal view {
-        bytes32 actionId = getActionId(msg.sig);
-        require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
-    }
+    // function _authenticateCaller() internal view {
+    //     bytes32 actionId = getActionId(msg.sig);
+    //     require(_canPerform(actionId, msg.sender), Errors.SENDER_NOT_ALLOWED);
+    // }
 
-    function getActionId(bytes4 selector) public view  returns (bytes32) {
-        // Each external function is dynamically assigned an action identifier as the hash of the disambiguator and the
-        // function selector. Disambiguation is necessary to avoid potential collisions in the function selectors of
-        // multiple contracts.
-        return keccak256(abi.encodePacked(selector));
-    }
+    // function getActionId(bytes4 selector) public view  returns (bytes32) {
+    //     // Each external function is dynamically assigned an action identifier as the hash of the disambiguator and the
+    //     // function selector. Disambiguation is necessary to avoid potential collisions in the function selectors of
+    //     // multiple contracts.
+    //     return keccak256(abi.encodePacked(selector));
+    // }
 
-    function _canPerform(bytes32 actionId, address user) internal view virtual returns (bool);
-
+    // function _canPerform(bytes32 actionId, address user) internal view virtual returns (bool);
+//-----------------------
   /**
      * @dev Balancer Governance can always enable the Oracle, even if it was originally not enabled. This allows for
      * Pools that unexpectedly drive much more volume and liquidity than expected to serve as Price Oracles.
@@ -282,19 +283,19 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
         return 1;
     }
 
-    // Swap Hooks
-    struct SwapRequest {
-        IVault.SwapKind kind;
-        IERC20 tokenIn;
-        IERC20 tokenOut;
-        uint256 amount;
-        // Misc data
-        bytes32 poolId;
-        uint256 lastChangeBlock;
-        address from;
-        address to;
-        bytes userData;
-    }
+    // // Swap Hooks
+    // struct SwapRequest {
+    //     IVault.SwapKind kind;
+    //     IERC20 tokenIn;
+    //     IERC20 tokenOut;
+    //     uint256 amount;
+    //     // Misc data
+    //     bytes32 poolId;
+    //     uint256 lastChangeBlock;
+    //     address from;
+    //     address to;
+    //     bytes userData;
+    // }
 
     function onSwap(
         SwapRequest memory request,
@@ -412,26 +413,26 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
             );
     }
 
-    // Join Hook
+    // // Join Hook
 
-    function onJoinPool(
-        bytes32 poolId,
-        address sender,
-        address recipient,
-        uint256[] memory balances,
-        uint256 lastChangeBlock,
-        uint256 protocolSwapFeePercentage,
-        bytes memory userData
-    )
-        external
-        virtual
+    // function onJoinPool(
+    //     bytes32 poolId,
+    //     address sender,
+    //     address recipient,
+    //     uint256[] memory balances,
+    //     uint256 lastChangeBlock,
+    //     uint256 protocolSwapFeePercentage,
+    //     bytes memory userData
+    // )
+    //     external
+    //     virtual
         
-        onlyVault(poolId)
-        whenNotPaused
-        returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts)
-    {
-        _cacheInvariantAndSupply();
-    }
+    //     onlyVault(poolId)
+    //     whenNotPaused
+    //     returns (uint256[] memory amountsIn, uint256[] memory dueProtocolFeeAmounts)
+    // {
+    //     _cacheInvariantAndSupply();
+    // }
 
 
     enum JoinKind { INIT, EXACT_TOKENS_IN_FOR_BPT_OUT, TOKEN_IN_FOR_EXACT_BPT_OUT }
@@ -635,43 +636,43 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
 
     // Exit Hook
 
-    function onExitPool(
-        bytes32 poolId,
-        address sender,
-        address recipient,
-        uint256[] memory balances,
-        uint256 lastChangeBlock,
-        uint256 protocolSwapFeePercentage,
-        bytes memory userData
-    ) external virtual onlyVault(poolId) returns (uint256[] memory, uint256[] memory) {
-        _upscaleArray(balances);
+    // function onExitPool(
+    //     bytes32 poolId,
+    //     address sender,
+    //     address recipient,
+    //     uint256[] memory balances,
+    //     uint256 lastChangeBlock,
+    //     uint256 protocolSwapFeePercentage,
+    //     bytes memory userData
+    // ) external virtual onlyVault(poolId) returns (uint256[] memory, uint256[] memory) {
+    //     _upscaleArray(balances);
 
-        (uint256 bptAmountIn, uint256[] memory amountsOut, uint256[] memory dueProtocolFeeAmounts) = _onExitPool(
-            poolId,
-            sender,
-            recipient,
-            balances,
-            lastChangeBlock,
-            protocolSwapFeePercentage,
-            userData
-        );
+    //     (uint256 bptAmountIn, uint256[] memory amountsOut, uint256[] memory dueProtocolFeeAmounts) = _onExitPool(
+    //         poolId,
+    //         sender,
+    //         recipient,
+    //         balances,
+    //         lastChangeBlock,
+    //         protocolSwapFeePercentage,
+    //         userData
+    //     );
 
-        // Note we no longer use `balances` after calling `_onExitPool`, which may mutate it.
+    //     // Note we no longer use `balances` after calling `_onExitPool`, which may mutate it.
 
-        _burnPoolTokens(sender, bptAmountIn);
+    //     _burnPoolTokens(sender, bptAmountIn);
 
-        // Both amountsOut and dueProtocolFeeAmounts are amounts exiting the Pool, so we round down.
-        _downscaleDownArray(amountsOut);
-        _downscaleDownArray(dueProtocolFeeAmounts);
+    //     // Both amountsOut and dueProtocolFeeAmounts are amounts exiting the Pool, so we round down.
+    //     _downscaleDownArray(amountsOut);
+    //     _downscaleDownArray(dueProtocolFeeAmounts);
 
-        // Update cached total supply and invariant using the results after the exit that will be used for future
-        // oracle updates, only if the pool was not paused (to minimize code paths taken while paused).
-        if (_isNotPaused()) {
-            _cacheInvariantAndSupply();
-        }
+    //     // Update cached total supply and invariant using the results after the exit that will be used for future
+    //     // oracle updates, only if the pool was not paused (to minimize code paths taken while paused).
+    //     if (_isNotPaused()) {
+    //         _cacheInvariantAndSupply();
+    //     }
 
-        return (amountsOut, dueProtocolFeeAmounts);
-    }
+    //     return (amountsOut, dueProtocolFeeAmounts);
+    // }
 
     function _isNotPaused() internal view returns (bool) {
         // After the Buffer Period, the (inexpensive) timestamp check short-circuits the storage access.
@@ -876,13 +877,13 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
         return 1;
     }
 
-    function getTimeWeightedAverage(OracleAverageQuery[] memory queries)
-        external
-        view
-        returns (uint256[] memory results)
-    {
-        results = new uint256[](queries.length);
-    }
+    // function getTimeWeightedAverage(OracleAverageQuery[] memory queries)
+    //     external
+    //     view
+    //     returns (uint256[] memory results)
+    // {
+    //     results = new uint256[](queries.length);
+    // }
 
     function _getPastAccumulator(
         IPriceOracle.Variable variable,
@@ -896,13 +897,13 @@ contract WETHBALMock is IMinimalSwapInfoPool, BalancerPoolToken, IPriceOracle, I
         return 1;
     }
 
-    function getPastAccumulators(OracleAccumulatorQuery[] memory queries)
-        external
-        view
-        returns (int256[] memory results)
-    {
-        results = new int256[](queries.length);
-    }
+    // function getPastAccumulators(OracleAccumulatorQuery[] memory queries)
+    //     external
+    //     view
+    //     returns (int256[] memory results)
+    // {
+    //     results = new int256[](queries.length);
+    // }
 
     function _updateOracle(
         uint256 lastChangeBlock,
