@@ -1,10 +1,9 @@
+#original code of vebal contract from mainnet
+#by address 0xC128a9954e6c874eA3d62ce62B468bA073093F25
 """
 NOTE: This file should be removed from repo later. 
 # The only purpose of this file is to have the original side by side, 
 # without having to go to the etherscan every time.
-
-#original code of bal contract from mainnet
-#by address 0xC128a9954e6c874eA3d62ce62B468bA073093F25
 """
 
 # @version 0.3.1

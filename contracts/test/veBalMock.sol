@@ -24,7 +24,7 @@ interface SmartWalletChecker {
 }   
 
 // contract BalMock is ERC20, ReentrancyGuard, SmartWalletChecker, BALERC20 {
-contract BalMock is ReentrancyGuard {
+contract veBalMock is ReentrancyGuard {
 // contract BalMock is BAL_ERC20, SmartWalletChecker{//}, ReentrancyGuard {
 
     struct Point{
