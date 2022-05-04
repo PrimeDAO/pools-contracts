@@ -877,7 +877,7 @@ interface IMinimalSwapInfoPool{
     ) external returns (uint256 amount);
 
 
-//--IBasePool
+    //--IBasePool
     function onJoinPool(
         bytes32 poolId,
         address sender,
@@ -1060,4 +1060,260 @@ abstract contract BasePoolAuthorization is Authentication {
     }
 
     function _getAuthorizer() internal view virtual returns (IAuthorizer);
+}
+
+
+abstract contract TemporarilyPausable is ITemporarilyPausable {
+    // The Pause Window and Buffer Period are timestamp-based: they should not be relied upon for sub-minute accuracy.
+    // solhint-disable not-rely-on-time
+
+    uint256 private constant _MAX_PAUSE_WINDOW_DURATION = 90 days;
+    uint256 private constant _MAX_BUFFER_PERIOD_DURATION = 30 days;
+
+    uint256 private immutable _pauseWindowEndTime;
+    uint256 private immutable _bufferPeriodEndTime;
+
+    bool private _paused;
+
+    constructor(uint256 pauseWindowDuration, uint256 bufferPeriodDuration) {
+        _require(pauseWindowDuration <= _MAX_PAUSE_WINDOW_DURATION, Errors.MAX_PAUSE_WINDOW_DURATION);
+        _require(bufferPeriodDuration <= _MAX_BUFFER_PERIOD_DURATION, Errors.MAX_BUFFER_PERIOD_DURATION);
+
+        uint256 pauseWindowEndTime = block.timestamp + pauseWindowDuration;
+
+        _pauseWindowEndTime = pauseWindowEndTime;
+        _bufferPeriodEndTime = pauseWindowEndTime + bufferPeriodDuration;
+    }
+
+    /**
+     * @dev Reverts if the contract is paused.
+     */
+    modifier whenNotPaused() {
+        _ensureNotPaused();
+        _;
+    }
+
+    /**
+     * @dev Returns the current contract pause status, as well as the end times of the Pause Window and Buffer
+     * Period.
+     */
+    function getPausedState()
+        external
+        view
+        override
+        returns (
+            bool paused,
+            uint256 pauseWindowEndTime,
+            uint256 bufferPeriodEndTime
+        )
+    {
+        paused = !_isNotPaused();
+        pauseWindowEndTime = _getPauseWindowEndTime();
+        bufferPeriodEndTime = _getBufferPeriodEndTime();
+    }
+
+    /**
+     * @dev Sets the pause state to `paused`. The contract can only be paused until the end of the Pause Window, and
+     * unpaused until the end of the Buffer Period.
+     *
+     * Once the Buffer Period expires, this function reverts unconditionally.
+     */
+    function _setPaused(bool paused) internal {
+        if (paused) {
+            _require(block.timestamp < _getPauseWindowEndTime(), Errors.PAUSE_WINDOW_EXPIRED);
+        } else {
+            _require(block.timestamp < _getBufferPeriodEndTime(), Errors.BUFFER_PERIOD_EXPIRED);
+        }
+
+        _paused = paused;
+        emit PausedStateChanged(paused);
+    }
+
+    /**
+     * @dev Reverts if the contract is paused.
+     */
+    function _ensureNotPaused() internal view {
+        _require(_isNotPaused(), Errors.PAUSED);
+    }
+
+    /**
+     * @dev Returns true if the contract is unpaused.
+     *
+     * Once the Buffer Period expires, the gas cost of calling this function is reduced dramatically, as storage is no
+     * longer accessed.
+     */
+    function _isNotPaused() internal view returns (bool) {
+        // After the Buffer Period, the (inexpensive) timestamp check short-circuits the storage access.
+        return block.timestamp > _getBufferPeriodEndTime() || !_paused;
+    }
+
+    // These getters lead to reduced bytecode size by inlining the immutable variables in a single place.
+
+    function _getPauseWindowEndTime() private view returns (uint256) {
+        return _pauseWindowEndTime;
+    }
+
+    function _getBufferPeriodEndTime() private view returns (uint256) {
+        return _bufferPeriodEndTime;
+    }
+}
+
+
+
+
+
+
+
+interface IWeightedPoolPriceOracle {
+    /**
+     * @dev Returns the raw data of the sample at `index`.
+     */
+    function getSample(uint256 index)
+        external
+        view
+        returns (
+            int256 logPairPrice,
+            int256 accLogPairPrice,
+            int256 logBptPrice,
+            int256 accLogBptPrice,
+            int256 logInvariant,
+            int256 accLogInvariant,
+            uint256 timestamp
+        );
+
+    /**
+     * @dev Returns the total number of samples.
+     */
+    function getTotalSamples() external view returns (uint256);
+}
+
+
+contract PoolPriceOracle is IWeightedPoolPriceOracle {
+
+    // Each sample in the buffer accumulates information for up to 2 minutes. This is simply to reduce the size of the
+    // buffer: small time deviations will not have any significant effect.
+    // solhint-disable not-rely-on-time
+    uint256 private constant _MAX_SAMPLE_DURATION = 2 minutes;
+
+    // We use a mapping to simulate an array: the buffer won't grow or shrink, and since we will always use valid
+    // indexes using a mapping saves gas by skipping the bounds checks.
+    mapping(uint256 => bytes32) internal _samples;
+
+    function getSample(uint256 index)
+        external
+        view
+        override
+        returns (
+            int256 logPairPrice,
+            int256 accLogPairPrice,
+            int256 logBptPrice,
+            int256 accLogBptPrice,
+            int256 logInvariant,
+            int256 accLogInvariant,
+            uint256 timestamp
+        )
+    {
+
+        bytes32 sample = _getSample(index);
+        return unpack(sample);
+    }
+
+    function unpack(bytes32 sample)
+        internal
+        pure
+        returns (
+            int256 logPairPrice,
+            int256 accLogPairPrice,
+            int256 logBptPrice,
+            int256 accLogBptPrice,
+            int256 logInvariant,
+            int256 accLogInvariant,
+            uint256 _timestamp
+        )
+    {
+        logPairPrice = 1;//_instLogPairPrice(sample);
+        accLogPairPrice = 1;//_accLogPairPrice(sample);
+        logBptPrice = 1;//_instLogBptPrice(sample);
+        accLogBptPrice = 1;//_accLogBptPrice(sample);
+        logInvariant = 1;//_instLogInvariant(sample);
+        accLogInvariant = 1;//_accLogInvariant(sample);
+        _timestamp = 1;//timestamp(sample);
+    }
+
+    function getTotalSamples() external pure override returns (uint256) {
+        return 1;//Buffer.SIZE;
+    }
+
+    /**
+     * @dev Processes new price and invariant data, updating the latest sample or creating a new one.
+     *
+     * Receives the new logarithms of values to store: `logPairPrice`, `logBptPrice` and `logInvariant`, as well the
+     * index of the latest sample and the timestamp of its creation.
+     *
+     * Returns the index of the latest sample. If different from `latestIndex`, the caller should also store the
+     * timestamp, and pass it on future calls to this function.
+     */
+    function _processPriceData(
+        uint256 latestSampleCreationTimestamp,
+        uint256 latestIndex,
+        int256 logPairPrice,
+        int256 logBptPrice,
+        int256 logInvariant
+    ) internal returns (uint256) {
+        return 1;
+    }
+
+    /**
+     * @dev Returns the instant value for `variable` in the sample pointed to by `index`.
+     */
+    function _getInstantValue(IPriceOracle.Variable variable, uint256 index) internal view returns (int256) {
+        return 1;
+    }
+
+    /**
+     * @dev Returns the value of the accumulator for `variable` `ago` seconds ago. `latestIndex` must be the index of
+     * the latest sample in the buffer.
+     *
+     * Reverts under the following conditions:
+     *  - if the buffer is empty.
+     *  - if querying past information and the buffer has not been fully initialized.
+     *  - if querying older information than available in the buffer. Note that a full buffer guarantees queries for the
+     *    past 34 hours will not revert.
+     *
+     * If requesting information for a timestamp later than the latest one, it is extrapolated using the latest
+     * available data.
+     *
+     * When no exact information is available for the requested past timestamp (as usually happens, since at most one
+     * timestamp is stored every two minutes), it is estimated by performing linear interpolation using the closest
+     * values. This process is guaranteed to complete performing at most 10 storage reads.
+     */
+    function _getPastAccumulator(
+        IPriceOracle.Variable variable,
+        uint256 latestIndex,
+        uint256 ago
+    ) internal view returns (int256) {
+        return 1;    
+    }
+
+    /**
+     * @dev Finds the two samples with timestamps before and after `lookUpDate`. If one of the samples matches exactly,
+     * both `prev` and `next` will be it. `offset` is the index of the oldest sample in the buffer.
+     *
+     * Assumes `lookUpDate` is greater or equal than the timestamp of the oldest sample, and less or equal than the
+     * timestamp of the latest sample.
+     */
+    function _findNearestSample(uint256 lookUpDate, uint256 offset) internal view returns (bytes32 prev, bytes32 next) {
+        bytes32 sample;
+        return (sample, sample);
+    }
+
+    /**
+     * @dev Returns the sample that corresponds to a given `index`.
+     *
+     * Using this function instead of accessing storage directly results in denser bytecode (since the storage slot is
+     * only computed here).
+     */
+    function _getSample(uint256 index) internal view returns (bytes32) {
+        return _samples[index];
+    }
 }
