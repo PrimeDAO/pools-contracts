@@ -23,7 +23,7 @@ import "./IVault.sol";
 import "./BalancerPoolToken.sol";
 import "./BalancerErrors.sol";
 
-contract WeightedPool2Tokens is
+contract WETHBAL_Shell_Mock is
     IMinimalSwapInfoPool,
     IPriceOracle,
     BasePoolAuthorization,
