@@ -112,8 +112,7 @@ contract VoterProxy {
         address _token,
         address _gauge,
         uint256 _amount
-    )
-        public returns (bool)
+    ) public returns (bool)
     {
         require(msg.sender == operator, "!auth");
         uint256 _balance = IERC20(_token).balanceOf(address(this));
@@ -131,8 +130,8 @@ contract VoterProxy {
     {
         require(msg.sender == operator, "!auth");
         uint256 amount = balanceOfPool(_gauge).add(
-                IERC20(_token).balanceOf(address(this))
-            );
+            IERC20(_token).balanceOf(address(this))
+        );
         withdraw(_token, _gauge, amount);
         return true;
     }
@@ -170,15 +169,17 @@ contract VoterProxy {
         return true;
     }
 
-    function release() external returns(bool) {
+    function release() external returns (bool) {
         require(msg.sender == depositor, "!auth");
         ICurveVoteEscrow(veBal).withdraw();
         return true;
     }
 
-    function vote(uint256 _voteId, address _votingAddress, bool _support)
-        external
-        returns (bool)
+    function vote(
+        uint256 _voteId,
+        address _votingAddress,
+        bool _support
+    ) external returns (bool)
     {
         require(msg.sender == operator, "!auth");
         IVoting(_votingAddress).vote(_voteId, _support, false);
