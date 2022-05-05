@@ -46,10 +46,25 @@ jobs:
       - name: Lints the project
         run: npm run lint
 
-  test:
+
+  analyze:
     runs-on: ubuntu-latest
 
     needs: build
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Slither
+        uses: crytic/slither-action@main
+        id: slither
+        with:
+          slither-args: --hardhat-artifacts-directory="./build/artifacts"
+
+
+  test:
+    runs-on: ubuntu-latest
+
+    needs: lint
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
