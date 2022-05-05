@@ -1,4 +1,4 @@
-//mock of bal contract from mainnet
+//mock of vebal contract from mainnet
 //by address 0xC128a9954e6c874eA3d62ce62B468bA073093F25
 
 // solium-disable linebreak-style
@@ -7,7 +7,7 @@ pragma solidity 0.8.13;
 // import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-interface BAL_ERC20 { //was just ERC20 in their python contract
+interface BAL_ERC20 { //was just ERC20 in their Vyper contract
     function decimals() external view returns (uint256);
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);
@@ -66,7 +66,9 @@ contract veBalMock is ReentrancyGuard {
     string public SYMBOL; //immutable SYMBOL; 
     uint256 immutable DECIMALS;
 
-    uint256 public supply;
+    // uint256 public supply;
+    mapping(address => uint256) supply;
+    uint256 private _totalSupply;
 
     mapping(address => LockedBalance) public locked;
 
@@ -158,11 +160,47 @@ contract veBalMock is ReentrancyGuard {
         */
         return locked[_addr].end;
     }
+
+// FROM ERC20
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
+
+    function _mint(address account, uint256 amount) internal virtual {
+        require(account != address(0), "ERC20: mint to the zero address");
+
+        _beforeTokenTransfer(address(0), account, amount);
+
+        _totalSupply += amount;
+        supply[account] += amount;
+        emit Transfer(address(0), account, amount);
+
+        _afterTokenTransfer(address(0), account, amount);
+    }
+// FROM ERC20 END
+
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {}
     function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, int128 type_) internal {}
     function checkpoint() external {}
-    function deposit_for(address _addr, uint256 _value) external nonReentrant {}
-    function create_lock(uint256) external nonReentrant {}
+    function deposit_for(address _addr, uint256 _value) external nonReentrant {
+        _mint(_addr, _value);
+    }
+
+    function create_lock(uint256 tokens) external nonReentrant {
+        _mint(msg.sender, tokens);
+        // BAL_ERC20(TOKEN).transferFrom(msg.sender, tokens);
+    }
+
     function increase_amount(uint256) external nonReentrant {}
     function increase_unlock_time(uint256 _unlock_time) external nonReentrant {}
     function withdraw() external nonReentrant {}

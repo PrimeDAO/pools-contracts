@@ -12,13 +12,13 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
   });
 
   const decimals2 = 10; //uint8 decimals_ ; 10 for example (set correct later)
-  await deploy("PoolContract", {
-    contract: "PoolContract",
+  await deploy("PoolToken", {
+    contract: "PoolToken",
     from: root,
-    args: ["Pool Contract", "BALP", decimals2],
+    args: ["Pool Token", "BALP", decimals2],
     log: true,
   });
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["D2DToken", "PoolContract"];
+module.exports.tags = ["D2DToken", "PoolToken"];
