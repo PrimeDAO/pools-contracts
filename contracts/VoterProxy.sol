@@ -18,11 +18,11 @@ contract VoterProxy {
 
     address public immutable veBal;
     address public immutable gaugeController;
-    
+
     address public owner;
     address public operator;
     address public depositor;
-    
+
     mapping (address => bool) private stashPool;
     mapping (address => bool) private protectedTokens;
 
@@ -62,21 +62,21 @@ contract VoterProxy {
         depositor = _depositor;
     }
 
-    function setStashAccess(address _stash, bool _status) external returns(bool){
+    function setStashAccess(address _stash, bool _status) external returns(bool) {
         require(msg.sender == operator, "!auth");
-        if(_stash != address(0)){
+        if (_stash != address(0)){
             stashPool[_stash] = _status;
         }
         return true;
     }
 
 
-    function deposit(address _token, address _gauge) external returns(bool){
+    function deposit(address _token, address _gauge) external returns(bool) {
         require(msg.sender == operator, "!auth");
-        if(protectedTokens[_token] == false){
+        if (protectedTokens[_token] == false){
             protectedTokens[_token] = true;
         }
-        if(protectedTokens[_gauge] == false){
+        if (protectedTokens[_gauge] == false){
             protectedTokens[_gauge] = true;
         }
         uint256 balance = IERC20(_token).balanceOf(address(this));
