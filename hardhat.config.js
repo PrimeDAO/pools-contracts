@@ -41,6 +41,7 @@ module.exports = {
       saveDeployments: false,
       initialBaseFeePerGas: 0,
       hardfork: "london",
+      chainId: 1337,
     },
     mainnet: {
       ...sharedNetworkConfig,
