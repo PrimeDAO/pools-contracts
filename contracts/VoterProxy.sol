@@ -108,9 +108,12 @@ contract VoterProxy {
     }
 
     // Withdraw partial funds
-    function withdraw(address _token, address _gauge, uint256 _amount)
-        public
-        returns (bool)
+    function withdraw(
+        address _token,
+        address _gauge,
+        uint256 _amount
+    )
+        public returns (bool)
     {
         require(msg.sender == operator, "!auth");
         uint256 _balance = IERC20(_token).balanceOf(address(this));
