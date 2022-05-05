@@ -51,7 +51,10 @@ contract VoterProxy {
 
     function setOperator(address _operator) external {
         require(msg.sender == owner, "!auth");
-        require(operator == address(0) || IDeposit(operator).isShutdown() == true, "needs shutdown");
+        require(
+            operator == address(0) || IDeposit(operator).isShutdown() == true,
+            "needs shutdown"
+        );
         
         operator = _operator;
     }
@@ -62,7 +65,7 @@ contract VoterProxy {
         depositor = _depositor;
     }
 
-    function setStashAccess(address _stash, bool _status) external returns(bool) {
+    function setStashAccess(address _stash, bool _status) external returns (bool) {
         require(msg.sender == operator, "!auth");
         if (_stash != address(0)) {
             stashPool[_stash] = _status;
@@ -70,7 +73,7 @@ contract VoterProxy {
         return true;
     }
 
-    function deposit(address _token, address _gauge) external returns(bool) {
+    function deposit(address _token, address _gauge) external returns (bool) {
         require(msg.sender == operator, "!auth");
         if (protectedTokens[_token] == false){
             protectedTokens[_token] = true;
