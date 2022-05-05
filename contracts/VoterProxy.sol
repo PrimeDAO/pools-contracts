@@ -8,16 +8,16 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract CurveVoterProxy {
+contract VoterProxy {
     using SafeERC20 for IERC20;
     using Address for address;
     using SafeMath for uint256;
 
-    address public constant mintr = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
-    address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
+    address public immutable mintr;// = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
+    address public immutable crv;// = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
 
-    address public constant escrow = address(0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2);
-    address public constant gaugeController = address(0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB);
+    address public immutable escrow;// = address(0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2);
+    address public immutable gaugeController;// = address(0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB);
     
     address public owner;
     address public operator;
@@ -26,8 +26,18 @@ contract CurveVoterProxy {
     mapping (address => bool) private stashPool;
     mapping (address => bool) private protectedTokens;
 
-    constructor() public {
+    constructor(
+        address mintr_,
+        address crv_,
+        address escrow_,
+        address gaugeController_
+    ) public {
         owner = msg.sender;
+
+        mintr = mintr_;
+        crv = crv_;
+        escrow = escrow_;
+        gaugeController = gaugeController_;
     }
 
     function getName() external pure returns (string memory) {
