@@ -55,7 +55,7 @@ contract VoterProxy {
             operator == address(0) || IDeposit(operator).isShutdown() == true,
             "needs shutdown"
         );
-        
+
         operator = _operator;
     }
 
@@ -65,7 +65,10 @@ contract VoterProxy {
         depositor = _depositor;
     }
 
-    function setStashAccess(address _stash, bool _status) external returns (bool) {
+    function setStashAccess(address _stash, bool _status)
+    external
+    returns (bool)
+    {
         require(msg.sender == operator, "!auth");
         if (_stash != address(0)) {
             stashPool[_stash] = _status;
@@ -116,19 +119,28 @@ contract VoterProxy {
         return true;
     }
 
-     function withdrawAll(address _token, address _gauge) external returns (bool) {
+    function withdrawAll(address _token, address _gauge)
+    external
+    returns (bool)
+    {
         require(msg.sender == operator, "!auth");
         uint256 amount = balanceOfPool(_gauge).add(IERC20(_token).balanceOf(address(this)));
         withdraw(_token, _gauge, amount);
         return true;
     }
 
-    function _withdrawSome(address _gauge, uint256 _amount) internal returns (uint256) {
+    function _withdrawSome(address _gauge, uint256 _amount)
+    internal
+    returns (uint256)
+    {
         ICurveGauge(_gauge).withdraw(_amount);
         return _amount;
     }
 
-    function createLock(uint256 _value, uint256 _unlockTime) external returns(bool){
+    function createLock(uint256 _value, uint256 _unlockTime)
+    external
+    returns (bool)
+    {
         require(msg.sender == depositor, "!auth");
         IERC20(bal).safeApprove(veBal, 0);
         IERC20(bal).safeApprove(veBal, _value);
@@ -136,7 +148,7 @@ contract VoterProxy {
         return true;
     }
 
-    function increaseAmount(uint256 _value) external returns(bool){
+    function increaseAmount(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
         IERC20(bal).safeApprove(veBal, 0);
         IERC20(bal).safeApprove(veBal, _value);
@@ -144,7 +156,7 @@ contract VoterProxy {
         return true;
     }
 
-    function increaseTime(uint256 _value) external returns(bool){
+    function increaseTime(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
         ICurveVoteEscrow(veBal).increase_unlock_time(_value);
         return true;
@@ -156,13 +168,16 @@ contract VoterProxy {
         return true;
     }
 
-    function vote(uint256 _voteId, address _votingAddress, bool _support) external returns(bool){
+    function vote(uint256 _voteId, address _votingAddress, bool _support)
+    external
+    returns (bool)
+    {
         require(msg.sender == operator, "!auth");
         IVoting(_votingAddress).vote(_voteId,_support,false);
         return true;
     }
 
-    function voteGaugeWeight(address _gauge, uint256 _weight) external returns(bool){
+    function voteGaugeWeight(address _gauge, uint256 _weight) external returns (bool) {
         require(msg.sender == operator, "!auth");
 
         //vote
@@ -170,14 +185,14 @@ contract VoterProxy {
         return true;
     }
 
-    function claimCrv(address _gauge) external returns (uint256){
+    function claimCrv(address _gauge) external returns (uint256) {
         require(msg.sender == operator, "!auth");
 
         uint256 _balance = 0;
         try IMinter(mintr).mint(_gauge) {
             _balance = IERC20(bal).balanceOf(address(this));
             IERC20(bal).safeTransfer(operator, _balance);
-        } catch {}
+        } catch { }
 
         return _balance;
     }
