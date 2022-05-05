@@ -112,8 +112,7 @@ contract VoterProxy {
         address _token,
         address _gauge,
         uint256 _amount
-    ) public returns (bool)
-    {
+    ) public returns (bool) {
         require(msg.sender == operator, "!auth");
         uint256 _balance = IERC20(_token).balanceOf(address(this));
         if (_balance < _amount) {
@@ -179,8 +178,7 @@ contract VoterProxy {
         uint256 _voteId,
         address _votingAddress,
         bool _support
-    ) external returns (bool)
-    {
+    ) external returns (bool) {
         require(msg.sender == operator, "!auth");
         IVoting(_votingAddress).vote(_voteId, _support, false);
         return true;
