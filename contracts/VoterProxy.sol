@@ -13,11 +13,11 @@ contract VoterProxy {
     using Address for address;
     using SafeMath for uint256;
 
-    address public immutable mintr;// 0xd061D61a4d941c39E5453435B6345Dc261C2fcE0
-    address public immutable bal;// was crv // 0xD533a949740bb3306d119CC777fa900bA034cd52
+    address public immutable mintr;
+    address public immutable bal;
 
-    address public immutable veBal;// was veCrv originally//0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2
-    address public immutable gaugeController;// 0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB
+    address public immutable veBal;
+    address public immutable gaugeController;
     
     address public owner;
     address public operator;
