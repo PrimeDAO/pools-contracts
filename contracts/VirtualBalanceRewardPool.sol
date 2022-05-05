@@ -51,11 +51,19 @@ contract VirtualBalanceWrapper {
 
     IDeposit public deposits;
 
-    function totalSupply() public view returns (uint256) {
+    function totalSupply()
+    public
+    view
+    returns (uint256)
+    {
         return deposits.totalSupply();
     }
 
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(address account)
+    public
+    view
+    returns (uint256)
+    {
         return deposits.balanceOf(account);
     }
 }
@@ -106,11 +114,19 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         _;
     }
 
-    function lastTimeRewardApplicable() public view returns (uint256) {
+    function lastTimeRewardApplicable()
+        public
+        view
+        returns (uint256)
+    {
         return MathUtil.min(block.timestamp, periodFinish);
     }
 
-    function rewardPerToken() public view returns (uint256) {
+    function rewardPerToken()
+        public
+        view
+        returns (uint256)
+    {
         if (totalSupply() == 0) {
             return rewardPerTokenStored;
         }
@@ -124,7 +140,11 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
             );
     }
 
-    function earned(address account) public view returns (uint256) {
+    function earned(address account)
+        public
+        view
+        returns (uint256)
+    {
         return
             balanceOf(account)
                 .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
@@ -152,7 +172,10 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         emit Withdrawn(_account, amount);
     }
 
-    function getReward(address _account) public updateReward(_account){
+    function getReward(address _account)
+        public
+        updateReward(_account)
+    {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
@@ -161,11 +184,14 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         }
     }
 
-    function getReward() external{
+    function getReward() external {
         getReward(msg.sender);
     }
 
-    function donate(uint256 _amount) external returns(bool){
+    function donate(uint256 _amount)
+        external
+        returns(bool)
+    {
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards.add(_amount);
     }

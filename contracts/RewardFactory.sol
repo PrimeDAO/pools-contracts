@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import "./utils/Interfaces.sol";
 import "./BaseRewardPool.sol";
 import "./VirtualBalanceRewardPool.sol";
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -23,15 +23,22 @@ contract RewardFactory {
     }
 
     //Get active count function
-    function activeRewardCount(address _reward) external view returns(uint256){
+    function activeRewardCount(address _reward)
+        external
+        view
+        returns(uint256)
+    {
         return rewardActiveList[_reward].length;
     }
 
-    function addActiveReward(address _reward, uint256 _pid) external returns(bool){
+    function addActiveReward(address _reward, uint256 _pid)
+        external
+        returns(bool)
+    {
         require(rewardAccess[msg.sender] == true,"!auth");
         if(_reward == address(0)){
             return true;
-        }
+    }
 
         uint256[] storage activeList = rewardActiveList[_reward];
         uint256 pid = _pid+1; //offset by 1 so that we can use 0 as empty
@@ -44,11 +51,14 @@ contract RewardFactory {
         return true;
     }
 
-    function removeActiveReward(address _reward, uint256 _pid) external returns(bool){
+    function removeActiveReward(address _reward, uint256 _pid)
+        external
+        returns(bool)
+    {
         require(rewardAccess[msg.sender] == true,"!auth");
         if(_reward == address(0)){
             return true;
-        }
+    }
 
         uint256[] storage activeList = rewardActiveList[_reward];
         uint256 pid = _pid+1; //offset by 1 so that we can use 0 as empty
@@ -73,7 +83,10 @@ contract RewardFactory {
     }
 
     //Create a Managed Reward Pool to handle distribution of all bal mined in a pool
-    function CreateBalRewards(uint256 _pid, address _depositToken) external returns (address) {
+    function CreateBalRewards(uint256 _pid, address _depositToken)
+        external
+        returns (address) 
+    {
         require(msg.sender == operator, "!auth");
 
         //operator = booster(deposit) contract so that new bal can be added and distributed
@@ -84,7 +97,10 @@ contract RewardFactory {
 
     //create a virtual balance reward pool that mimicks the balance of a pool's main reward contract
     //used for extra incentive tokens(ex. snx) as well as vebal fees
-    function CreateTokenRewards(address _token, address _mainRewards, address _operator) external returns (address) {
+    function CreateTokenRewards(address _token, address _mainRewards, address _operator)
+        external
+        returns (address)
+    {
         require(msg.sender == operator || rewardAccess[msg.sender] == true, "!auth");
 
         //create new pool, use main pool for balance lookup
