@@ -1,7 +1,6 @@
 // const { parseEther } = ethers.utils;
 
 // const PROXY_CREATION = "ProxyCreation";
-const BAL_ADDRESS = "0xC128a9954e6c874eA3d62ce62B468bA073093F25";
 
 const initialize = async (accounts) => {
   const setup = {};
@@ -16,6 +15,11 @@ const initialize = async (accounts) => {
   };
 
   return setup;
+};
+
+const getBAL = async (setup) => {
+  const BAL_ADDRESS =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  return { BAL_ADDRESS };
 };
 
 //(done)
@@ -102,14 +106,15 @@ const controller = async (setup) => {
     "Controller",
     setup.roles.root
   );
-  const staker = BAL_ADDRESS;
-  const minter = BAL_ADDRESS; //Rewards tokens minted by balancer for the liquidity providers.
+  const staker = await ethers.getContract("ERC20Mock");
+  const minter = staker;
 
-  return await controller.deploy(setup.roles.root.address, staker, minter);
+  return await controller.deploy(setup.roles.root.address, staker.address, minter.address);
 };
 
 module.exports = {
   initialize,
+  getBAL,
   getVoterProxy,
   gettokenInstances,
   balDepositor,
