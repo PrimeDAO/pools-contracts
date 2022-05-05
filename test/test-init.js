@@ -18,7 +18,9 @@ const initialize = async (accounts) => {
 };
 
 const getBAL = async (setup) => {
-  const BAL_ADDRESS =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  const Bal =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  const BAL_ADDRESS = await Bal.deploy("Bal", "BAL", decimals);
+
   return { BAL_ADDRESS };
 };
 
