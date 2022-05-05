@@ -40,8 +40,8 @@ pragma solidity ^0.8.0;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -51,19 +51,11 @@ contract VirtualBalanceWrapper {
 
     IDeposit public deposits;
 
-    function totalSupply()
-    public
-    view
-    returns (uint256)
-    {
+    function totalSupply() public view returns (uint256) {
         return deposits.totalSupply();
     }
 
-    function balanceOf(address account)
-    public
-    view
-    returns (uint256)
-    {
+    function balanceOf(address account) public view returns (uint256) {
         return deposits.balanceOf(account);
     }
 }
@@ -103,7 +95,6 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         operator = op_;
     }
 
-
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = lastTimeRewardApplicable();
@@ -114,19 +105,11 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         _;
     }
 
-    function lastTimeRewardApplicable()
-        public
-        view
-        returns (uint256)
-    {
+    function lastTimeRewardApplicable() public view returns (uint256) {
         return MathUtil.min(block.timestamp, periodFinish);
     }
 
-    function rewardPerToken()
-        public
-        view
-        returns (uint256)
-    {
+    function rewardPerToken() public view returns (uint256) {
         if (totalSupply() == 0) {
             return rewardPerTokenStored;
         }
@@ -140,11 +123,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
             );
     }
 
-    function earned(address account)
-        public
-        view
-        returns (uint256)
-    {
+    function earned(address account) public view returns (uint256) {
         return
             balanceOf(account)
                 .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
@@ -158,7 +137,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         updateReward(_account)
     {
         require(msg.sender == address(deposits), "!authorized");
-       // require(amount > 0, 'VirtualDepositRewardPool: Cannot stake 0');
+        require(amount > 0, "VirtualDepositRewardPool: Cannot stake 0");
         emit Staked(_account, amount);
     }
 
@@ -172,10 +151,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         emit Withdrawn(_account, amount);
     }
 
-    function getReward(address _account)
-        public
-        updateReward(_account)
-    {
+    function getReward(address _account) public updateReward(_account) {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
@@ -188,15 +164,16 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         getReward(msg.sender);
     }
 
-    function donate(uint256 _amount)
-        external
-        returns(bool)
-    {
-        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
+    function donate(uint256 _amount) external returns (bool) {
+        IERC20(rewardToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount
+        );
         queuedRewards = queuedRewards.add(_amount);
     }
 
-    function queueNewRewards(uint256 _rewards) external{
+    function queueNewRewards(uint256 _rewards) external {
         require(msg.sender == operator, "!authorized");
 
         _rewards = _rewards.add(queuedRewards);
@@ -212,10 +189,10 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
         uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
-        if(queuedRatio < newRewardRatio){
+        if (queuedRatio < newRewardRatio) {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
-        }else{
+        } else {
             queuedRewards = _rewards;
         }
     }
