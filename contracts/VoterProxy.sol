@@ -195,7 +195,7 @@ contract VoterProxy {
         return true;
     }
 
-    function claimCrv(address _gauge) external returns (uint256) {
+    function claimBal(address _gauge) external returns (uint256) {
         require(msg.sender == operator, "!auth");
 
         uint256 _balance = 0;
