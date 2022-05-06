@@ -6,10 +6,10 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+// import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Controller {
-    using SafeMath for uint256;
+    // using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using Address for address;
 
@@ -171,9 +171,7 @@ contract Controller {
     ) external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _lockFees.add(_stakerFees).add(_callerFees).add(
-            _platform
-        );
+        uint256 total = _lockFees + _stakerFees + _callerFees + _platform ;
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
@@ -475,15 +473,12 @@ contract Controller {
         uint256 balBal = IERC20(bal).balanceOf(address(this));
 
         if (balBal > 0) {
-            uint256 _lockIncentive = balBal.mul(lockIncentive).div(
-                FEE_DENOMINATOR
-            );
-            uint256 _stakerIncentive = balBal.mul(stakerIncentive).div(
-                FEE_DENOMINATOR
-            );
-            uint256 _callIncentive = balBal.mul(earmarkIncentive).div(
-                FEE_DENOMINATOR
-            );
+            uint256 _lockIncentive = (balBal * lockIncentive) /
+                FEE_DENOMINATOR;
+            uint256 _stakerIncentive = (balBal * stakerIncentive) /
+                FEE_DENOMINATOR;
+            uint256 _callIncentive = (balBal * earmarkIncentive) /
+                FEE_DENOMINATOR;
 
             //send treasury
             if (
