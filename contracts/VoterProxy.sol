@@ -6,12 +6,10 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract VoterProxy {
     using SafeERC20 for IERC20;
     using Address for address;
-    using SafeMath for uint256;
 
     address public immutable mintr;
     address public immutable bal;
@@ -116,8 +114,8 @@ contract VoterProxy {
         require(msg.sender == operator, "!auth");
         uint256 _balance = IERC20(_token).balanceOf(address(this));
         if (_balance < _amount) {
-            _amount = _withdrawSome(_gauge, _amount.sub(_balance));
-            _amount = _amount.add(_balance);
+            _amount = _withdrawSome(_gauge, _amount -_balance);
+            _amount = _amount + _balance;
         }
         IERC20(_token).safeTransfer(msg.sender, _amount);
         return true;
@@ -128,7 +126,7 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == operator, "!auth");
-        uint256 amount = balanceOfPool(_gauge).add(
+        uint256 amount = balanceOfPool(_gauge) + (
             IERC20(_token).balanceOf(address(this))
         );
         withdraw(_token, _gauge, amount);
