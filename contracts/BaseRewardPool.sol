@@ -96,8 +96,8 @@ contract BaseRewardPool {
         }
         return
             rewardPerTokenStored + (lastTimeRewardApplicable() -
-            (lastUpdateTime * rewardRate * 1e18) /
-            totalSupply()
+                (lastUpdateTime * rewardRate * 1e18) /
+                totalSupply()
             );
     }
 
@@ -105,7 +105,8 @@ contract BaseRewardPool {
         return
             balanceOf(account) *
                 (rewardPerToken() - userRewardPerTokenPaid[account]) /
-                1e18 + rewards[account];
+                1e18 +
+                rewards[account];
     }
 
     function stake(uint256 _amount)
