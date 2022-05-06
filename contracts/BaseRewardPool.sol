@@ -5,10 +5,10 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+// import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract BaseRewardPool {
-    using SafeMath for uint256;
+    // using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     IERC20 public rewardToken;
@@ -97,21 +97,21 @@ contract BaseRewardPool {
             return rewardPerTokenStored;
         }
         return
-            rewardPerTokenStored.add(
+            rewardPerTokenStored + (
                 lastTimeRewardApplicable()
-                    .sub(lastUpdateTime)
-                    .mul(rewardRate)
-                    .mul(1e18)
-                    .div(totalSupply())
+                    -(lastUpdateTime)
+                    *(rewardRate)
+                    *(1e18)
+                    /(totalSupply())
             );
     }
 
     function earned(address account) public view returns (uint256) {
         return
             balanceOf(account)
-                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
-                .div(1e18)
-                .add(rewards[account]);
+                *(rewardPerToken() - (userRewardPerTokenPaid[account]))
+                /(1e18)
+                +(rewards[account]);
     }
 
     function stake(uint256 _amount)
@@ -126,8 +126,8 @@ contract BaseRewardPool {
             IRewards(extraRewards[i]).stake(msg.sender, _amount);
         }
 
-        _totalSupply = _totalSupply.add(_amount);
-        _balances[msg.sender] = _balances[msg.sender].add(_amount);
+        _totalSupply = _totalSupply + (_amount);
+        _balances[msg.sender] = _balances[msg.sender] + (_amount);
 
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit Staked(msg.sender, _amount);
@@ -154,8 +154,8 @@ contract BaseRewardPool {
         }
 
         //give to _for
-        _totalSupply = _totalSupply.add(_amount);
-        _balances[_for] = _balances[_for].add(_amount);
+        _totalSupply = _totalSupply + (_amount);
+        _balances[_for] = _balances[_for] + (_amount);
 
         //take away from sender
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -176,8 +176,8 @@ contract BaseRewardPool {
             IRewards(extraRewards[i]).withdraw(msg.sender, amount);
         }
 
-        _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        _totalSupply = _totalSupply - (amount);
+        _balances[msg.sender] = _balances[msg.sender] - (amount);
 
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
@@ -203,8 +203,8 @@ contract BaseRewardPool {
             IRewards(extraRewards[i]).withdraw(msg.sender, amount);
         }
 
-        _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        _totalSupply = _totalSupply - (amount);
+        _balances[msg.sender] = _balances[msg.sender] - (amount);
 
         //tell operator to withdraw from here directly to user
         IDeposit(operator).withdrawTo(pid, amount, msg.sender);
@@ -254,13 +254,13 @@ contract BaseRewardPool {
             address(this),
             _amount
         );
-        queuedRewards = queuedRewards.add(_amount);
+        queuedRewards = queuedRewards + (_amount);
     }
 
     function queueNewRewards(uint256 _rewards) external returns (bool) {
         require(msg.sender == operator, "!authorized");
 
-        _rewards = _rewards.add(queuedRewards);
+        _rewards = _rewards + (queuedRewards);
 
         if (block.timestamp >= periodFinish) {
             notifyRewardAmount(_rewards);
@@ -269,10 +269,10 @@ contract BaseRewardPool {
         }
 
         //et = now - (finish-duration)
-        uint256 elapsedTime = block.timestamp.sub(periodFinish.sub(duration));
+        uint256 elapsedTime = block.timestamp - (periodFinish - (duration));
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
-        uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
+        uint256 queuedRatio = currentAtNow * (1000) / (_rewards);
 
         //uint256 queuedRatio = currentRewards.mul(1000).div(_rewards);
         if (queuedRatio < newRewardRatio) {
@@ -288,18 +288,18 @@ contract BaseRewardPool {
         internal
         updateReward(address(0))
     {
-        historicalRewards = historicalRewards.add(reward);
+        historicalRewards = historicalRewards + (reward);
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(duration);
+            rewardRate = reward / (duration);
         } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
-            reward = reward.add(leftover);
-            rewardRate = reward.div(duration);
+            uint256 remaining = periodFinish - (block.timestamp);
+            uint256 leftover = remaining * (rewardRate);
+            reward = reward + (leftover);
+            rewardRate = reward / (duration);
         }
         currentRewards = reward;
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(duration);
+        periodFinish = block.timestamp + (duration);
         emit RewardAdded(reward);
     }
 }
