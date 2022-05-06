@@ -96,9 +96,8 @@ contract BaseRewardPool {
         }
         return
             rewardPerTokenStored +
-            ((lastTimeRewardApplicable() - lastUpdateTime) *
-            rewardRate * 1e18 /
-                totalSupply()
+            (((lastTimeRewardApplicable() - lastUpdateTime) *
+                rewardRate * 1e18) / totalSupply()
             );
     }
 
