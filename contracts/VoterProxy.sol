@@ -126,7 +126,8 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == operator, "!auth");
-        uint256 amount = balanceOfPool(_gauge) + (IERC20(_token).balanceOf(address(this)));
+        uint256 amount = balanceOfPool(_gauge) +
+            (IERC20(_token).balanceOf(address(this)));
         withdraw(_token, _gauge, amount);
         return true;
     }
