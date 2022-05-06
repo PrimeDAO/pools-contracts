@@ -5,15 +5,13 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-// import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract BaseRewardPool {
-    // using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     IERC20 public rewardToken;
     IERC20 public stakingToken;
-    uint256 public constant duration = 7 days;
+    uint256 public constant DURATION = 7 days;
 
     address public operator;
     address public rewardManager;
@@ -177,7 +175,7 @@ contract BaseRewardPool {
         }
 
         _totalSupply = _totalSupply - (amount);
-        _balances[msg.sender] = _balances[msg.sender] - (amount);
+        _balances[msg.sender] = _balances[msg.sender] - (amount); //(_balances created with mapping)
 
         stakingToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
@@ -268,8 +266,8 @@ contract BaseRewardPool {
             return true;
         }
 
-        //et = now - (finish-duration)
-        uint256 elapsedTime = block.timestamp - (periodFinish - (duration));
+        //et = now - (finish-DURATION)
+        uint256 elapsedTime = block.timestamp - (periodFinish - (DURATION));
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
         uint256 queuedRatio = currentAtNow * (1000) / (_rewards);
@@ -290,16 +288,16 @@ contract BaseRewardPool {
     {
         historicalRewards = historicalRewards + (reward);
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward / (duration);
+            rewardRate = reward / (DURATION);
         } else {
             uint256 remaining = periodFinish - (block.timestamp);
             uint256 leftover = remaining * (rewardRate);
             reward = reward + (leftover);
-            rewardRate = reward / (duration);
+            rewardRate = reward / (DURATION);
         }
         currentRewards = reward;
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp + (duration);
+        periodFinish = block.timestamp + (DURATION);
         emit RewardAdded(reward);
     }
 }
