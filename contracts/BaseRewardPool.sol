@@ -95,16 +95,17 @@ contract BaseRewardPool {
             return rewardPerTokenStored;
         }
         return
-            rewardPerTokenStored + (astTimeRewardApplicable() - lastUpdateTime * rewardRate * 1e18 / 
-                totalSupply()
+            rewardPerTokenStored + (lastTimeRewardApplicable() -
+            (lastUpdateTime * rewardRate * 1e18) /
+            totalSupply()
             );
     }
 
     function earned(address account) public view returns (uint256) {
         return
             balanceOf(account) *
-            (rewardPerToken() - userRewardPerTokenPaid[account]) /
-            1e18 + rewards[account];
+                (rewardPerToken() - userRewardPerTokenPaid[account]) /
+                1e18 + rewards[account];
     }
 
     function stake(uint256 _amount)
