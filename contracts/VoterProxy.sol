@@ -114,7 +114,7 @@ contract VoterProxy {
         require(msg.sender == operator, "!auth");
         uint256 _balance = IERC20(_token).balanceOf(address(this));
         if (_balance < _amount) {
-            _amount = _withdrawSome(_gauge, _amount -_balance);
+            _amount = _withdrawSome(_gauge, _amount - _balance);
             _amount = _amount + _balance;
         }
         IERC20(_token).safeTransfer(msg.sender, _amount);
@@ -126,9 +126,7 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == operator, "!auth");
-        uint256 amount = balanceOfPool(_gauge) + (
-            IERC20(_token).balanceOf(address(this))
-        );
+        uint256 amount = balanceOfPool(_gauge) + (IERC20(_token).balanceOf(address(this)));
         withdraw(_token, _gauge, amount);
         return true;
     }

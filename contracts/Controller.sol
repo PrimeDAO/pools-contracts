@@ -474,10 +474,10 @@ contract Controller {
             uint256 _lockIncentive = (balBal * lockIncentive) / FEE_DENOMINATOR;
 
             uint256 _stakerIncentive = (balBal * stakerIncentive) /
-            FEE_DENOMINATOR;
+                FEE_DENOMINATOR;
 
             uint256 _callIncentive = (balBal * earmarkIncentive) /
-            FEE_DENOMINATOR;
+                FEE_DENOMINATOR;
 
             //send treasury
             if (
@@ -492,7 +492,8 @@ contract Controller {
             }
 
             //remove incentives from balance
-            balBal = balBal -
+            balBal =
+                balBal -
                 _lockIncentive -
                 _callIncentive -
                 _stakerIncentive;
