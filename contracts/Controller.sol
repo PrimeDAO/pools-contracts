@@ -473,9 +473,11 @@ contract Controller {
         if (balBal > 0) {
             uint256 _lockIncentive = (balBal * lockIncentive) / FEE_DENOMINATOR;
 
-            uint256 _stakerIncentive = (balBal * stakerIncentive) / FEE_DENOMINATOR;
+            uint256 _stakerIncentive = (balBal * stakerIncentive) /
+            FEE_DENOMINATOR;
 
-            uint256 _callIncentive = (balBal * earmarkIncentive) / FEE_DENOMINATOR;
+            uint256 _callIncentive = (balBal * earmarkIncentive) /
+            FEE_DENOMINATOR;
 
             //send treasury
             if (
