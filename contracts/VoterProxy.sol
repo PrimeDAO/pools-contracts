@@ -200,6 +200,7 @@ contract VoterProxy {
         try IMinter(mintr).mint(_gauge) {
             _balance = IERC20(bal).balanceOf(address(this));
             IERC20(bal).transfer(operator, _balance);
+            //solhint-disable-next-line
         } catch {}
 
         return _balance;
@@ -233,6 +234,7 @@ contract VoterProxy {
     ) external returns (bool, bytes memory) {
         require(msg.sender == operator, "!auth");
 
+        // solhint-disable-next-line
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
 
         return (success, result);

@@ -250,11 +250,7 @@ contract BaseRewardPool {
     }
 
     function donate(uint256 _amount) external returns (bool) {
-        IERC20(rewardToken).transferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
+        IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards.add(_amount);
     }
 
