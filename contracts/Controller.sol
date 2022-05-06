@@ -169,7 +169,7 @@ contract Controller {
     ) external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _lockFees + _stakerFees + _callerFees + _platform ;
+        uint256 total = _lockFees + _stakerFees + _callerFees + _platform;
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
@@ -472,7 +472,9 @@ contract Controller {
 
         if (balBal > 0) {
             uint256 _lockIncentive = (balBal * lockIncentive) / FEE_DENOMINATOR;
+
             uint256 _stakerIncentive = (balBal * stakerIncentive) / FEE_DENOMINATOR;
+
             uint256 _callIncentive = (balBal * earmarkIncentive) / FEE_DENOMINATOR;
 
             //send treasury
@@ -488,7 +490,10 @@ contract Controller {
             }
 
             //remove incentives from balance
-            balBal = balBal - _lockIncentive - _callIncentive - _stakerIncentive;
+            balBal = balBal -
+                _lockIncentive -
+                _callIncentive -
+                _stakerIncentive;
 
             //send incentives for calling
             IERC20(bal).safeTransfer(msg.sender, _callIncentive);
