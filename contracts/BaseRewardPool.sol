@@ -45,8 +45,8 @@ contract BaseRewardPool {
         address rewardManager_
     ) public {
         pid = pid_;
-        stakingToken = IERC20(stakingToken_);
-        rewardToken = IERC20(rewardToken_);
+        stakingToken = IERC20(stakingToken_); //Staking token is d2dBal.
+        rewardToken = IERC20(rewardToken_); // Rewards token is Bal.
         operator = operator_;
         rewardManager = rewardManager_;
     }
@@ -139,6 +139,7 @@ contract BaseRewardPool {
         return true;
     }
 
+    //here we are locking tokens
     function stakeFor(address _for, uint256 _amount)
         public
         updateReward(_for)
@@ -187,7 +188,9 @@ contract BaseRewardPool {
         return true;
     }
 
-    function withdrawAll(bool claim) external {
+    //It is possible to withdraw the whole amount of d2dBal.
+    function withdrawAll() external {
+        bool claim = true;
         withdraw(_balances[msg.sender], claim);
     }
 
