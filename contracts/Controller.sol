@@ -482,17 +482,13 @@ contract Controller {
                 platformFee > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = balBal.mul(platformFee).div(
-                    FEE_DENOMINATOR
-                );
-                balBal = balBal.sub(_platform);
+                uint256 _platform = (balBal * platformFee) / FEE_DENOMINATOR;
+                balBal = balBal - _platform;
                 IERC20(bal).safeTransfer(treasury, _platform);
             }
 
             //remove incentives from balance
-            balBal = balBal.sub(_lockIncentive).sub(_callIncentive).sub(
-                _stakerIncentive
-            );
+            balBal = balBal - _lockIncentive - _callIncentive - _stakerIncentive;
 
             //send incentives for calling
             IERC20(bal).safeTransfer(msg.sender, _callIncentive);
