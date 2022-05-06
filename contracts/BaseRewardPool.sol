@@ -95,17 +95,16 @@ contract BaseRewardPool {
             return rewardPerTokenStored;
         }
         return
-            rewardPerTokenStored + (
-                lastTimeRewardApplicable() - lastUpdateTime * rewardRate * 1e18 / totalSupply()
+            rewardPerTokenStored + (astTimeRewardApplicable() - lastUpdateTime * rewardRate * 1e18 / 
+                totalSupply()
             );
     }
 
     function earned(address account) public view returns (uint256) {
         return
-            balanceOf(account)
-                *(rewardPerToken() - (userRewardPerTokenPaid[account]))
-                /(1e18)
-                +(rewards[account]);
+            balanceOf(account) *
+            (rewardPerToken() - userRewardPerTokenPaid[account]) /
+            1e18 + rewards[account];
     }
 
     function stake(uint256 _amount)
@@ -266,10 +265,10 @@ contract BaseRewardPool {
         }
 
         //et = now - (finish-DURATION)
-        uint256 elapsedTime = block.timestamp - (periodFinish - (DURATION));
+        uint256 elapsedTime = block.timestamp - (periodFinish - DURATION);
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
-        uint256 queuedRatio = currentAtNow * (1000) / (_rewards);
+        uint256 queuedRatio = currentAtNow * 1000 / _rewards;
 
         //uint256 queuedRatio = currentRewards.mul(1000).div(_rewards);
         if (queuedRatio < newRewardRatio) {
