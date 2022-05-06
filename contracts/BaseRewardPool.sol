@@ -98,8 +98,7 @@ contract BaseRewardPool {
             rewardPerTokenStored +
             (((lastTimeRewardApplicable() - lastUpdateTime) *
                 rewardRate *
-                1e18) / totalSupply()
-            );
+                1e18) / totalSupply());
     }
 
     function earned(address account) public view returns (uint256) {
