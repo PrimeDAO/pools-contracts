@@ -79,14 +79,14 @@ contract Controller {
 
     constructor(address _staker, address _minter, address _bal, address _registry, address _voteOwnership, address _voteParameter) public {
         isShutdown = false;
-        staker = _staker; //Controller owns staked Bal --> staker = Bal
+        staker = _staker; //the veBal staking rewards
         owner = msg.sender;
         voteDelegate = msg.sender;
         feeManager = msg.sender;
         poolManager = msg.sender;
         feeDistro = address(0);
         feeToken = address(0);
-        treasury = address(0);
+        treasury = address(0); //company’s Gnosis safe
         minter = _minter; //Controller owns minted veBal
         bal = _bal; //Controller owns staked Bal
         registry = _registry;
@@ -141,7 +141,7 @@ contract Controller {
         voteDelegate = _voteDelegate;
     }
 
-    function setRewardContracts(address _rewards, address _stakerRewards)
+    function setRewardContracts(address _rewards, address _stakerRewards) //the veBal staking rewards.
         external
     {
         require(msg.sender == owner, "!auth");
@@ -174,10 +174,6 @@ contract Controller {
     function setFees( //change to protocol fees and profit fees only
         uint256 _platformFee,
         uint256 _profitFee
-        // uint256 _lockFees,
-        // uint256 _stakerFees,
-        // uint256 _callerFees,
-        // uint256 _platform
     ) external {
         require(msg.sender == feeManager, "!auth");
 
@@ -186,12 +182,6 @@ contract Controller {
 
         //values must be within certain ranges
         if (
-            // _lockFees >= 1000 &&
-            // _lockFees <= 1500 &&
-            // _stakerFees >= 300 &&
-            // _stakerFees <= 600 &&
-            // _callerFees >= 10 &&
-            // _callerFees <= 100 &&
             _platformFee <= 200 &&
             _profitFee >= 70 && // 50 && //7- as 50*15 is not enough and 70*15 = 1050
             _profitFee <= 100
@@ -203,7 +193,7 @@ contract Controller {
         }
     }
 
-    function setTreasury(address _treasury) external {
+    function setTreasury(address _treasury) external { //set company’s Gnosis safe address
         require(msg.sender == feeManager, "!auth");
         treasury = _treasury;
     }
@@ -366,7 +356,7 @@ contract Controller {
         address gauge = pool.gauge;
 
         //check lock
-        require(block.timestamp > userLockTime[_to],
+        require(block.timestamp > userLockTime[_from],
             "Controller: userLockTime is not reached yet"
         );
 
@@ -473,6 +463,7 @@ contract Controller {
         emit Deposited(msg.sender, _pid, _amount);
         return true;
     }
+    
     //delegate address votes on dao
     function vote(
         uint256 _voteId,
