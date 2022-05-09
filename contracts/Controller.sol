@@ -180,8 +180,7 @@ contract Controller {
     }
 
     //change to protocol fees and profit fees only
-    function setFees(uint256 _platformFee, uint256 _profitFee) external
-    {
+    function setFees(uint256 _platformFee, uint256 _profitFee) external {
         require(msg.sender == feeManager, "!auth");
 
         uint256 total = _profitFee + _platformFee;
@@ -531,7 +530,6 @@ contract Controller {
     //claim bal and extra rewards and disperse to reward contracts
     //should send rewards to lockRewards
     function _earmarkRewards(uint256 _pid) internal {
-
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 
