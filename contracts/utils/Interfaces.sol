@@ -1,4 +1,5 @@
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
 
 interface ICurveGauge {
     function deposit(uint256) external;
