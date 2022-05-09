@@ -43,7 +43,7 @@ contract Controller {
     address public treasury;
     address public stakerRewards; //veBal rewards
     address public lockRewards; //balBal rewards(bal)
-    address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent? 
+    address public lockFees; //d2dBal vebal fees -> What is Bal equivalent?
     address public feeDistro;
     address public feeToken;
 
@@ -92,7 +92,7 @@ contract Controller {
 
     /// SETTER SECTION ///
 
-    function setOwner(address _owner) external {
+    function setOwner(address _owner) external { //protocol fees should be distributed to the owner(Gnosis multisig)
         require(msg.sender == owner, "!auth");
         owner = _owner;
     }
@@ -584,7 +584,7 @@ contract Controller {
     //claim fees from curve distro contract, put in lockers' reward contract
     function earmarkFees() external returns (bool) {
         //claim fee rewards
-        IStaker(staker).claimFees(feeDistro, feeToken);
+        IStaker(staker).claimFees(feeDistro, feeToken); //profit fees should be staked into the veBAL
         //send fee rewards to reward contract
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
         IERC20(feeToken).safeTransfer(lockFees, _balance);
