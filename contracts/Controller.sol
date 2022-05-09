@@ -31,6 +31,8 @@ contract Controller {
     uint256 public constant FEE_DENOMINATOR = 10000;
     uint256 public lockTime = 365*24*60*60; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     mapping(address => uint256) public userLockTime; //lock time for each user individually
+    // mapping (address => mapping (uint256 => uint256)) public userLockTime;
+    // mapping (user => mapping (amount => unlock_time)) public userTransactionLockTime;
 
     address public owner;
     address public feeManager;
@@ -420,6 +422,11 @@ contract Controller {
 
     //withdraw veBAL, which was unlocked after a year of usage
     function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount) public returns (bool) {
+        //check lock
+        require(block.timestamp > userLockTime[msg.sender],
+            "Controller: can't withdraw. userLockTime is not reached yet"
+        );
+
         _withdraw(_pid, _amount, msg.sender, msg.sender);
         return true;
     }
@@ -431,8 +438,10 @@ contract Controller {
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 
-
-        _withdraw(_pid, _amount, msg.sender, msg.sender);
+        //check lock
+        require(block.timestamp > userLockTime[msg.sender],
+            "Controller: can't restake. userLockTime is not reached yet"
+        );
 
         //send to proxy to stake
         // address lptoken = pool.lptoken;
@@ -450,17 +459,16 @@ contract Controller {
         }
 
         address token = pool.token;
-        if (_stake) {
-            //mint here and send to rewards on user behalf
-            ITokenMinter(token).mint(address(this), _amount);
-            address rewardContract = pool.balRewards;
-            IERC20(token).safeApprove(rewardContract, 0);
-            IERC20(token).safeApprove(rewardContract, _amount);
-            IRewards(rewardContract).stakeFor(msg.sender, _amount);
-        } else {
-            //add user balance directly
-            ITokenMinter(token).mint(msg.sender, _amount);
-        }
+
+        //update timelock info
+        userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
+
+        //mint here and send to rewards on user behalf
+        ITokenMinter(token).mint(address(this), _amount);
+        address rewardContract = pool.balRewards;
+        IERC20(token).safeApprove(rewardContract, 0);
+        IERC20(token).safeApprove(rewardContract, _amount);
+        IRewards(rewardContract).stakeFor(msg.sender, _amount);
 
         emit Deposited(msg.sender, _pid, _amount);
         return true;
