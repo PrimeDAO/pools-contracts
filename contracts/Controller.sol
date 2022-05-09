@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract Controller {
-
-contract Controller {
     using Address for address;
 
     address public constant bal =
