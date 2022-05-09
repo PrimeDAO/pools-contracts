@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract BaseRewardPool {
-
     IERC20 public rewardToken;
     IERC20 public stakingToken;
     uint256 public constant DURATION = 7 days;

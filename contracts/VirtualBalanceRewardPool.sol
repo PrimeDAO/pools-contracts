@@ -44,7 +44,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract VirtualBalanceWrapper {
-
     IDeposit public deposits;
 
     function totalSupply() public view returns (uint256) {
@@ -57,7 +56,6 @@ contract VirtualBalanceWrapper {
 }
 
 contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
-
     IERC20 public rewardToken;
     uint256 public constant duration = 7 days;
 
