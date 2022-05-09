@@ -13,15 +13,15 @@ contract Controller {
     using SafeERC20 for IERC20;
     using Address for address;
 
-    address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
-    address public constant registry =
-        address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
+    address public immutable bal;
+        // address(0xba100000625a3754423978a60c9317c58a424e3D);
+    address public immutable registry;
+        // address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
-    address public constant voteOwnership =
-        address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
-    address public constant voteParameter =
-        address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
+    address public immutable voteOwnership;
+        // address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
+    address public immutable voteParameter;
+        // address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
     uint256 public lockIncentive = 1000; //incentive to bal stakers
     uint256 public stakerIncentive = 450; //incentive to native token stakers
@@ -43,7 +43,7 @@ contract Controller {
     address public treasury;
     address public stakerRewards; //bal rewards
     address public lockRewards; //balBal rewards(bal)
-    address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
+    address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent? 
     address public feeDistro;
     address public feeToken;
 
@@ -73,9 +73,9 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _minter) public {
+    constructor(address _staker, address _minter, address _bal, address _registry, address _voteOwnership, address _voteParameter) public {
         isShutdown = false;
-        staker = _staker;
+        staker = _staker; //Controller owns staked Bal --> staker = Bal
         owner = msg.sender;
         voteDelegate = msg.sender;
         feeManager = msg.sender;
@@ -83,7 +83,11 @@ contract Controller {
         feeDistro = address(0);
         feeToken = address(0);
         treasury = address(0);
-        minter = _minter;
+        minter = _minter; //Controller owns minted veBal
+        bal = _bal; //Controller owns staked Bal
+        registry = _registry;
+        voteOwnership = _voteOwnership;
+        voteParameter = _voteParameter;
     }
 
     /// SETTER SECTION ///
@@ -163,7 +167,7 @@ contract Controller {
         }
     }
 
-    function setFees(
+    function setFees( //change to protocol fees and profit fees only
         uint256 _lockFees,
         uint256 _stakerFees,
         uint256 _callerFees,
@@ -401,6 +405,18 @@ contract Controller {
         return true;
     }
 
+    //withdraw veBAL, which was unlocked after a year of usage
+    function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount) public returns (bool) {
+        _withdraw(_pid, _amount, msg.sender, msg.sender);
+        return true;
+    }
+
+    //restake veBAL, which was unlocked after a year of usage
+    function restake(uint256 _pid, uint256 _amount) public returns (bool) {
+        _withdraw(_pid, _amount, msg.sender, msg.sender);
+        return true;
+    }
+
     //delegate address votes on dao
     function vote(
         uint256 _voteId,
@@ -539,7 +555,7 @@ contract Controller {
         return true;
     }
 
-    //callback from reward contract when crv is received.
+    //callback from reward contract when bal is received.
     function rewardClaimed(
         uint256 _pid,
         address _address,
