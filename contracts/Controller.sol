@@ -41,7 +41,7 @@ contract Controller {
     address public rewardArbitrator;
     address public voteDelegate;
     address public treasury;
-    address public stakerRewards; //bal rewards
+    address public stakerRewards; //veBal rewards
     address public lockRewards; //balBal rewards(bal)
     address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent? 
     address public feeDistro;
@@ -168,16 +168,16 @@ contract Controller {
     }
 
     function setFees( //change to protocol fees and profit fees only
-        uint256 _lockFees,
-        uint256 _stakerFees,
-        uint256 _callerFees,
-        uint256 _platform
+        uint256 _platformFee,
+        uint256 _profitFee
+        // uint256 _lockFees,
+        // uint256 _stakerFees,
+        // uint256 _callerFees,
+        // uint256 _platform
     ) external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _lockFees.add(_stakerFees).add(_callerFees).add(
-            _platform
-        );
+        uint256 total = _lockFees.add(_profitFee).add(_platformFee);
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
@@ -188,12 +188,12 @@ contract Controller {
             _stakerFees <= 600 &&
             _callerFees >= 10 &&
             _callerFees <= 100 &&
-            _platform <= 200
+            _platformFee <= 200
         ) {
             lockIncentive = _lockFees;
             stakerIncentive = _stakerFees;
             earmarkIncentive = _callerFees;
-            platformFee = _platform;
+            platformFee = _platformFee;
         }
     }
 
@@ -413,10 +413,45 @@ contract Controller {
 
     //restake veBAL, which was unlocked after a year of usage
     function restake(uint256 _pid, uint256 _amount) public returns (bool) {
+
+        require(!isShutdown, "shutdown");
+        PoolInfo storage pool = poolInfo[_pid];
+        require(pool.shutdown == false, "pool is closed");
+
+
         _withdraw(_pid, _amount, msg.sender, msg.sender);
+
+        //send to proxy to stake
+        // address lptoken = pool.lptoken;
+        // IERC20(lptoken).safeTransferFrom(msg.sender, staker, _amount);
+
+        //stake
+        // address gauge = pool.gauge;
+        // require(gauge != address(0), "!gauge setting");
+        // IStaker(staker).deposit(lptoken, gauge); //we restaking it. it is already in the pool
+
+        //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
+        address stash = pool.stash;
+        if (stash != address(0)) {
+            IStash(stash).stashRewards();
+        }
+
+        address token = pool.token;
+        if (_stake) {
+            //mint here and send to rewards on user behalf
+            ITokenMinter(token).mint(address(this), _amount);
+            address rewardContract = pool.balRewards;
+            IERC20(token).safeApprove(rewardContract, 0);
+            IERC20(token).safeApprove(rewardContract, _amount);
+            IRewards(rewardContract).stakeFor(msg.sender, _amount);
+        } else {
+            //add user balance directly
+            ITokenMinter(token).mint(msg.sender, _amount);
+        }
+
+        emit Deposited(msg.sender, _pid, _amount);
         return true;
     }
-
     //delegate address votes on dao
     function vote(
         uint256 _voteId,
@@ -469,7 +504,7 @@ contract Controller {
     }
 
     //claim bal and extra rewards and disperse to reward contracts
-    function _earmarkRewards(uint256 _pid) internal {
+    function _earmarkRewards(uint256 _pid) internal { //should send rewards to lockRewards
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 
