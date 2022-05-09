@@ -29,6 +29,8 @@ contract Controller {
     uint256 public platformFee = 0; //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
+    uint256 public lockTime = 365*24*60*60; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
+    mapping(address => uint256) public userLockTime; //lock time for each user individually
 
     address public owner;
     address public feeManager;
@@ -212,7 +214,7 @@ contract Controller {
 
     //create a new pool
     function addPool(
-        address _lptoken,
+        address _lptoken, // PoolToken 
         address _gauge,
         uint256 _stashVersion
     ) external returns (bool) {
@@ -320,6 +322,10 @@ contract Controller {
         if (stash != address(0)) {
             IStash(stash).stashRewards();
         }
+
+        //save timelock info
+        userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
+
 
         address token = pool.token;
         if (_stake) {
@@ -581,7 +587,7 @@ contract Controller {
         return true;
     }
 
-    //claim fees from curve distro contract, put in lockers' reward contract
+    //claim fees from veBAL distro contract, put in lockers' reward contract
     function earmarkFees() external returns (bool) {
         //claim fee rewards
         IStaker(staker).claimFees(feeDistro, feeToken); //profit fees should be staked into the veBAL
