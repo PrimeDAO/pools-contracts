@@ -180,8 +180,7 @@ contract Controller {
     }
 
     //change to protocol fees and profit fees only
-    function setFees(uint256 _platformFee, uint256 _profitFee)
-        external
+    function setFees(uint256 _platformFee, uint256 _profitFee) external
     {
         require(msg.sender == feeManager, "!auth");
 
@@ -202,8 +201,8 @@ contract Controller {
         }
     }
 
-    function setTreasury(address _treasury) external
-    { //set company’s Gnosis safe address
+    //set company’s Gnosis safe address for treasury address
+    function setTreasury(address _treasury) external {
         require(msg.sender == feeManager, "!auth");
         treasury = _treasury;
     }
@@ -422,8 +421,8 @@ contract Controller {
 
     //withdraw veBAL, which was unlocked after a year of usage
     function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount)
-    public
-    returns (bool)
+        public
+        returns (bool)
     {
         //check lock
         require(
@@ -472,7 +471,7 @@ contract Controller {
         address rewardContract = pool.balRewards;
         // IERC20(token).safeApprove(rewardContract, 0);
         // IERC20(token).safeApprove(rewardContract, _amount);
-        IRewards(rewardContract).stakeFor(msg.sender, _amount); //maybe that row also need to be removed. as we don't withdraw them 
+        IRewards(rewardContract).stakeFor(msg.sender, _amount); //maybe that row also need to be removed. as we don't withdraw them
 
         emit ReDeposited(msg.sender, _pid, _amount);
         return true;
@@ -530,7 +529,8 @@ contract Controller {
     }
 
     //claim bal and extra rewards and disperse to reward contracts
-    function _earmarkRewards(uint256 _pid) internal { //should send rewards to lockRewards
+    //should send rewards to lockRewards
+    function _earmarkRewards(uint256 _pid) internal {
 
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
