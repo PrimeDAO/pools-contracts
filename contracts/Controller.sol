@@ -67,6 +67,11 @@ contract Controller {
         uint256 indexed poolid,
         uint256 amount
     );
+    event ReDeposited(
+        address indexed user,
+        uint256 indexed poolid,
+        uint256 amount
+    );
     event Withdrawn(
         address indexed user,
         uint256 indexed poolid,
@@ -453,11 +458,11 @@ contract Controller {
         //mint here and send to rewards on user behalf
         ITokenMinter(token).mint(address(this), _amount);
         address rewardContract = pool.balRewards;
-        IERC20(token).safeApprove(rewardContract, 0);
-        IERC20(token).safeApprove(rewardContract, _amount);
+        // IERC20(token).safeApprove(rewardContract, 0);
+        // IERC20(token).safeApprove(rewardContract, _amount);
         IRewards(rewardContract).stakeFor(msg.sender, _amount);
 
-        emit Deposited(msg.sender, _pid, _amount);
+        emit ReDeposited(msg.sender, _pid, _amount);
         return true;
     }
     
