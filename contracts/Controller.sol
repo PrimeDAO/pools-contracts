@@ -10,14 +10,14 @@ contract Controller {
     using Address for address;
 
     address public immutable bal;
-        // address(0xba100000625a3754423978a60c9317c58a424e3D);
+    // address(0xba100000625a3754423978a60c9317c58a424e3D);
     address public immutable registry;
-        // address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
+    // address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
     address public immutable voteOwnership;
-        // address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
+    // address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
     address public immutable voteParameter;
-        // address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
+    // address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
     uint256 public lockIncentive = 1000; //incentive to bal stakers
     uint256 public stakerIncentive = 450; //incentive to native token stakers
@@ -25,7 +25,7 @@ contract Controller {
     uint256 public platformFee = 0; //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
-    uint256 public lockTime = 365*24*60*60; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
+    uint256 public lockTime = 365 * 24 * 60 * 60; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     mapping(address => uint256) public userLockTime; //lock time for each user individually
     // mapping (address => mapping (uint256 => uint256)) public userLockTime;
     // mapping (user => mapping (amount => unlock_time)) public userTransactionLockTime;
@@ -78,7 +78,14 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _minter, address _bal, address _registry, address _voteOwnership, address _voteParameter) public {
+    constructor(
+        address _staker,
+        address _minter,
+        address _bal,
+        address _registry,
+        address _voteOwnership,
+        address _voteParameter
+    ) public {
         isShutdown = false;
         staker = _staker; //the veBal staking rewards
         owner = msg.sender;
@@ -97,8 +104,8 @@ contract Controller {
 
     /// SETTER SECTION ///
 
-    function setOwner(address _owner) external { //protocol fees should be distributed to the owner(Gnosis multisig)
-        require(msg.sender == owner, "!auth");
+    function setOwner(address _owner) external { 
+        require(msg.sender == owner, "!auth"); //protocol fees should be distributed to the owner(Gnosis multisig)
         owner = _owner;
     }
 
@@ -142,16 +149,14 @@ contract Controller {
         voteDelegate = _voteDelegate;
     }
 
-    function setRewardContracts(address _rewards, address _stakerRewards) //the veBal staking rewards.
-        external
-    {
+    function setRewardContracts(address _rewards, address _stakerRewards) external {
         require(msg.sender == owner, "!auth");
 
         //reward contracts are immutable or else the owner
         //has a means to redeploy and mint bal via rewardClaimed()
         if (lockRewards == address(0)) {
             lockRewards = _rewards;
-            stakerRewards = _stakerRewards;
+            stakerRewards = _stakerRewards; //the veBal staking rewards.
         }
     }
 
@@ -172,7 +177,8 @@ contract Controller {
         }
     }
 
-    function setFees( //change to protocol fees and profit fees only
+    //change to protocol fees and profit fees only
+    function setFees(
         uint256 _platformFee,
         uint256 _profitFee
     ) external {
@@ -189,7 +195,7 @@ contract Controller {
             _profitFee <= 100
         ) {
             lockIncentive = _profitFee * 20; //
-            stakerIncentive = _profitFee * 6; //50*6 = 300; 100*6 = 600 //70*6 = 420 
+            stakerIncentive = _profitFee * 6; //50*6 = 300; 100*6 = 600 //70*6 = 420
             earmarkIncentive = _profitFee;
             platformFee = _platformFee;
         }
@@ -208,7 +214,7 @@ contract Controller {
 
     //create a new pool
     function addPool(
-        address _lptoken, // PoolToken 
+        address _lptoken, //PoolToken 
         address _gauge,
         uint256 _stashVersion
     ) external returns (bool) {
@@ -320,7 +326,6 @@ contract Controller {
         //save timelock info
         userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
 
-
         address token = pool.token;
         if (_stake) {
             //mint here and send to rewards on user behalf
@@ -358,7 +363,8 @@ contract Controller {
         address gauge = pool.gauge;
 
         //check lock
-        require(block.timestamp > userLockTime[_from],
+        require(
+            block.timestamp > userLockTime[_from],
             "Controller: userLockTime is not reached yet"
         );
 
@@ -413,9 +419,13 @@ contract Controller {
     }
 
     //withdraw veBAL, which was unlocked after a year of usage
-    function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount) public returns (bool) {
+    function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount)
+    public
+    returns (bool)
+    {
         //check lock
-        require(block.timestamp > userLockTime[msg.sender],
+        require(
+            block.timestamp > userLockTime[msg.sender],
             "Controller: can't withdraw. userLockTime is not reached yet"
         );
 
@@ -425,13 +435,13 @@ contract Controller {
 
     //restake veBAL, which was unlocked after a year of usage
     function restake(uint256 _pid, uint256 _amount) public returns (bool) {
-
         require(!isShutdown, "shutdown");
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 
         //check lock
-        require(block.timestamp > userLockTime[msg.sender],
+        require(
+            block.timestamp > userLockTime[msg.sender],
             "Controller: can't restake. userLockTime is not reached yet"
         );
 
@@ -460,12 +470,12 @@ contract Controller {
         address rewardContract = pool.balRewards;
         // IERC20(token).safeApprove(rewardContract, 0);
         // IERC20(token).safeApprove(rewardContract, _amount);
-        IRewards(rewardContract).stakeFor(msg.sender, _amount);
+        IRewards(rewardContract).stakeFor(msg.sender, _amount); //maybe that row also need to be removed. as we don't withdraw them 
 
         emit ReDeposited(msg.sender, _pid, _amount);
         return true;
     }
-    
+
     //delegate address votes on dao
     function vote(
         uint256 _voteId,
@@ -519,6 +529,7 @@ contract Controller {
 
     //claim bal and extra rewards and disperse to reward contracts
     function _earmarkRewards(uint256 _pid) internal { //should send rewards to lockRewards
+
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 
