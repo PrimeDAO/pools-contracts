@@ -104,7 +104,7 @@ contract Controller {
 
     /// SETTER SECTION ///
 
-    function setOwner(address _owner) external { 
+    function setOwner(address _owner) external {
         require(msg.sender == owner, "!auth"); //protocol fees should be distributed to the owner(Gnosis multisig)
         owner = _owner;
     }
@@ -149,7 +149,9 @@ contract Controller {
         voteDelegate = _voteDelegate;
     }
 
-    function setRewardContracts(address _rewards, address _stakerRewards) external {
+    function setRewardContracts(address _rewards, address _stakerRewards)
+        external
+    {
         require(msg.sender == owner, "!auth");
 
         //reward contracts are immutable or else the owner
@@ -178,10 +180,9 @@ contract Controller {
     }
 
     //change to protocol fees and profit fees only
-    function setFees(
-        uint256 _platformFee,
-        uint256 _profitFee
-    ) external {
+    function setFees(uint256 _platformFee, uint256 _profitFee)
+        external
+    {
         require(msg.sender == feeManager, "!auth");
 
         uint256 total = _profitFee + _platformFee;
@@ -201,7 +202,8 @@ contract Controller {
         }
     }
 
-    function setTreasury(address _treasury) external { //set company’s Gnosis safe address
+    function setTreasury(address _treasury) external
+    { //set company’s Gnosis safe address
         require(msg.sender == feeManager, "!auth");
         treasury = _treasury;
     }
@@ -214,7 +216,7 @@ contract Controller {
 
     //create a new pool
     function addPool(
-        address _lptoken, //PoolToken 
+        address _lptoken, //PoolToken
         address _gauge,
         uint256 _stashVersion
     ) external returns (bool) {
