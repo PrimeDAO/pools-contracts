@@ -91,39 +91,10 @@ module.exports = {
         settings: {
             optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 100000,
           },
         },
       },
-      {
-        version: "0.8.10",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.8.9",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.8.6",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      { version: "0.6.12" },
-      { version: "0.5.16" },
     ],
   },
   etherscan: {
