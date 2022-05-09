@@ -5,10 +5,8 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract VoterProxy {
-    using SafeERC20 for IERC20;
     using Address for address;
 
     address public immutable mintr;
@@ -84,8 +82,8 @@ contract VoterProxy {
         }
         uint256 balance = IERC20(_token).balanceOf(address(this));
         if (balance > 0) {
-            IERC20(_token).safeApprove(_gauge, 0);
-            IERC20(_token).safeApprove(_gauge, balance);
+            IERC20(_token).approve(_gauge, 0);
+            IERC20(_token).approve(_gauge, balance);
             ICurveGauge(_gauge).deposit(balance);
         }
         return true;
@@ -101,7 +99,7 @@ contract VoterProxy {
         }
 
         balance = _asset.balanceOf(address(this));
-        _asset.safeTransfer(msg.sender, balance);
+        _asset.transfer(msg.sender, balance);
         return balance;
     }
 
@@ -117,7 +115,7 @@ contract VoterProxy {
             _amount = _withdrawSome(_gauge, _amount - _balance);
             _amount = _amount + _balance;
         }
-        IERC20(_token).safeTransfer(msg.sender, _amount);
+        IERC20(_token).transfer(msg.sender, _amount);
         return true;
     }
 
@@ -145,16 +143,16 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).safeApprove(veBal, 0);
-        IERC20(bal).safeApprove(veBal, _value);
+        IERC20(bal).approve(veBal, 0);
+        IERC20(bal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).create_lock(_value, _unlockTime);
         return true;
     }
 
     function increaseAmount(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).safeApprove(veBal, 0);
-        IERC20(bal).safeApprove(veBal, _value);
+        IERC20(bal).approve(veBal, 0);
+        IERC20(bal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).increase_amount(_value);
         return true;
     }
@@ -198,7 +196,8 @@ contract VoterProxy {
         uint256 _balance = 0;
         try IMinter(mintr).mint(_gauge) {
             _balance = IERC20(bal).balanceOf(address(this));
-            IERC20(bal).safeTransfer(operator, _balance);
+            IERC20(bal).transfer(operator, _balance);
+            //solhint-disable-next-line
         } catch {}
 
         return _balance;
@@ -217,7 +216,7 @@ contract VoterProxy {
         require(msg.sender == operator, "!auth");
         IFeeDistro(_distroContract).claim();
         uint256 _balance = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).safeTransfer(operator, _balance);
+        IERC20(_token).transfer(operator, _balance);
         return _balance;
     }
 
@@ -232,6 +231,7 @@ contract VoterProxy {
     ) external returns (bool, bytes memory) {
         require(msg.sender == operator, "!auth");
 
+        // solhint-disable-next-line
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
 
         return (success, result);

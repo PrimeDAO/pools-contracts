@@ -42,10 +42,8 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract VirtualBalanceWrapper {
-    using SafeERC20 for IERC20;
 
     IDeposit public deposits;
 
@@ -59,7 +57,6 @@ contract VirtualBalanceWrapper {
 }
 
 contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
-    using SafeERC20 for IERC20;
 
     IERC20 public rewardToken;
     uint256 public constant duration = 7 days;
@@ -149,7 +146,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
-            rewardToken.safeTransfer(_account, reward);
+            rewardToken.transfer(_account, reward);
             emit RewardPaid(_account, reward);
         }
     }
@@ -159,11 +156,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
     }
 
     function donate(uint256 _amount) external returns (bool) {
-        IERC20(rewardToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount
-        );
+        IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards + _amount;
     }
 
