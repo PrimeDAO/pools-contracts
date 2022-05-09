@@ -5,10 +5,8 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Controller {
-    using SafeMath for uint256;
     using Address for address;
 
     address public constant bal =
@@ -169,9 +167,7 @@ contract Controller {
     ) external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _lockFees.add(_stakerFees).add(_callerFees).add(
-            _platform
-        );
+        uint256 total = _lockFees + _stakerFees + _callerFees + _platform;
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
@@ -473,15 +469,13 @@ contract Controller {
         uint256 balBal = IERC20(bal).balanceOf(address(this));
 
         if (balBal > 0) {
-            uint256 _lockIncentive = balBal.mul(lockIncentive).div(
-                FEE_DENOMINATOR
-            );
-            uint256 _stakerIncentive = balBal.mul(stakerIncentive).div(
-                FEE_DENOMINATOR
-            );
-            uint256 _callIncentive = balBal.mul(earmarkIncentive).div(
-                FEE_DENOMINATOR
-            );
+            uint256 _lockIncentive = (balBal * lockIncentive) / FEE_DENOMINATOR;
+
+            uint256 _stakerIncentive = (balBal * stakerIncentive) /
+                FEE_DENOMINATOR;
+
+            uint256 _callIncentive = (balBal * earmarkIncentive) /
+                FEE_DENOMINATOR;
 
             //send treasury
             if (
@@ -490,17 +484,17 @@ contract Controller {
                 platformFee > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = balBal.mul(platformFee).div(
-                    FEE_DENOMINATOR
-                );
-                balBal = balBal.sub(_platform);
+                uint256 _platform = (balBal * platformFee) / FEE_DENOMINATOR;
+                balBal = balBal - _platform;
                 IERC20(bal).transfer(treasury, _platform);
             }
 
             //remove incentives from balance
-            balBal = balBal.sub(_lockIncentive).sub(_callIncentive).sub(
-                _stakerIncentive
-            );
+            balBal =
+                balBal -
+                _lockIncentive -
+                _callIncentive -
+                _stakerIncentive;
 
             //send incentives for calling
             IERC20(bal).transfer(msg.sender, _callIncentive);

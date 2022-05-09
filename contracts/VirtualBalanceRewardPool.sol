@@ -42,11 +42,8 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract VirtualBalanceWrapper {
-    using SafeMath for uint256;
-
     IDeposit public deposits;
 
     function totalSupply() public view returns (uint256) {
@@ -59,8 +56,6 @@ contract VirtualBalanceWrapper {
 }
 
 contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
-    using SafeMath for uint256;
-
     IERC20 public rewardToken;
     uint256 public constant duration = 7 days;
 
@@ -111,21 +106,18 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
             return rewardPerTokenStored;
         }
         return
-            rewardPerTokenStored.add(
-                lastTimeRewardApplicable()
-                    .sub(lastUpdateTime)
-                    .mul(rewardRate)
-                    .mul(1e18)
-                    .div(totalSupply())
-            );
+            rewardPerTokenStored +
+            (((lastTimeRewardApplicable() - lastUpdateTime) *
+                rewardRate *
+                1e18) / totalSupply());
     }
 
     function earned(address account) public view returns (uint256) {
         return
-            balanceOf(account)
-                .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
-                .div(1e18)
-                .add(rewards[account]);
+            (balanceOf(account) *
+                (rewardPerToken() - userRewardPerTokenPaid[account])) /
+            1e18 +
+            rewards[account];
     }
 
     //update reward, emit, call linked reward's stake
@@ -163,13 +155,13 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
 
     function donate(uint256 _amount) external returns (bool) {
         IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
-        queuedRewards = queuedRewards.add(_amount);
+        queuedRewards = queuedRewards + _amount;
     }
 
     function queueNewRewards(uint256 _rewards) external {
         require(msg.sender == operator, "!authorized");
 
-        _rewards = _rewards.add(queuedRewards);
+        _rewards = _rewards + queuedRewards;
 
         if (block.timestamp >= periodFinish) {
             notifyRewardAmount(_rewards);
@@ -178,10 +170,10 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         }
 
         //et = now - (finish-duration)
-        uint256 elapsedTime = block.timestamp.sub(periodFinish.sub(duration));
+        uint256 elapsedTime = block.timestamp - (periodFinish - duration);
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
-        uint256 queuedRatio = currentAtNow.mul(1000).div(_rewards);
+        uint256 queuedRatio = (currentAtNow * 1000) / _rewards;
         if (queuedRatio < newRewardRatio) {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
@@ -194,18 +186,18 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         internal
         updateReward(address(0))
     {
-        historicalRewards = historicalRewards.add(reward);
+        historicalRewards = historicalRewards + reward;
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward.div(duration);
+            rewardRate = reward / duration;
         } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
-            reward = reward.add(leftover);
-            rewardRate = reward.div(duration);
+            uint256 remaining = periodFinish - block.timestamp;
+            uint256 leftover = remaining * rewardRate;
+            reward = reward + leftover;
+            rewardRate = reward / duration;
         }
         currentRewards = reward;
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(duration);
+        periodFinish = block.timestamp + duration;
         emit RewardAdded(reward);
     }
 }

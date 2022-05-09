@@ -4,10 +4,8 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract BalDepositor {
-    using SafeMath for uint256;
     using Address for address;
 
     address public constant bal =
@@ -85,7 +83,7 @@ contract BalDepositor {
         uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
         //increase time too if over 2 week buffer
-        if (unlockInWeeks.sub(unlockTime) > 2) {
+        if ((unlockInWeeks - unlockTime) > 2) {
             IStaker(staker).increaseTime(unlockAt);
             unlockTime = unlockInWeeks;
         }
@@ -114,20 +112,19 @@ contract BalDepositor {
             _lockBalancer();
             if (incentiveBal > 0) {
                 //add the incentive tokens here so they can be staked together
-                _amount = _amount.add(incentiveBal);
+                _amount = _amount + incentiveBal;
                 incentiveBal = 0;
             }
         } else {
             //move tokens here
             IERC20(bal).transferFrom(msg.sender, address(this), _amount);
             //defer lock cost to another user
-            uint256 callIncentive = _amount.mul(lockIncentive).div(
-                FEE_DENOMINATOR
-            );
-            _amount = _amount.sub(callIncentive);
+            uint256 callIncentive = ((_amount * lockIncentive) /
+                FEE_DENOMINATOR);
+            _amount = _amount - callIncentive;
 
             //add to a pool for lock caller
-            incentiveBal = incentiveBal.add(callIncentive);
+            incentiveBal = incentiveBal + callIncentive;
         }
 
         bool depositOnly = _stakeAddress == address(0);
