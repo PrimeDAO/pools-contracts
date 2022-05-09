@@ -363,6 +363,11 @@ contract Controller {
         address lptoken = pool.lptoken;
         address gauge = pool.gauge;
 
+        //check lock
+        require(block.timestamp > userLockTime[_to],
+            "Controller: userLockTime is not reached yet"
+        );
+
         //remove lp balance
         address token = pool.token;
         ITokenMinter(token).burn(_from, _amount);
