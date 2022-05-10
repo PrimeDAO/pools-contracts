@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.13;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Controller {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
     using Address for address;
 
     address public constant bal =
@@ -171,9 +167,7 @@ contract Controller {
     ) external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _lockFees.add(_stakerFees).add(_callerFees).add(
-            _platform
-        );
+        uint256 total = _lockFees + _stakerFees + _callerFees + _platform;
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
@@ -302,7 +296,7 @@ contract Controller {
 
         //send to proxy to stake
         address lptoken = pool.lptoken;
-        IERC20(lptoken).safeTransferFrom(msg.sender, staker, _amount);
+        IERC20(lptoken).transferFrom(msg.sender, staker, _amount);
 
         //stake
         address gauge = pool.gauge;
@@ -320,8 +314,8 @@ contract Controller {
             //mint here and send to rewards on user behalf
             ITokenMinter(token).mint(address(this), _amount);
             address rewardContract = pool.balRewards;
-            IERC20(token).safeApprove(rewardContract, 0);
-            IERC20(token).safeApprove(rewardContract, _amount);
+            IERC20(token).approve(rewardContract, 0);
+            IERC20(token).approve(rewardContract, _amount);
             IRewards(rewardContract).stakeFor(msg.sender, _amount);
         } else {
             //add user balance directly
@@ -369,7 +363,7 @@ contract Controller {
         }
 
         //return lp tokens
-        IERC20(lptoken).safeTransfer(_to, _amount);
+        IERC20(lptoken).transfer(_to, _amount);
 
         emit Withdrawn(_to, _pid, _amount);
     }
@@ -475,15 +469,13 @@ contract Controller {
         uint256 balBal = IERC20(bal).balanceOf(address(this));
 
         if (balBal > 0) {
-            uint256 _lockIncentive = balBal.mul(lockIncentive).div(
-                FEE_DENOMINATOR
-            );
-            uint256 _stakerIncentive = balBal.mul(stakerIncentive).div(
-                FEE_DENOMINATOR
-            );
-            uint256 _callIncentive = balBal.mul(earmarkIncentive).div(
-                FEE_DENOMINATOR
-            );
+            uint256 _lockIncentive = (balBal * lockIncentive) / FEE_DENOMINATOR;
+
+            uint256 _stakerIncentive = (balBal * stakerIncentive) /
+                FEE_DENOMINATOR;
+
+            uint256 _callIncentive = (balBal * earmarkIncentive) /
+                FEE_DENOMINATOR;
 
             //send treasury
             if (
@@ -492,32 +484,32 @@ contract Controller {
                 platformFee > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = balBal.mul(platformFee).div(
-                    FEE_DENOMINATOR
-                );
-                balBal = balBal.sub(_platform);
-                IERC20(bal).safeTransfer(treasury, _platform);
+                uint256 _platform = (balBal * platformFee) / FEE_DENOMINATOR;
+                balBal = balBal - _platform;
+                IERC20(bal).transfer(treasury, _platform);
             }
 
             //remove incentives from balance
-            balBal = balBal.sub(_lockIncentive).sub(_callIncentive).sub(
-                _stakerIncentive
-            );
+            balBal =
+                balBal -
+                _lockIncentive -
+                _callIncentive -
+                _stakerIncentive;
 
             //send incentives for calling
-            IERC20(bal).safeTransfer(msg.sender, _callIncentive);
+            IERC20(bal).transfer(msg.sender, _callIncentive);
 
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
-            IERC20(bal).safeTransfer(rewardContract, balBal);
+            IERC20(bal).transfer(rewardContract, balBal);
             IRewards(rewardContract).queueNewRewards(balBal);
 
             //send lockers' share of bal to reward contract
-            IERC20(bal).safeTransfer(lockRewards, _lockIncentive);
+            IERC20(bal).transfer(lockRewards, _lockIncentive);
             IRewards(lockRewards).queueNewRewards(_lockIncentive);
 
             //send stakers's share of bal to reward contract
-            IERC20(bal).safeTransfer(stakerRewards, _stakerIncentive);
+            IERC20(bal).transfer(stakerRewards, _stakerIncentive);
             IRewards(stakerRewards).queueNewRewards(_stakerIncentive);
         }
     }
@@ -534,7 +526,7 @@ contract Controller {
         IStaker(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
-        IERC20(feeToken).safeTransfer(lockFees, _balance);
+        IERC20(feeToken).transfer(lockFees, _balance);
         IRewards(lockFees).queueNewRewards(_balance);
         return true;
     }
