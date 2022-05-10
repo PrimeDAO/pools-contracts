@@ -9,9 +9,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract BalDepositor {
     using Address for address;
 
-    address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
-    address public immutable escrow;
+    address public immutable balWeth;
+    address public immutable veBal;
     uint256 private constant MAXTIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
 
@@ -27,12 +26,14 @@ contract BalDepositor {
     constructor(
         address _staker,
         address _minter,
-        address _escrow
+        address _veBal,
+        address _balWeth
     ) public {
         staker = _staker;
         minter = _minter;
         feeManager = msg.sender;
-        escrow = _escrow;
+        veBal = _veBal;
+        balWeth = _balWeth;
     }
 
     function setFeeManager(address _feeManager) external {
@@ -51,7 +52,7 @@ contract BalDepositor {
     function initialLock() external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 vBal = IERC20(escrow).balanceOf(staker);
+        uint256 vBal = IERC20(veBal).balanceOf(staker);
         if (vBal == 0) {
             uint256 unlockAt = block.timestamp + MAXTIME;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
@@ -59,20 +60,20 @@ contract BalDepositor {
             //release old lock if exists
             IStaker(staker).release();
             //create new lock
-            uint256 balBalanceStaker = IERC20(bal).balanceOf(staker);
+            uint256 balBalanceStaker = IERC20(balWeth).balanceOf(staker);
             IStaker(staker).createLock(balBalanceStaker, unlockAt);
             unlockTime = unlockInWeeks;
         }
     }
 
     function _lockBalancer() internal {
-        uint256 balBalance = IERC20(bal).balanceOf(address(this));
+        uint256 balBalance = IERC20(balWeth).balanceOf(address(this));
         if (balBalance > 0) {
-            IERC20(bal).transfer(staker, balBalance);
+            IERC20(balWeth).transfer(staker, balBalance);
         }
 
         //increase ammount
-        uint256 balBalanceStaker = IERC20(bal).balanceOf(staker);
+        uint256 balBalanceStaker = IERC20(balWeth).balanceOf(staker);
         if (balBalanceStaker == 0) {
             return;
         }
@@ -109,7 +110,7 @@ contract BalDepositor {
 
         if (_lock) {
             //lock immediately, transfer directly to staker to skip an erc20 transfer
-            IERC20(bal).transferFrom(msg.sender, staker, _amount);
+            IERC20(balWeth).transferFrom(msg.sender, staker, _amount);
             _lockBalancer();
             if (incentiveBal > 0) {
                 //add the incentive tokens here so they can be staked together
@@ -118,7 +119,7 @@ contract BalDepositor {
             }
         } else {
             //move tokens here
-            IERC20(bal).transferFrom(msg.sender, address(this), _amount);
+            IERC20(balWeth).transferFrom(msg.sender, address(this), _amount);
             //defer lock cost to another user
             uint256 callIncentive = ((_amount * lockIncentive) /
                 FEE_DENOMINATOR);
@@ -147,7 +148,7 @@ contract BalDepositor {
     }
 
     function depositAll(bool _lock, address _stakeAddress) external {
-        uint256 balBal = IERC20(bal).balanceOf(msg.sender); //This is balancer balance of msg.sender
+        uint256 balBal = IERC20(balWeth).balanceOf(msg.sender); //This is balancer balance of msg.sender
         deposit(balBal, _lock, _stakeAddress);
     }
 }
