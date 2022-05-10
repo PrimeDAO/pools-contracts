@@ -9,7 +9,7 @@ describe("BalDepositor", function() {
   let addr1; //staker
   let addr2; // minter
   let addr3;
-  let stakeAddress;
+
   let Depositor;
 
   let coinContractAddress;
@@ -29,7 +29,7 @@ describe("BalDepositor", function() {
   let OwnerBalTokenbalance;
 
   before(async () => {
-    [owner, addr1, addr2, addr3, stakeAddress] = await ethers.getSigners();
+    [owner, addr1, addr2, addr3] = await ethers.getSigners();
 
     //Deploy mock weth/bal erc20
 
