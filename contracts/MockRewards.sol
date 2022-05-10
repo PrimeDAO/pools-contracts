@@ -7,7 +7,7 @@ import "./MockD2DBal.sol";
 
 
 contract MockRewards is ERC20 {
-    uint256 public constant initialSupply = 20000000000000000000000;
+    uint256 public theSupply = 20000000000000000000000;
     MockD2DBal public mockD2DBal;
 
     constructor() ERC20("Rewards", "RWD") {}

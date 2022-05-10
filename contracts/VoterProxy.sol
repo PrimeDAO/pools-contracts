@@ -7,7 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./SampleERC.sol";
+import "./MockVBAL.sol";
+import "./MockRewards.sol";
 
+import "hardhat/console.sol";
 
 contract VoterProxy {
     using SafeERC20 for IERC20;
@@ -15,20 +19,36 @@ contract VoterProxy {
     using SafeMath for uint256;
 
     address public constant mintr = address(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
-    address public constant crv = address(0xD533a949740bb3306d119CC777fa900bA034cd52);
+    address public constant balWeth = address(0x5FbDB2315678afecb367f032d93F642f64180aa3);
 
-    address public constant escrow = address(0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2);
+    address public constant veBal = address(0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0);
     address public constant gaugeController = address(0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB);
     
     address public owner;
     address public operator;
     address public depositor;
+    SampleERC public coin;
+    MockVBAL public mockvBal;
+    MockRewards public mockRewards;
     
     mapping (address => bool) private stashPool;
     mapping (address => bool) private protectedTokens;
 
     constructor() public {
         owner = msg.sender;
+    }
+
+    function setCoinAddress(SampleERC _coin) external {
+        require(address(coin) == address(0x0), "WRITE_ONCE");
+        coin = _coin;
+    }
+    function setMockVbalAddress(MockVBAL _mockVbal) external {
+        require(address(mockvBal) == address(0x0), "WRITE_ONCE");
+        mockvBal = _mockVbal;
+    }
+    function setMockRewardsAddress(MockRewards _mockRewards) external {
+        require(address(mockRewards) == address(0x0), "WRITE_ONCE");
+        mockRewards = _mockRewards;
     }
 
     function getName() external pure returns (string memory) {
@@ -62,7 +82,12 @@ contract VoterProxy {
     }
 
 
+
+    // new stake funds function:
+    // will redirect weth bal from its own address and staks them into vbal contract
     function deposit(address _token, address _gauge) external returns(bool){
+        
+        
         require(msg.sender == operator, "!auth");
         if(protectedTokens[_token] == false){
             protectedTokens[_token] = true;
@@ -119,29 +144,29 @@ contract VoterProxy {
 
     function createLock(uint256 _value, uint256 _unlockTime) external returns(bool){
         require(msg.sender == depositor, "!auth");
-        IERC20(crv).safeApprove(escrow, 0);
-        IERC20(crv).safeApprove(escrow, _value);
-        ICurveVoteEscrow(escrow).create_lock(_value, _unlockTime);
+        coin.approve(address(mockvBal), _value);
+        mockvBal.create_lock(_value, _unlockTime);
         return true;
     }
 
     function increaseAmount(uint256 _value) external returns(bool){
         require(msg.sender == depositor, "!auth23");
-        // IERC20(crv).safeApprove(escrow, 0);
-        // IERC20(crv).safeApprove(escrow, _value);
-        // ICurveVoteEscrow(escrow).increase_amount(_value);
+        coin.approve(address(mockvBal), _value);
+        mockvBal.increaseAmount(address(this), _value);
         return true;
     }
 
+    
+
     function increaseTime(uint256 _value) external returns(bool){
         require(msg.sender == depositor, "!auth");
-        ICurveVoteEscrow(escrow).increase_unlock_time(_value);
+        mockvBal.increase_unlock_time(_value); //this is in vbal contract
         return true;
     }
 
     function release() external returns(bool){
         require(msg.sender == depositor, "!auth");
-        ICurveVoteEscrow(escrow).withdraw();
+        mockvBal.withdraw();
         return true;
     }
 
@@ -164,8 +189,8 @@ contract VoterProxy {
         
         uint256 _balance = 0;
         try IMinter(mintr).mint(_gauge){
-            _balance = IERC20(crv).balanceOf(address(this));
-            IERC20(crv).safeTransfer(operator, _balance);
+            _balance = coin.balanceOf(address(this));
+            coin.transfer(operator, _balance);
         }catch{}
 
         return _balance;

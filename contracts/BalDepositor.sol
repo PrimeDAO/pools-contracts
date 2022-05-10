@@ -12,7 +12,6 @@ import "./MockD2DBal.sol";
 import "./ERC20Mock.sol";
 import "./VoterProxy.sol";
 import "./SampleERC.sol";
-import "./MockVoteProxy.sol";
 import "./MockRewards.sol";
 
 import "hardhat/console.sol";
@@ -23,7 +22,7 @@ contract BalDepositor {
     using Address for address;
 
     address public immutable balWeth =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
+        address(0x5FbDB2315678afecb367f032d93F642f64180aa3);
     address public immutable veBal;
     uint256 private constant MAXTIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
@@ -41,7 +40,6 @@ contract BalDepositor {
     ERC20Mock public mocktoken;
     VoterProxy public voter;
     SampleERC public coin;
-    MockVoteProxy public voteProxy;
     MockRewards public mockRewards;
 
     constructor(
@@ -83,56 +81,58 @@ contract BalDepositor {
     }
 
     function setFees(uint256 _lockIncentive) external {
-       // require(msg.sender == feeManager, "!auth");
+       require(msg.sender == feeManager, "!auth");
 
         if (_lockIncentive >= 0 && _lockIncentive <= 30) {
             lockIncentive = _lockIncentive;
         }
     }
 
- //Istaker === voter poxy
-    //will be same for 
     function initialLock() external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 vBal = IERC20(veBal).balanceOf(staker);
+        uint256 vBal = mockvBal.balanceOf(staker);
         if (vBal == 0) {
             uint256 unlockAt = block.timestamp + MAXTIME;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
-            //release old lock if exists
-            //voter poxy has 
-            IStaker(staker).release(); //release calls withdraw bal/weth going back to voter proxy
-            //create new lock
-            uint256 balBalanceStaker = IERC20(balWeth).balanceOf(staker); //checking the amount bal/weth staked (voter proxy) in the vbal contract
-            //this is from balancer contract titled create_lock
-            //voter proxy will be calling the createLock function on the vbal contract
-            IStaker(staker).createLock(balBalanceStaker, unlockAt);
+            voter.release(); //release calls withdraw bal/weth going back to voter proxy
+
+            uint256 balBalanceStaker = coin.balanceOf(staker); //checking the amount bal/weth staked (voter proxy) in the vbal contract
+
+            voter.createLock(balBalanceStaker, unlockAt);
             unlockTime = unlockInWeeks;
         }
         require(vBal == 0,"vBal locked already");
     }
 
-    function _lockToken() internal {
-        uint balBalance = coin.balanceOf(address(this));
-        
-        // uint256 balBalance = IERC20(balWeth).balanceOf(address(this));
-        if (balBalance > 0) {
-            mockvBal.deposit_for(address(staker), balBalance);
+    function _lockToken(uint _amount) internal {
+
+        if(_amount > 0){
+            coin.transferFrom(msg.sender, address(voter), _amount);
         }
 
-        //increase ammount
-        uint256 balBalanceOfStaker = coin.balanceOf(staker);
-
-        // uint256 balBalanceStaker = mocktoken.balanceOf(staker);
-        if (balBalanceOfStaker == 0) {
+        uint256 wethbalBalanceVoterProxy = coin.balanceOf(address(voter));
+        if(wethbalBalanceVoterProxy == 0){
             return;
+        }
+
+        require(voter.increaseAmount(_amount));
+
+
+        uint256 unlockAt = block.timestamp + MAXTIME;
+        uint256 unlockInWeeks = (unlockAt/WEEK)*WEEK;
+
+        
+        if(unlockInWeeks.sub(unlockTime) > 2){
+            voter.increaseTime(unlockAt); 
+            unlockTime = unlockInWeeks;
         }
 
     }
 
-    function lockToken() external {
-        _lockToken();
+    function lockToken(uint256 _amount) external {
+        _lockToken(_amount);
 
         //mint incentives
         if (incentiveBal > 0) {
@@ -141,8 +141,31 @@ contract BalDepositor {
         }
     }
 
-//we shoudl call vbal contract and lock tokens in vbal contract
-    function deposit(uint256 _amount) external {
+    //we shoudl call vbal contract and lock tokens in vbal contract
+    function deposit(uint256 _amount) public {
+
+        require(_amount > 0, "!>0");
+        coin.approve(address(this), _amount);
+        _lockToken(_amount);
+
+        mockD2DBal.mint(address(this), _amount);
+
+        mockD2DBal.approve(address(mockRewards), _amount);
+        mockRewards.stakeFor(address(this), _amount);
+      
+    }
+
+    function _deposit(uint256 _amount) external {
+        deposit(_amount);
+    }
+
+    function depositAll() external {
+        uint256 balBal = coin.balanceOf(msg.sender); 
+        deposit(balBal);
+    }
+}
+
+
         //current flow:
         // user deposits weth/bal
         //transfer from user to Baldepositor address
@@ -151,25 +174,13 @@ contract BalDepositor {
         // lockTokens calls vbal contratc depositFor 
         //this transfer tokens from staker/aka vProxy to 
         // ll last step is minting d2dbal and putting them into rewards contract
-        require(_amount > 0, "!>0");
-        coin.approve(address(this), _amount);
-        coin.transferFrom(msg.sender, address(this), _amount);
-        coin.increaseAllowance(address(mockvBal), _amount);
-        _lockToken();
+
+
+        ///Final floew:
+     //   user -> balDepsoitor depsoit func , depsoit func is calling transferFrom (transfers from user to voterproxy contract)
+     //   now weth/bal is inside vproxy contract then we call new increase amount in voterproxy, 
+     //   voterProxy sends the funds of wth/bal to vbal contract
         
-        //mockD2DBal.initialSupply();
-        //mockD2DBal.mint(address(this), _amount);
-        //I think i need to approvwe mock rewards
-       // mockRewards.stakeFor(msg.sender, _amount);
-      
-    }
-
-    function _deposit(uint256 _amount, bool _lock) external {
-        //deposit(_amount, _lock, address(0));
-    }
-
-    function depositAll(bool _lock, address _stakeAddress) external {
-        uint256 balBal = IERC20(balWeth).balanceOf(msg.sender); //This is bal/weth balance of msg.sender
-        //deposit(balBal, _lock, _stakeAddress);
-    }
-}
+        
+       // funds live in baldepositor
+      //  call (new stake funds) in voterproxy
