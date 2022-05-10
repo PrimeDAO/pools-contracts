@@ -163,33 +163,24 @@ contract Controller {
         }
     }
 
-    function setFees(
-        uint256 _lockFees,
-        uint256 _stakerFees,
-        uint256 _callerFees,
-        uint256 _platform
-    ) external {
+    //change to protocol fees and profit fees only
+    function setFees(uint256 _platformFee, uint256 _profitFee) external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _lockFees.add(_stakerFees).add(_callerFees).add(
-            _platform
-        );
+        uint256 total = _profitFee + _platformFee;
+
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
         if (
-            _lockFees >= 1000 &&
-            _lockFees <= 1500 &&
-            _stakerFees >= 300 &&
-            _stakerFees <= 600 &&
-            _callerFees >= 10 &&
-            _callerFees <= 100 &&
-            _platform <= 200
+            _platformFee <= 200 &&
+            _profitFee >= 70 && // 50 && //7- as 50*15 is not enough and 70*15 = 1050
+            _profitFee <= 100
         ) {
-            lockIncentive = _lockFees;
-            stakerIncentive = _stakerFees;
-            earmarkIncentive = _callerFees;
-            platformFee = _platform;
+            lockIncentive = _profitFee * 20; //
+            stakerIncentive = _profitFee * 6; //50*6 = 300; 100*6 = 600 //70*6 = 420
+            earmarkIncentive = _profitFee;
+            platformFee = _platformFee;
         }
     }
 
