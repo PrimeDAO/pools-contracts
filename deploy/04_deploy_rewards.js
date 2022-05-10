@@ -12,7 +12,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
   await deploy("BaseRewardPool", {
     contract: "BaseRewardPool",
     from: root,
-    args: [pid, stakingTokenInstance.address, rewardToken, operator.address, rewardManager],
+    args: [pid, stakingTokenInstance.address, rewardToken.address, operator.address, rewardManager.address],
     log: true,
   });
 };
