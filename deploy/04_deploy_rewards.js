@@ -7,7 +7,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
   const stakingTokenInstance = await ethers.getContract("D2DToken"); //Staking token provided will be a d2dBAL, minted in the Deposit contract.
   const rewardToken = await ethers.getContract("veBalMock"); //reward contract is going to be BAL, which will be received from BAL ve model.
   const operator = await ethers.getContract("Controller");
-  const rewardManager = await ethers.getContract("Controller");
+  const rewardManager = await ethers.getContract("Controller"); // TODO: should be controller factory contract
 
   await deploy("BaseRewardPool", {
     contract: "BaseRewardPool",
