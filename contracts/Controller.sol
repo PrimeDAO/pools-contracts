@@ -44,6 +44,8 @@ contract Controller {
     address public stakerRewards; //bal rewards
     address public lockRewards; //balBal rewards(bal)
     address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
+    address public profitFees;
+    address public platformFees;
     address public feeDistro;
     address public feeToken;
 
