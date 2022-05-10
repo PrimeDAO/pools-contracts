@@ -32,7 +32,7 @@ contract Controller {
     uint256 public constant FEE_DENOMINATOR = 10000;
 
     address public owner;
-    address public feeManager;
+    address public feeManager; //Fee manager is a GnosisSafe multisig; Profit fees are distributed to the gnosisSafe, which owned by Prime
     address public poolManager;
     address public immutable staker;
     address public immutable minter;
@@ -44,10 +44,8 @@ contract Controller {
     address public treasury;
     address public stakerRewards; //bal rewards
     address public lockRewards; //balBal rewards(bal)
-    // address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
     address public feeDistro;
     address public feeToken;
-    address public gnosisSafe; //Profit fees are distributed to the gnosisSafe, which owned by Prime
 
     bool public isShutdown;
 
@@ -75,18 +73,17 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _minter, address _gnosisSafe) public {
+    constructor(address _staker, address _minter, address _feeManager) public {
         isShutdown = false;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
-        feeManager = msg.sender;
+        feeManager = _feeManager;
         poolManager = msg.sender;
         feeDistro = address(0);
         feeToken = address(0);
         treasury = address(0);
         minter = _minter;
-        gnosisSafe = _gnosisSafe;
     }
 
     /// SETTER SECTION ///
@@ -464,8 +461,8 @@ contract Controller {
                 FEE_DENOMINATOR
             );
             balBal = balBal.sub(_profit);
-            //profit fees are distributed to the gnosisSafe, which owned by Prime
-            IERC20(bal).safeTransfer(gnosisSafe, _profit);
+            //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
+            IERC20(bal).safeTransfer(feeManager, _profit);
 
             //send treasury
             if (
