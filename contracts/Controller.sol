@@ -29,6 +29,8 @@ contract Controller {
     uint256 public platformFee = 0; //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
+    uint256 public lockTime = 365 * 24 * 60 * 60; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
+    mapping(address => uint256) public userLockTime; //lock time for each user individually
 
     address public owner;
     address public feeManager;
@@ -63,6 +65,11 @@ contract Controller {
     mapping(address => bool) public gaugeMap;
 
     event Deposited(
+        address indexed user,
+        uint256 indexed poolid,
+        uint256 amount
+    );
+    event ReDeposited(
         address indexed user,
         uint256 indexed poolid,
         uint256 amount
@@ -315,6 +322,9 @@ contract Controller {
             IStash(stash).stashRewards();
         }
 
+        //save timelock info
+        userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
+
         address token = pool.token;
         if (_stake) {
             //mint here and send to rewards on user behalf
@@ -351,6 +361,12 @@ contract Controller {
         address lptoken = pool.lptoken;
         address gauge = pool.gauge;
 
+        //check lock
+        require(
+            block.timestamp > userLockTime[_from],
+            "Controller: userLockTime is not reached yet"
+        );
+        
         //remove lp balance
         address token = pool.token;
         ITokenMinter(token).burn(_from, _amount);
@@ -398,6 +414,70 @@ contract Controller {
         require(msg.sender == rewardContract, "!auth");
 
         _withdraw(_pid, _amount, msg.sender, _to);
+        return true;
+    }
+
+    //withdraw veBAL, which was unlocked after a year of usage
+    function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount)
+        public
+        returns (bool)
+    {
+        //check lock
+        require(
+            block.timestamp > userLockTime[msg.sender],
+            "Controller: can't withdraw. userLockTime is not reached yet"
+        );
+
+        _withdraw(_pid, _amount, msg.sender, msg.sender); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
+        return true;
+    }
+
+    //restake veBAL, which was unlocked after a year of usage
+    // function restake(uint256 _pid, uint256 _amount) public returns (bool) {
+    // no need in "uint256 _amount" as we will get it later inside function as current balanceOf(msg.sender)
+    function restake(uint256 _pid) public returns (bool) {
+        require(!isShutdown, "shutdown");
+        PoolInfo storage pool = poolInfo[_pid];
+        require(pool.shutdown == false, "pool is closed");
+
+        //check lock
+        require(
+            block.timestamp > userLockTime[msg.sender],
+            "Controller: can't restake. userLockTime is not reached yet"
+        );
+
+        //send to proxy to stake
+        // address lptoken = pool.lptoken;
+        // IERC20(lptoken).safeTransferFrom(msg.sender, staker, _amount);
+
+        //stake
+        // address gauge = pool.gauge;
+        // require(gauge != address(0), "!gauge setting");
+        // IStaker(staker).deposit(lptoken, gauge); //we restaking it. it is already in the pool
+
+        //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
+        address stash = pool.stash;
+        if (stash != address(0)) {
+            IStash(stash).stashRewards();
+        }
+
+        address token = pool.token;
+
+        //update timelock info
+        userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
+
+        //mint here and send to rewards on user behalf
+        // ITokenMinter(token).mint(address(this), _amount); //no need as _amount of tokens already inside
+        address rewardContract = pool.balRewards;
+
+        //question: balanceOf() which exactly contract we should check? with what function? 
+        // IStaker(staker).withdraw(lptoken, gauge, _amount); - in withdraw --> so need this address to check current balance of msg.sender
+        uint256 _amount = IStaker(staker).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+
+        IERC20(token).safeApprove(rewardContract, _amount);
+        // IRewards(rewardContract).stakeFor(msg.sender, _amount); //question: maybe that row also need to be removed? as we don't withdraw them
+
+        emit ReDeposited(msg.sender, _pid, _amount);
         return true;
     }
 
