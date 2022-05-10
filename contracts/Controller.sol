@@ -457,7 +457,7 @@ contract Controller {
             uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
             balBal = balBal - _profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
-            IERC20(bal).safeTransfer(feeManager, _profit);
+            IERC20(bal).transfer(feeManager, _profit);
 
             //send treasury
             if (
@@ -468,7 +468,7 @@ contract Controller {
                 //only subtract after address condition check
                 uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
                 balBal = balBal - _platform;
-                IERC20(bal).safeTransfer(treasury, _platform); //platform fees are sent to the treasury.
+                IERC20(bal).transfer(treasury, _platform); //platform fees are sent to the treasury.
             }
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
@@ -491,7 +491,7 @@ contract Controller {
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
 
         //earmarkRewards should send rewards to lockRewards
-        IERC20(feeToken).safeTransfer(lockRewards, _balance);
+        IERC20(feeToken).transfer(lockRewards, _balance);
         IRewards(lockRewards).queueNewRewards(_balance);
 
         return true;
