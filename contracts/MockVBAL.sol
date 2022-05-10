@@ -38,8 +38,6 @@ contract MockVBAL is ERC20 {
         
     }
 
-    //Have to also set the coin address in this contract
-
     event NewDeposit(address from, uint256 amount);
 
 }
