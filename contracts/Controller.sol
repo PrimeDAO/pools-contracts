@@ -23,10 +23,11 @@ contract Controller {
     address public constant voteParameter =
         address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
-    uint256 public lockIncentive = 1000; //incentive to bal stakers
-    uint256 public stakerIncentive = 450; //incentive to native token stakers
-    uint256 public earmarkIncentive = 50; //incentive to users who spend gas to make calls
-    uint256 public platformFee = 0; //possible fee to build treasury
+    // uint256 public lockIncentive = 1000; //incentive to bal stakers
+    // uint256 public stakerIncentive = 450; //incentive to native token stakers
+    uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
+    uint256 public platformFees = 1000; //10% //possible fee to build treasury
+    // uint256 public earmarkIncentive = 50; //incentive to users who spend gas to make calls
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
 
@@ -43,9 +44,7 @@ contract Controller {
     address public treasury;
     address public stakerRewards; //bal rewards
     address public lockRewards; //balBal rewards(bal)
-    address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
-    address public profitFees;
-    address public platformFees;
+    // address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
     address public feeDistro;
     address public feeToken;
 
@@ -148,7 +147,7 @@ contract Controller {
         }
     }
 
-    // Set reward token and claim contract, get from Curve's registry
+    // Set reward token and claim contract, get from Bal's registry
     function setFeeInfo() external {
         require(msg.sender == feeManager, "!auth");
 
@@ -156,7 +155,7 @@ contract Controller {
         address _feeToken = IFeeDistro(feeDistro).token();
         if (feeToken != _feeToken) {
             //create a new reward contract for the new token
-            lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(
+            lockRewards = IRewardFactory(rewardFactory).CreateTokenRewards(
                 _feeToken,
                 lockRewards,
                 address(this)
@@ -165,7 +164,6 @@ contract Controller {
         }
     }
 
-    //change to protocol fees and profit fees only
     function setFees(uint256 _platformFee, uint256 _profitFee) external {
         require(msg.sender == feeManager, "!auth");
 
@@ -173,17 +171,8 @@ contract Controller {
 
         require(total <= MaxFees, ">MaxFees");
 
-        //values must be within certain ranges
-        if (
-            _platformFee <= 200 &&
-            _profitFee >= 70 && // 50 && //7- as 50*15 is not enough and 70*15 = 1050
-            _profitFee <= 100
-        ) {
-            lockIncentive = _profitFee * 20; //
-            stakerIncentive = _profitFee * 6; //50*6 = 300; 100*6 = 600 //70*6 = 420
-            earmarkIncentive = _profitFee;
-            platformFee = _platformFee;
-        }
+        platformFees = _platformFee;
+        profitFees = _profitFee;
     }
 
     function setTreasury(address _treasury) external {
@@ -468,50 +457,49 @@ contract Controller {
         uint256 balBal = IERC20(bal).balanceOf(address(this));
 
         if (balBal > 0) {
-            uint256 _lockIncentive = balBal.mul(lockIncentive).div(
+
+            uint256 _profitFees = balBal.mul(profitFees).div(
                 FEE_DENOMINATOR
             );
-            uint256 _stakerIncentive = balBal.mul(stakerIncentive).div(
+
+            //Profit fees are taken on the rewards together with platform fees.
+            uint256 _profit = balBal.mul(profitFees).div(
                 FEE_DENOMINATOR
             );
-            uint256 _callIncentive = balBal.mul(earmarkIncentive).div(
-                FEE_DENOMINATOR
-            );
+            balBal = balBal.sub(_profit);
 
             //send treasury
             if (
                 treasury != address(0) &&
                 treasury != address(this) &&
-                platformFee > 0
+                platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = balBal.mul(platformFee).div(
+                uint256 _platform = balBal.mul(platformFees).div(
                     FEE_DENOMINATOR
                 );
                 balBal = balBal.sub(_platform);
-                IERC20(bal).safeTransfer(treasury, _platform);
+                IERC20(bal).safeTransfer(treasury, _platform); //platform fees are sent to the treasury.
             }
 
-            //remove incentives from balance
-            balBal = balBal.sub(_lockIncentive).sub(_callIncentive).sub(
-                _stakerIncentive
-            );
+            //remove fees from balance
+            balBal = balBal.sub(_platformFees).sub(_profitFees);
 
-            //send incentives for calling
-            IERC20(bal).safeTransfer(msg.sender, _callIncentive);
+            //profit fees are distributed to the gnosisSafe, which owned by Prime
+            IERC20(bal).safeTransfer(gnosisSafe, _profitFees);
 
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
             IERC20(bal).safeTransfer(rewardContract, balBal);
             IRewards(rewardContract).queueNewRewards(balBal);
 
-            //send lockers' share of bal to reward contract
-            IERC20(bal).safeTransfer(lockRewards, _lockIncentive);
-            IRewards(lockRewards).queueNewRewards(_lockIncentive);
+            // //send lockers' share of bal to reward contract
+            // IERC20(bal).safeTransfer(lockRewards, _lockIncentive);
+            // IRewards(lockRewards).queueNewRewards(_lockIncentive);
 
-            //send stakers's share of bal to reward contract
-            IERC20(bal).safeTransfer(stakerRewards, _stakerIncentive);
-            IRewards(stakerRewards).queueNewRewards(_stakerIncentive);
+            // //send stakers's share of bal to reward contract
+            // IERC20(bal).safeTransfer(stakerRewards, _stakerIncentive);
+            // IRewards(stakerRewards).queueNewRewards(_stakerIncentive);
         }
     }
 
@@ -521,14 +509,16 @@ contract Controller {
         return true;
     }
 
-    //claim fees from curve distro contract, put in lockers' reward contract
+    //claim fees from veBal distro contract, put in lockers' reward contract
     function earmarkFees() external returns (bool) {
         //claim fee rewards
         IStaker(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
-        IERC20(feeToken).safeTransfer(lockFees, _balance);
-        IRewards(lockFees).queueNewRewards(_balance);
+        
+        //earmarkRewards should send rewards to lockRewards
+        IERC20(feeToken).safeTransfer(lockRewards, _balance);
+        IRewards(lockRewards).queueNewRewards(_balance);
         return true;
     }
 
