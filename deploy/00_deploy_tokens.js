@@ -3,7 +3,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  const decimals1 = 10; //uint8 decimals_ ; 10 for example (set correct later)
+  const decimals1 = 18; //uint8 decimals_ ; 10 for example (set correct later)
   await deploy("D2DToken", {
     contract: "D2DToken",
     from: root,
@@ -11,7 +11,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
     log: true,
   });
 
-  const decimals2 = 10; //uint8 decimals_ ; 10 for example (set correct later)
+  const decimals2 = 18; //uint8 decimals_ ; 10 for example (set correct later)
   await deploy("PoolToken", {
     contract: "PoolToken",
     from: root,
