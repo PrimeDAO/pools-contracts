@@ -474,7 +474,7 @@ contract Controller {
         //question: balanceOf() which exactly contract we should check? with what function? 
         uint256 _amount = IRewards(rewardContract).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
 
-        IERC20(token).safeApprove(rewardContract, 0);
+        // IERC20(token).safeApprove(rewardContract, 0);
         IERC20(token).safeApprove(rewardContract, _amount);
         IRewards(rewardContract).stakeFor(msg.sender, _amount); //question: maybe that row also need to be removed? as we don't withdraw them
 
