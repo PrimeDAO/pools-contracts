@@ -429,12 +429,14 @@ contract Controller {
             "Controller: can't withdraw. userLockTime is not reached yet"
         );
 
-        _withdraw(_pid, _amount, msg.sender, msg.sender);
+        _withdraw(_pid, _amount, msg.sender, msg.sender); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
         return true;
     }
 
     //restake veBAL, which was unlocked after a year of usage
-    function restake(uint256 _pid, uint256 _amount) public returns (bool) {
+    // function restake(uint256 _pid, uint256 _amount) public returns (bool) {
+    // no need in "uint256 _amount" as we will get it later inside function as current balanceOf(msg.sender)
+    function restake(uint256 _pid) public returns (bool) {
         require(!isShutdown, "shutdown");
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
@@ -466,11 +468,15 @@ contract Controller {
         userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
 
         //mint here and send to rewards on user behalf
-        ITokenMinter(token).mint(address(this), _amount);
+        // ITokenMinter(token).mint(address(this), _amount); //no need as _amount of tokens already inside
         address rewardContract = pool.balRewards;
-        // IERC20(token).safeApprove(rewardContract, 0);
-        // IERC20(token).safeApprove(rewardContract, _amount);
-        IRewards(rewardContract).stakeFor(msg.sender, _amount); //maybe that row also need to be removed. as we don't withdraw them
+
+        //question: balanceOf() which exactly contract we should check? with what function? 
+        uint256 _amount = IRewards(rewardContract).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+
+        IERC20(token).safeApprove(rewardContract, 0);
+        IERC20(token).safeApprove(rewardContract, _amount);
+        IRewards(rewardContract).stakeFor(msg.sender, _amount); //question: maybe that row also need to be removed? as we don't withdraw them
 
         emit ReDeposited(msg.sender, _pid, _amount);
         return true;
