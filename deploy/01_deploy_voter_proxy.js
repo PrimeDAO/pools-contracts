@@ -11,7 +11,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
       bal.address,
       "veBalMock",
       "VBM",
-      "0xEFc3a819695932394D89b8AF6f49e0D89EDf9A40", // TODO: change with authorizer adapter
+      "0xEFc3a819695932394D89b8AF6f49e0D89EDf9A40",
     ],
     log: true,
   });

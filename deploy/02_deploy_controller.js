@@ -4,7 +4,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  let staker =  de;
+  let staker =  await ethers.getContract("veBalMock");
 
   let minter = "0xEFc3a819695932394D89b8AF6f49e0D89EDf9A40"; // change with seedPool mock
 
