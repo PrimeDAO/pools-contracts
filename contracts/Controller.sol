@@ -23,11 +23,9 @@ contract Controller {
     address public constant voteParameter =
         address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
-    // uint256 public lockIncentive = 1000; //incentive to bal stakers
-    // uint256 public stakerIncentive = 450; //incentive to native token stakers
+
     uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
     uint256 public platformFees = 1000; //10% //possible fee to build treasury
-    // uint256 public earmarkIncentive = 50; //incentive to users who spend gas to make calls
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
 
