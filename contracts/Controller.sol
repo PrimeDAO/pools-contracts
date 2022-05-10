@@ -19,7 +19,6 @@ contract Controller {
     address public constant voteParameter =
         address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
-
     uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
     uint256 public platformFees = 1000; //10% //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
@@ -67,7 +66,11 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _minter, address _feeManager) public {
+    constructor(
+        address _staker,
+        address _minter,
+        address _feeManager
+    ) public {
         isShutdown = false;
         staker = _staker;
         owner = msg.sender;
@@ -161,7 +164,7 @@ contract Controller {
         require(msg.sender == feeManager, "!auth");
 
         uint256 total = _profitFee + _platformFee;
-        
+
         require(total <= MaxFees, ">MaxFees");
 
         platformFees = _platformFee;
@@ -452,7 +455,7 @@ contract Controller {
         if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
             uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal -_profit;
+            balBal = balBal - _profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
             IERC20(bal).safeTransfer(feeManager, _profit);
 
@@ -486,7 +489,7 @@ contract Controller {
         IStaker(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
-        
+
         //earmarkRewards should send rewards to lockRewards
         IERC20(feeToken).safeTransfer(lockRewards, _balance);
         IRewards(lockRewards).queueNewRewards(_balance);
