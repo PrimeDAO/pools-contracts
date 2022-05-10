@@ -47,6 +47,7 @@ contract Controller {
     // address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
     address public feeDistro;
     address public feeToken;
+    address public gnosisSafe; //Profit fees are distributed to the gnosisSafe, which owned by Prime
 
     bool public isShutdown;
 
@@ -74,7 +75,7 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _minter) public {
+    constructor(address _staker, address _minter, address _gnosisSafe) public {
         isShutdown = false;
         staker = _staker;
         owner = msg.sender;
@@ -85,6 +86,7 @@ contract Controller {
         feeToken = address(0);
         treasury = address(0);
         minter = _minter;
+        gnosisSafe = _gnosisSafe;
     }
 
     /// SETTER SECTION ///
@@ -457,16 +459,13 @@ contract Controller {
         uint256 balBal = IERC20(bal).balanceOf(address(this));
 
         if (balBal > 0) {
-
-            uint256 _profitFees = balBal.mul(profitFees).div(
-                FEE_DENOMINATOR
-            );
-
             //Profit fees are taken on the rewards together with platform fees.
             uint256 _profit = balBal.mul(profitFees).div(
                 FEE_DENOMINATOR
             );
             balBal = balBal.sub(_profit);
+            //profit fees are distributed to the gnosisSafe, which owned by Prime
+            IERC20(bal).safeTransfer(gnosisSafe, _profit);
 
             //send treasury
             if (
@@ -482,24 +481,10 @@ contract Controller {
                 IERC20(bal).safeTransfer(treasury, _platform); //platform fees are sent to the treasury.
             }
 
-            //remove fees from balance
-            balBal = balBal.sub(_platformFees).sub(_profitFees);
-
-            //profit fees are distributed to the gnosisSafe, which owned by Prime
-            IERC20(bal).safeTransfer(gnosisSafe, _profitFees);
-
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
             IERC20(bal).safeTransfer(rewardContract, balBal);
             IRewards(rewardContract).queueNewRewards(balBal);
-
-            // //send lockers' share of bal to reward contract
-            // IERC20(bal).safeTransfer(lockRewards, _lockIncentive);
-            // IRewards(lockRewards).queueNewRewards(_lockIncentive);
-
-            // //send stakers's share of bal to reward contract
-            // IERC20(bal).safeTransfer(stakerRewards, _stakerIncentive);
-            // IRewards(stakerRewards).queueNewRewards(_stakerIncentive);
         }
     }
 
