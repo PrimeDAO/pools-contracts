@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.13;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract Controller {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
     using Address for address;
 
     address public constant bal =
@@ -165,7 +161,7 @@ contract Controller {
         require(msg.sender == feeManager, "!auth");
 
         uint256 total = _profitFee + _platformFee;
-
+        
         require(total <= MaxFees, ">MaxFees");
 
         platformFees = _platformFee;
@@ -281,7 +277,7 @@ contract Controller {
 
         //send to proxy to stake
         address lptoken = pool.lptoken;
-        IERC20(lptoken).safeTransferFrom(msg.sender, staker, _amount);
+        IERC20(lptoken).transferFrom(msg.sender, staker, _amount);
 
         //stake
         address gauge = pool.gauge;
@@ -299,8 +295,8 @@ contract Controller {
             //mint here and send to rewards on user behalf
             ITokenMinter(token).mint(address(this), _amount);
             address rewardContract = pool.balRewards;
-            IERC20(token).safeApprove(rewardContract, 0);
-            IERC20(token).safeApprove(rewardContract, _amount);
+            IERC20(token).approve(rewardContract, 0);
+            IERC20(token).approve(rewardContract, _amount);
             IRewards(rewardContract).stakeFor(msg.sender, _amount);
         } else {
             //add user balance directly
@@ -348,7 +344,7 @@ contract Controller {
         }
 
         //return lp tokens
-        IERC20(lptoken).safeTransfer(_to, _amount);
+        IERC20(lptoken).transfer(_to, _amount);
 
         emit Withdrawn(_to, _pid, _amount);
     }
@@ -455,10 +451,8 @@ contract Controller {
 
         if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
-            uint256 _profit = balBal.mul(profitFees).div(
-                FEE_DENOMINATOR
-            );
-            balBal = balBal.sub(_profit);
+            uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            balBal = balBal -_profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
             IERC20(bal).safeTransfer(feeManager, _profit);
 
@@ -469,16 +463,13 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = balBal.mul(platformFees).div(
-                    FEE_DENOMINATOR
-                );
-                balBal = balBal.sub(_platform);
+                uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
+                balBal = balBal - _platform;
                 IERC20(bal).safeTransfer(treasury, _platform); //platform fees are sent to the treasury.
             }
-
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
-            IERC20(bal).safeTransfer(rewardContract, balBal);
+            IERC20(bal).transfer(rewardContract, balBal);
             IRewards(rewardContract).queueNewRewards(balBal);
         }
     }
@@ -499,6 +490,7 @@ contract Controller {
         //earmarkRewards should send rewards to lockRewards
         IERC20(feeToken).safeTransfer(lockRewards, _balance);
         IRewards(lockRewards).queueNewRewards(_balance);
+
         return true;
     }
 

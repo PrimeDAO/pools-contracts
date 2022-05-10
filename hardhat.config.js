@@ -5,6 +5,7 @@ require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-web3");
+require("hardhat-gas-reporter");
 
 const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, PK } =
     process.env;
@@ -28,6 +29,16 @@ module.exports = {
     imports: "imports",
   },
   defaultNetwork: "hardhat",
+  gasReporter: {
+    currency: "USD",
+    token: "ETH",
+    gasPriceApi:
+      "https://api.etherscan.com/api?module=proxy&action=eth_gasPrice&apikey=" + process.env.ETHERSCAN_API_KEY,
+    enabled: process.env.REPORT_GAS ? true : false,
+    excludeContracts: [],
+    src: "./contracts",
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY
+  },
   networks: {
     localhost: {
       ...sharedNetworkConfig,
@@ -80,39 +91,10 @@ module.exports = {
         settings: {
             optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 100000,
           },
         },
       },
-      {
-        version: "0.8.10",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.8.9",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      {
-        version: "0.8.6",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-      { version: "0.6.12" },
-      { version: "0.5.16" },
     ],
   },
   etherscan: {

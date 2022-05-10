@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.13;
 
 // copied from https://github.com/Uniswap/v2-core/blob/master/contracts/libraries/SafeMath.sol
 
