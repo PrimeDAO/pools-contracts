@@ -216,9 +216,8 @@ contract Controller {
         //the next pool's pid
         uint256 pid = poolInfo.length;
 
-
-        // IBasePool pool = IBasePool(_getPoolAddress(poolId)); //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-balances-minimalswapinfopoolsbalance.sol
-
+        // IBasePool pool = IBasePool(_getPoolAddress(poolId)); 
+        //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-balances-minimalswapinfopoolsbalance.sol
 
 
         //create a tokenized deposit
