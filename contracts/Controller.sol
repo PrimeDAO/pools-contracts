@@ -43,9 +43,9 @@ contract Controller {
     address public treasury;
     address public stakerRewards; //bal rewards
     address public lockRewards; //balBal rewards(bal)
-    address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
+    address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent? //lockFees were removed in other issue
     address public feeDistro;
-    address public feeToken;
+    address public feeToken; //poolTokens //vault/balances/MinimalSwapInfoPoolsBalance.sol
 
     bool public isShutdown;
 
@@ -80,7 +80,7 @@ contract Controller {
         voteDelegate = msg.sender;
         feeManager = msg.sender;
         poolManager = msg.sender;
-        feeDistro = address(0);
+        feeDistro = address(0); //feeDistributorAddress="0x26743984e3357efc59f2fd6c1afdc310335a61c9"; //https://dev.balancer.fi/resources/vebal-and-gauges/vebal
         feeToken = address(0);
         treasury = address(0);
         minter = _minter;
@@ -150,8 +150,8 @@ contract Controller {
     function setFeeInfo() external {
         require(msg.sender == feeManager, "!auth");
 
-        feeDistro = IRegistry(registry).get_address(distributionAddressId);
-        address _feeToken = IFeeDistro(feeDistro).token();
+        feeDistro = IRegistry(registry).get_address(distributionAddressId); //feeDistributorContract = contract(feeDistributorAddress, feeDistributorAbi);
+        address _feeToken = IFeeDistro(feeDistro).token(); //(address(getProtocolFeesCollector() ? //paidProtocolSwapFeeAmounts //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-poolbalances.sol-4
         if (feeToken != _feeToken) {
             //create a new reward contract for the new token
             lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(
@@ -215,6 +215,11 @@ contract Controller {
 
         //the next pool's pid
         uint256 pid = poolInfo.length;
+
+
+        // IBasePool pool = IBasePool(_getPoolAddress(poolId)); //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-balances-minimalswapinfopoolsbalance.sol
+
+
 
         //create a tokenized deposit
         address token = ITokenFactory(tokenFactory).CreateDepositToken(
@@ -318,7 +323,7 @@ contract Controller {
         address token = pool.token;
         if (_stake) {
             //mint here and send to rewards on user behalf
-            ITokenMinter(token).mint(address(this), _amount);
+            ITokenMinter(token).mint(address(this), _amount); //_mintPoolTokens() //pools/BalancerPoolToken.sol //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-balances-minimalswapinfopoolsbalance.sol
             address rewardContract = pool.balRewards;
             IERC20(token).safeApprove(rewardContract, 0);
             IERC20(token).safeApprove(rewardContract, _amount);
@@ -539,7 +544,7 @@ contract Controller {
         return true;
     }
 
-    //callback from reward contract when crv is received.
+    //callback from reward contract when bal is received.
     function rewardClaimed(
         uint256 _pid,
         address _address,
