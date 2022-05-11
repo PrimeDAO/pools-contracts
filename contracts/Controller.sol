@@ -418,6 +418,7 @@ contract Controller {
     }
 
     //withdraw veBAL, which was unlocked after a year of usage
+    //upd of issue: Add withdraw function, which withdraws tokens from the veBal address, and redirects them to the treasury contract
     function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount)
         public
         returns (bool)
@@ -428,7 +429,7 @@ contract Controller {
             "Controller: can't withdraw. userLockTime is not reached yet"
         );
 
-        _withdraw(_pid, _amount, msg.sender, msg.sender); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
+        _withdraw(_pid, _amount, msg.sender, treasury); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
         return true;
     }
 
