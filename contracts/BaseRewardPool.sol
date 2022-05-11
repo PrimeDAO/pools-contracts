@@ -165,36 +165,6 @@ contract BaseRewardPool {
         return true;
     }
 
-    /// @dev Gas optimization for loops that iterate over extra rewards
-    /// We know that this can't overflow because we can't interate over big arrays
-    function unsafeInc(uint256 x) internal pure returns (uint256) {
-        unchecked {
-            return x + 1;
-        }
-    }
-
-    /// @dev Stakes `amount` tokens for address `for` to extra rewards tokens
-    /// RewardManager `rewardManager` is responsible for adding reward tokens
-    /// @param _for Who are we staking for
-    /// @param _amount The amount of tokens user wants to stake
-    function stakeToExtraRewards(address _for, uint256 _amount) internal {
-        address[] memory extraRewardsMemory = extraRewards;
-        for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
-            IRewards(extraRewardsMemory[i]).stake(_for, _amount);
-        }
-    }
-
-    /// @dev Stakes `amount` tokens for address `for` to extra rewards tokens
-    /// RewardManager `rewardManager` is responsible for adding reward tokens
-    /// @param _for Who are we staking for
-    /// @param _amount The amount of tokens user wants to stake
-    function withdrawExtraRewards(address _for, uint256 _amount) internal {
-        address[] memory extraRewardsMemory = extraRewards;
-        for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
-            IRewards(extraRewardsMemory[i]).withdraw(_for, _amount);
-        }
-    }
-
     /// @notice Stakes all BAL tokens
     /// @return true on success
     function stakeAll() external returns (bool) {
@@ -373,6 +343,36 @@ contract BaseRewardPool {
             queuedRewards = _rewards;
         }
         return true;
+    }
+
+    /// @dev Gas optimization for loops that iterate over extra rewards
+    /// We know that this can't overflow because we can't interate over big arrays
+    function unsafeInc(uint256 x) internal pure returns (uint256) {
+        unchecked {
+            return x + 1;
+        }
+    }
+
+    /// @dev Stakes `amount` tokens for address `for` to extra rewards tokens
+    /// RewardManager `rewardManager` is responsible for adding reward tokens
+    /// @param _for Who are we staking for
+    /// @param _amount The amount of tokens user wants to stake
+    function stakeToExtraRewards(address _for, uint256 _amount) internal {
+        address[] memory extraRewardsMemory = extraRewards;
+        for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
+            IRewards(extraRewardsMemory[i]).stake(_for, _amount);
+        }
+    }
+
+    /// @dev Stakes `amount` tokens for address `for` to extra rewards tokens
+    /// RewardManager `rewardManager` is responsible for adding reward tokens
+    /// @param _for Who are we staking for
+    /// @param _amount The amount of tokens user wants to stake
+    function withdrawExtraRewards(address _for, uint256 _amount) internal {
+        address[] memory extraRewardsMemory = extraRewards;
+        for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
+            IRewards(extraRewardsMemory[i]).withdraw(_for, _amount);
+        }
     }
 
     function notifyRewardAmount(uint256 reward)
