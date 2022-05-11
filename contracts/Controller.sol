@@ -324,8 +324,8 @@ contract Controller {
             //mint here and send to rewards on user behalf
             ITokenMinter(token).mint(address(this), _amount); //_mintPoolTokens() //pools/BalancerPoolToken.sol //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-balances-minimalswapinfopoolsbalance.sol
             address rewardContract = pool.balRewards;
-            IERC20(token).safeApprove(rewardContract, 0);
-            IERC20(token).safeApprove(rewardContract, _amount);
+            IERC20(token).approve(rewardContract, 0);
+            IERC20(token).approve(rewardContract, _amount);
             IRewards(rewardContract).stakeFor(msg.sender, _amount);
         } else {
             //add user balance directly
