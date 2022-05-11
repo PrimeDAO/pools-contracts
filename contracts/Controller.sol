@@ -366,7 +366,7 @@ contract Controller {
             block.timestamp > userLockTime[_from],
             "Controller: userLockTime is not reached yet"
         );
-        
+
         //remove lp balance
         address token = pool.token;
         ITokenMinter(token).burn(_from, _amount);
