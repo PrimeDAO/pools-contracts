@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract PoolContract is ERC20, Ownable {
+contract PoolToken is ERC20, Ownable {
     uint8 private immutable _decimals;
 
     //d2dPool tokens are staked in the Rewards contract for specific pool on the name of user, without the possibility to unstake them.

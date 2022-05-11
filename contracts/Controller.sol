@@ -28,7 +28,6 @@ contract Controller {
     address public feeManager; //Fee manager is a GnosisSafe multisig; Profit fees are distributed to the gnosisSafe, which owned by Prime
     address public poolManager;
     address public immutable staker;
-    address public immutable minter;
     address public rewardFactory;
     address public stashFactory;
     address public tokenFactory;
@@ -68,7 +67,6 @@ contract Controller {
 
     constructor(
         address _staker,
-        address _minter,
         address _feeManager
     ) public {
         isShutdown = false;
@@ -80,7 +78,6 @@ contract Controller {
         feeDistro = address(0);
         feeToken = address(0);
         treasury = address(0);
-        minter = _minter;
     }
 
     /// SETTER SECTION ///
@@ -508,10 +505,6 @@ contract Controller {
             msg.sender == rewardContract || msg.sender == lockRewards,
             "!auth"
         );
-
-        //mint reward tokens
-        ITokenMinter(minter).mint(_address, _amount);
-
         return true;
     }
 }
