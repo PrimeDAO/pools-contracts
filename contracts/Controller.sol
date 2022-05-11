@@ -149,9 +149,12 @@ contract Controller {
     // Set reward token and claim contract, get from Curve's registry
     function setFeeInfo() external {
         require(msg.sender == feeManager, "!auth");
+        // feeDistro = IRegistry(registry).get_address(distributionAddressId); //here we getting the exact address by id --> just set address of feeDistributorContract //feeDistributorContract = contract(feeDistributorAddress, feeDistributorAbi);
+        //D2D BAL SHOULD BE DISTRIBUTED AS A REWARD --> feeDistro = D2D BAL address
+        feeDistro = feeDistributorContract; //address WITH D2D BAL //feeManager??
+        // address _feeToken = IFeeDistro(feeDistro).token(); //D2D BAL address //(address(getProtocolFeesCollector() ? //paidProtocolSwapFeeAmounts //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-poolbalances.sol-4
+        address _feeToken = ; //D2D BAL address //(address(getProtocolFeesCollector() ? //paidProtocolSwapFeeAmounts //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-poolbalances.sol-4
 
-        feeDistro = IRegistry(registry).get_address(distributionAddressId); //feeDistributorContract = contract(feeDistributorAddress, feeDistributorAbi);
-        address _feeToken = IFeeDistro(feeDistro).token(); //(address(getProtocolFeesCollector() ? //paidProtocolSwapFeeAmounts //https://dev.balancer.fi/guides/guided-tour-of-balancer-vault/episode-2-joins#vault-poolbalances.sol-4
         if (feeToken != _feeToken) {
             //create a new reward contract for the new token
             lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(
