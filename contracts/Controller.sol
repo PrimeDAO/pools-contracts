@@ -65,10 +65,7 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(
-        address _staker,
-        address _feeManager
-    ) public {
+    constructor(address _staker, address _feeManager) public {
         isShutdown = false;
         staker = _staker;
         owner = msg.sender;
