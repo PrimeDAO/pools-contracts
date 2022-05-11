@@ -34,7 +34,6 @@ contract Controller {
     address public feeManager;
     address public poolManager;
     address public immutable staker;
-    address public immutable minter;
     address public rewardFactory;
     address public stashFactory;
     address public tokenFactory;
@@ -73,7 +72,7 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _minter) public {
+    constructor(address _staker) public {
         isShutdown = false;
         staker = _staker;
         owner = msg.sender;
@@ -83,7 +82,6 @@ contract Controller {
         feeDistro = address(0);
         feeToken = address(0);
         treasury = address(0);
-        minter = _minter;
     }
 
     /// SETTER SECTION ///
