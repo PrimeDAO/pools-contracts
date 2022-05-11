@@ -548,10 +548,6 @@ contract Controller {
             msg.sender == rewardContract || msg.sender == lockRewards,
             "!auth"
         );
-
-        //mint reward tokens
-        ITokenMinter(minter).mint(_address, _amount);
-
         return true;
     }
 }
