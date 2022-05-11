@@ -104,4 +104,7 @@ dist
 .tern-port
 
 # Idea system files
-.idea 
+.idea
+
+# build
+build

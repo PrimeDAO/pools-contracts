@@ -4,24 +4,9 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  let staker = await deploy("veBalMock", {
-    from: root,
-    args: [
-      token_addr,
-      "veBalMock",
-      "VBM",
-      _authorizer_adaptor,
-    ],
-    log: true,
-  });
+  let staker =  await ethers.getContract("veBalMock");
 
-  let minter = await deploy("SeedPool", {
-    from: root,
-    args: [
-
-    ],
-    log: true,
-  });
+  let minter = "0xEFc3a819695932394D89b8AF6f49e0D89EDf9A40"; // change with seedPool mock
 
   // const staker = await ethers.getContract("veBalMock"); //the veBal staking rewards
   // const minter = await ethers.getContract("SeedPool "); //Rewards tokens minted by balancer for the liquidity providers.
@@ -29,7 +14,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   await deploy("Controller", {
     from: root,
     args: [
-      staker,
+      staker.address,
       minter,
     ],
     log: true,
