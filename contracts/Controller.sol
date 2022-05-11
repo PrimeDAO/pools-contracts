@@ -470,12 +470,10 @@ contract Controller {
         // ITokenMinter(token).mint(address(this), _amount); //no need as _amount of tokens already inside
         address rewardContract = pool.balRewards;
 
-        //question: balanceOf() which exactly contract we should check? with what function? 
         // IStaker(staker).withdraw(lptoken, gauge, _amount); - in withdraw --> so need this address to check current balance of msg.sender
-        uint256 _amount = IStaker(staker).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+        uint256 _amount = IERC20(staker).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
 
         IERC20(token).safeApprove(rewardContract, _amount);
-        // IRewards(rewardContract).stakeFor(msg.sender, _amount); //question: maybe that row also need to be removed? as we don't withdraw them
 
         emit ReDeposited(msg.sender, _pid, _amount);
         return true;
