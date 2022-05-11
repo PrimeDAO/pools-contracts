@@ -147,7 +147,7 @@ contract Controller {
     }
 
     // Set reward token and claim contract, get from Curve's registry
-    function setFeeInfo() external {
+    function setFeeInfo() external { //balancer analog for fee: https://dev.balancer.fi/resources/flash-loans
         require(msg.sender == feeManager, "!auth");
         // feeDistro = IRegistry(registry).get_address(distributionAddressId); //here we getting the exact address by id --> just set address of feeDistributorContract //feeDistributorContract = contract(feeDistributorAddress, feeDistributorAbi);
         //D2D BAL SHOULD BE DISTRIBUTED AS A REWARD --> feeDistro = D2D BAL address
