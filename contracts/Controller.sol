@@ -25,7 +25,7 @@ contract Controller {
     uint256 public constant FEE_DENOMINATOR = 10000;
 
     address public owner;
-    address public feeManager; //Fee manager is a GnosisSafe multisig; Profit fees are distributed to the gnosisSafe, which owned by Prime
+    address public feeManager;
     address public poolManager;
     address public immutable staker;
     address public rewardFactory;
@@ -144,12 +144,6 @@ contract Controller {
         feeDistro = IRegistry(registry).get_address(distributionAddressId);
         address _feeToken = IFeeDistro(feeDistro).token();
         if (feeToken != _feeToken) {
-            //create a new reward contract for the new token
-            lockRewards = IRewardFactory(rewardFactory).CreateTokenRewards(
-                _feeToken,
-                lockRewards,
-                address(this)
-            );
             feeToken = _feeToken;
         }
     }
@@ -161,8 +155,16 @@ contract Controller {
 
         require(total <= MaxFees, ">MaxFees");
 
-        platformFees = _platformFee;
-        profitFees = _profitFee;
+        //values must be within certain ranges
+        if (
+            _platformFee >= 500 && //5%
+            _platformFee <= 2000 && //20%
+            _profitFee >= 100 &&
+            _profitFee <= 500
+        ) {
+            platformFees = _platformFee;
+            profitFees = _profitFee;
+        }
     }
 
     function setTreasury(address _treasury) external {
