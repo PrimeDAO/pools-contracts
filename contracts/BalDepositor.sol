@@ -6,6 +6,10 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+
+
+/// @title BalDepositor contract
+/// @dev Deposit contract for Prime Pools is based on the convex contract
 contract BalDepositor {
     using Address for address;
 
@@ -39,6 +43,7 @@ contract BalDepositor {
         balWeth = IERC20(_balWeth);
     }
 
+    /// @notice  Confirms caller is the current fee manager
     modifier onlyFeeManager(address _feeManager) {
         if (msg.sender != _feeManager) {
             revert Unauthorized();
@@ -66,7 +71,7 @@ contract BalDepositor {
         }
     }
 
-    /// @notice Locks initial balance of balWeth in Voter Proxy
+    /// @notice Locks initial balance of Weth/Bal in Voter Proxy
     function initialLock() external onlyFeeManager(msg.sender) {
         uint256 vBal = IERC20(veBal).balanceOf(staker);
         if (vBal == 0) {
