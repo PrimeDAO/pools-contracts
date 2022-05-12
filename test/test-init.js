@@ -17,8 +17,6 @@ const getVoterProxy = async (setup) => {
 };
 
 const getTokens = async (setup) => {
-  const decimals = 18;
-
   const ERC20_Factory =  await ethers.getContractFactory(
     "ERC20Mock",
     setup.roles.root
@@ -29,16 +27,14 @@ const getTokens = async (setup) => {
     setup.roles.root
   );
 
-  const D2DToken_Factory = await ethers.getContractFactory(
-    "D2DToken",
+  const D2DBal_Factory = await ethers.getContractFactory(
+    "D2DBAL",
     setup.roles.root
   );
 
   const BAL = await ERC20_Factory.deploy("Bal", "BAL");
 
-  const D2DToken = await D2DToken_Factory.deploy(
-    decimals
-  );
+  const D2DToken = await D2DBal_Factory.deploy();
 
   const PoolContract = await ERC20_Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20_Factory.deploy("WethBal", "WethBAL");
@@ -69,7 +65,8 @@ const baseRewardPool = async (setup) => {
   const stakingTokenInstance = await ethers.getContract("D2DToken");
   const rewardToken = BAL_ADDRESS;
   const operator = await ethers.getContract("Controller");
-  // const rewardManager = "0xedccb35798fae4925718a43cc608ae136208aa8d";
+  // TODO: remove magic value when refactor baseRewardPool tests
+  const rewardManager = "0xedccb35798fae4925718a43cc608ae136208aa8d";
 
   return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingTokenInstance.address, rewardToken, operator.address, rewardManager);
 };
