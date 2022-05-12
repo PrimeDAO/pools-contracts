@@ -39,6 +39,9 @@ describe("Contract: Controller", async () => {
   let platformFee;
   let profitFee;
 
+  //constants
+  const zero_address = "0x0000000000000000000000000000000000000000";
+
   context("» creator is avatar", () => {
     before("!! setup", async () => {
       setup = await deploy();
@@ -69,6 +72,15 @@ describe("Contract: Controller", async () => {
     });
 
     context("» Testing changed functions", () => {
+        context("» setFeeInfo testing", () => {
+            it("Checks feeToken", async () => {
+                expect((await setup.controller.feeToken()).toString()).to.equal(zero_address);
+                await setup.controller
+                        .connect(root)
+                        .setFeeInfo(); //crashed with "Error: Transaction reverted: function returned an unexpected amount of data"
+                expectRevert((await setup.controller.feeToken()).toString()).to.equal(zero_address);
+            });
+        });
         context("» setFees testing", () => {
             it("Sets correct fees", async () => {
                 await setup.controller
@@ -94,6 +106,25 @@ describe("Contract: Controller", async () => {
                         .setFees(platformFee, profitFee);
                 expect((await setup.controller.platformFees()).toString()).to.equal("500");              
             });
+            it("Should fail if platformFee is too big", async () => {
+                platformFee = 10000;
+                profitFee = 100;
+                await expectRevert(
+                    setup.controller
+                        .connect(root)
+                        .setFees(platformFee, profitFee),
+                    ">MaxFees"
+                );  
+            });
+            it("Should fail if profitFee is too small", async () => {
+                platformFee = 500;
+                profitFee = 10;
+                await setup.controller
+                        .connect(root)
+                        .setFees(platformFee, profitFee);
+                expect((await setup.controller.profitFees()).toString()).to.equal("100");
+
+            });
             it("Should fail if profitFee is too big", async () => {
                 platformFee = 500;
                 profitFee = 1000;
@@ -104,6 +135,13 @@ describe("Contract: Controller", async () => {
 
             });
         });
+        // context("» _earmarkRewards testing", () => {
+        //     it("Sets correct fees", async () => {
+        //         await setup.controller
+        //                 .connect(root)
+        //                 .setFees(platformFee, profitFee);            
+        //     });
+        // });
     });
   });
 });
