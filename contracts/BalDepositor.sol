@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract BalDepositor {
     using Address for address;
 
-IERC20 public immutable balWeth;
+    IERC20 public immutable balWeth;
     IERC20 public immutable veBal;
 
     error Unauthorized();
@@ -48,13 +48,19 @@ IERC20 public immutable balWeth;
 
     /// @notice Sets the contracts feeManager variable
     /// @param _feeManager The address of the fee manager
-    function setFeeManager(address _feeManager) external onlyFeeManager(msg.sender) {
+    function setFeeManager(address _feeManager)
+        external
+        onlyFeeManager(msg.sender)
+    {
         feeManager = _feeManager;
     }
 
     /// @notice Sets the lock incentive variable
     /// @param _lockIncentive Time to lock tokens
-    function setFees(uint256 _lockIncentive) external onlyFeeManager(msg.sender) {
+    function setFees(uint256 _lockIncentive)
+        external
+        onlyFeeManager(msg.sender)
+    {
         if (_lockIncentive >= 0 && _lockIncentive <= 30) {
             lockIncentive = _lockIncentive;
         }
