@@ -12,6 +12,8 @@ const deploy = async () => {
   const setup = await init.initialize(await ethers.getSigners());
 
   setup.token = await init.gettokenInstances(setup);
+  
+  setup.bal = await init.getBAL(setup);
 
   setup.controller = await init.controller(setup);
 
@@ -56,7 +58,7 @@ describe("Contract: Controller", async () => {
       buyer1 = setup.roles.buyer1;
       buyer2 = setup.roles.buyer2;
       buyer3 = setup.roles.buyer3;
-      buyer4 = setup.roles.buyer4;
+      staker = setup.roles.staker;
 
       platformFee = 500;
       profitFee = 100;
@@ -149,21 +151,20 @@ describe("Contract: Controller", async () => {
                 );  
             });
             it("Adds pool", async () => { //not this issue; now it is
-                lptoken = ;
-                gauge = ;
-                stashVersion = ;
+                //lp token is unwithdrawable --> PoolToken
+                lptoken = setup.token.PoolToken; //address; 
+                //reward contract is going to be BAL
+                gauge = setup.bal; //address of what? //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
+                stashVersion = 1; //uint256
                 expect(
-                    await setup.controller.connect(root).addPool(lptoken, gauge, stashVersion)
+                    await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion)
                 ).to.equal(true);
             });
             it("Calls earmarkRewards with existing pool number", async () => {
                 pid = 1;
-                await expectRevert(
-                    setup.controller
-                        .connect(root)
-                        .earmarkRewards(pid),
-                    "Controller: pool is not exists"
-                );  
+                expect(
+                    await setup.controller.connect(root).earmarkRewards(pid)
+                ).to.equal(true);
             });
         });
     });

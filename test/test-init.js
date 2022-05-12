@@ -11,17 +11,17 @@ const initialize = async (accounts) => {
     buyer1: accounts[3],
     buyer2: accounts[4],
     buyer3: accounts[5],
-    buyer4: accounts[6],
+    staker: accounts[6],
   };
 
   return setup;
 };
 
 const getBAL = async (setup) => {
-  const Bal =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
-  const BAL_ADDRESS = await Bal.deploy("Bal", "BAL", decimals);
+  const Bal_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  const BAL = await Bal_Factory.deploy("Bal", "BAL");
 
-  return { BAL_ADDRESS };
+  return { BAL };
 };
 
 //(done)
@@ -61,7 +61,7 @@ const gettokenInstances = async (setup) => {
     "D2DToken",
     setup.roles.root
   );
-  const decimals = 10; //10 only for example here
+  const decimals = 18;
 
   const D2DToken = await D2DToken_Factory.deploy(decimals);
 
