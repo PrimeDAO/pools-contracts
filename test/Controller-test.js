@@ -37,12 +37,12 @@ describe("Contract: Controller", async () => {
   let platformFee;
   let profitFee;
   let pid;
-  let lptoken;
-  let gauge;
-  let stashVersion;
+//   let lptoken;
+//   let gauge;
+//   let stashVersion;
 
   //constants
-  const zero_address = "0x0000000000000000000000000000000000000000";
+//   const zero_address = "0x0000000000000000000000000000000000000000";
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
