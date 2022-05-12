@@ -38,6 +38,7 @@ describe("Contract: Controller", async () => {
 
   let platformFee;
   let profitFee;
+  let pid;
 
   //constants
   const zero_address = "0x0000000000000000000000000000000000000000";
@@ -78,6 +79,7 @@ describe("Contract: Controller", async () => {
                 await setup.controller
                         .connect(root)
                         .setFeeInfo(); //crashed with "Error: Transaction reverted: function returned an unexpected amount of data"
+                        //reason of error - not this issue; it should be solved in "Change Curve interactions with Balancer interactions" issue
                 expectRevert((await setup.controller.feeToken()).toString()).to.equal(zero_address);
             });
         });
@@ -135,13 +137,14 @@ describe("Contract: Controller", async () => {
 
             });
         });
-        // context("» _earmarkRewards testing", () => {
-        //     it("Sets correct fees", async () => {
-        //         await setup.controller
-        //                 .connect(root)
-        //                 .setFees(platformFee, profitFee);            
-        //     });
-        // });
+        context("» _earmarkRewards testing", () => {
+            it("Calls earmarkRewards", async () => {
+                pid = 1;
+                await setup.controller
+                        .connect(root)
+                        .earmarkRewards(pid);  //need to add require to earmarkRewards() function to check if pool with this number exists 
+            });
+        });
     });
   });
 });
