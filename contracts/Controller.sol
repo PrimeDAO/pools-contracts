@@ -428,6 +428,7 @@ contract Controller {
 
     //claim bal and extra rewards and disperse to reward contracts
     function _earmarkRewards(uint256 _pid) internal {
+        require(poolInfo.length != 0, "Controller: pool is not exists");
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 

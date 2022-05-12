@@ -138,11 +138,14 @@ describe("Contract: Controller", async () => {
             });
         });
         context("» _earmarkRewards testing", () => {
-            it("Calls earmarkRewards", async () => {
+            it("Calls earmarkRewards with non existing pool number", async () => {
                 pid = 1;
-                await setup.controller
+                await expectRevert(
+                    setup.controller
                         .connect(root)
-                        .earmarkRewards(pid);  //need to add require to earmarkRewards() function to check if pool with this number exists 
+                        .earmarkRewards(pid),
+                    "Controller: pool is not exists"
+                );  
             });
         });
     });
