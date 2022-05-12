@@ -54,6 +54,7 @@ describe("Contract: Controller", async () => {
       buyer4 = setup.roles.buyer4;
 
 
+      //TODO: fill () with arguments
       await setup.controller.setOwner();
       await setup.controller.setFeeManager();
       await setup.controller.setPoolManager();
@@ -69,14 +70,18 @@ describe("Contract: Controller", async () => {
 
     context("» Testing changed functions", () => {
         context("» setFees testing", () => {
-            it("Should fail if setFeeManager caller is not the fee m/anager ", async () => {
-                await setup.controller.setFees()
+            it("Should fail platformFee is too small", async () => {
+                platformFee = 400; //expect too smatt
+                profitFee = 100;
+                await expectRevert(
+                    setup.controller
+                        .connect(root)
+                        .setFees(platformFee, profitFee),
+                    "Controller: "
+                );
                 
-                let tx = Depositor.connect(addr1).setFeeManager(addr1.address);
-                await expect(tx).to.be.revertedWith("!auth");
             });
         });
     });
   });
-
 });
