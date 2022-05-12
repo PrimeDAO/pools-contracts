@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract BalDepositor {
     using Address for address;
 
-    IERC20 public immutable balWeth;
+IERC20 public immutable balWeth;
     IERC20 public immutable veBal;
 
     error Unauthorized();
@@ -48,13 +48,13 @@ contract BalDepositor {
 
     /// @notice Sets the contracts feeManager variable
     /// @param _feeManager The address of the fee manager
-    function setFeeManager(address _feeManager) external onlyFeeManager(msg.sender){
+    function setFeeManager(address _feeManager) external onlyFeeManager(msg.sender) {
         feeManager = _feeManager;
     }
 
     /// @notice Sets the lock incentive variable
     /// @param _lockIncentive Time to lock tokens
-    function setFees(uint256 _lockIncentive) external onlyFeeManager(msg.sender){
+    function setFees(uint256 _lockIncentive) external onlyFeeManager(msg.sender) {
         if (_lockIncentive >= 0 && _lockIncentive <= 30) {
             lockIncentive = _lockIncentive;
         }
@@ -119,10 +119,7 @@ contract BalDepositor {
     /// All of the minted d2dBal will be automatically staked to the Rewards contract
     /// @param _amount The amount of tokens user wants to stake
     /// @param _stakeAddress The Reward contract address
-    function deposit(
-        uint256 _amount,
-        address _stakeAddress
-    ) public {
+    function deposit(uint256 _amount, address _stakeAddress) public {
         require(_amount > 0, "!>0");
 
         //lock immediately, transfer directly to staker to skip an erc20 transfer
