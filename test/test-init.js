@@ -11,17 +11,17 @@ const initialize = async (accounts) => {
     buyer1: accounts[3],
     buyer2: accounts[4],
     buyer3: accounts[5],
-    buyer4: accounts[6],
+    staker: accounts[6],
   };
 
   return setup;
 };
 
 const getBAL = async (setup) => {
-  const Bal =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
-  const BAL_ADDRESS = await Bal.deploy("Bal", "BAL", decimals);
+  const Bal_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  const BAL = await Bal_Factory.deploy("Bal", "BAL");
 
-  return { BAL_ADDRESS };
+  return { BAL };
 };
 
 //(done)
@@ -56,7 +56,7 @@ const getVoterProxy = async (setup) => {
 // };
 
 //(done)
-const gettokenInstances = async (setup) => {
+const getTokenInstances = async (setup) => {
   const D2DToken_Factory = await ethers.getContractFactory(
     "D2DToken",
     setup.roles.root
@@ -64,17 +64,22 @@ const gettokenInstances = async (setup) => {
   const decimals = 10; //10 only for example here
 
   const D2DToken = await D2DToken_Factory.deploy(
-    decimals,
-    setup.roles.root.address
+    decimals
   );
 
-  // const PoolContract_Factory = await ethers.getContractFactory(
-  //   "PoolContract",
-  //   setup.roles.root
-  // );
-  const PoolContract = await ERC20_Factory.deploy("Pool Contract", "BALP", decimals);
+  const PoolContract_Factory = await ethers.getContractFactory(
+    "PoolToken",
+    setup.roles.root
+  );
+  const PoolContract = await PoolContract_Factory.deploy("PoolToken", "BALP", decimals);
 
-  return { D2DToken, PoolContract };
+  const VeBal_Factory =  await ethers.getContractFactory(
+  "ERC20Mock",
+  setup.roles.root
+  );
+  const VeBal = await VeBal_Factory.deploy("VeBal", "VeBAL");  // TODO: Change to VeBal mock
+
+  return { D2DToken, PoolContract, VeBal };
 };
 
 const balDepositor = async (setup) => {
@@ -82,11 +87,12 @@ const balDepositor = async (setup) => {
     "BalDepositor",
     setup.roles.root
   );
-  const minterInstance = await ethers.getContract("D2DToken");
-  const staker = address();
-  const veBal = await ethers.getContract("veBal");
-  const escrow = veBal;
-  return await balDepositor.deploy(setup.roles.root.address, staker, minterInstance.address, escrow);
+  const bal = setup.bal.BAL;
+  const minter = setup.getTokenInstances.D2DToken;
+  const staker = setup.roles.staker;
+  const escrow = setup.getTokenInstances.VeBal;
+
+  return await balDepositor.deploy(bal.address, staker.address, minter.address, escrow.address);
 };
 
 const baseRewardPool = async (setup) => {
@@ -118,7 +124,7 @@ module.exports = {
   initialize,
   getBAL,
   getVoterProxy,
-  gettokenInstances,
+  getTokenInstances,
   balDepositor,
   baseRewardPool,
   controller,
