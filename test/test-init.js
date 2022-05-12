@@ -17,6 +17,13 @@ const initialize = async (accounts) => {
   return setup;
 };
 
+const getERC20Mock = async (setup) => {
+  const ERC20Mock_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  const ERC20Mock = await ERC20Mock_Factory.deploy("ERC20Mock", "ERC20Mock");
+
+  return { ERC20Mock };
+};
+
 const getBAL = async (setup) => {
   const Bal =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
   const BAL_ADDRESS = await Bal.deploy("Bal", "BAL", decimals);
@@ -49,11 +56,11 @@ const getVoterProxy = async (setup) => {
 // };
 
 
-// const getContractInstance = async (factoryName, address, args) => {
-//   const Factory = await ethers.getContractFactory(factoryName, address);
-//   const parameters = args ? args : [];
-//   return await Factory.deploy(...parameters);
-// };
+const getContractInstance = async (factoryName, address, args) => {
+  const Factory = await ethers.getContractFactory(factoryName, address);
+  const parameters = args ? args : [];
+  return await Factory.deploy(...parameters);
+};
 
 //(done)
 const gettokenInstances = async (setup) => {
@@ -63,18 +70,15 @@ const gettokenInstances = async (setup) => {
   );
   const decimals = 10; //10 only for example here
 
-  const D2DToken = await D2DToken_Factory.deploy(
-    decimals,
-    setup.roles.root.address
+  const D2DToken = await D2DToken_Factory.deploy(decimals);
+
+  const PoolToken_Factory = await ethers.getContractFactory(
+    "PoolToken",
+    setup.roles.root
   );
+  const PoolToken = await PoolToken_Factory.deploy("Pool Contract", "BALP", decimals);
 
-  // const PoolContract_Factory = await ethers.getContractFactory(
-  //   "PoolContract",
-  //   setup.roles.root
-  // );
-  const PoolContract = await ERC20_Factory.deploy("Pool Contract", "BALP", decimals);
-
-  return { D2DToken, PoolContract };
+  return { D2DToken, PoolToken };
 };
 
 const balDepositor = async (setup) => {
@@ -108,10 +112,13 @@ const controller = async (setup) => {
     "Controller",
     setup.roles.root
   );
-  const staker = await ethers.getContract("ERC20Mock");
-  const minter = staker;
 
-  return await controller.deploy(setup.roles.root.address, staker.address, minter.address);
+  const ERC20Mock_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  const ERC20Mock = await ERC20Mock_Factory.deploy("ERC20Mock", "ERC20Mock");
+
+  const staker = ERC20Mock;//await ethers.getContract("ERC20Mock");//await ethers.getContract("ERC20Mock");
+
+  return await controller.deploy(staker.address, setup.roles.root.address);
 };
 
 module.exports = {
@@ -122,4 +129,5 @@ module.exports = {
   balDepositor,
   baseRewardPool,
   controller,
+  getContractInstance
 };

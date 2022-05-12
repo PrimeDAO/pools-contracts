@@ -156,15 +156,15 @@ contract Controller {
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
-        if (
+        require (
             _platformFee >= 500 && //5%
             _platformFee <= 2000 && //20%
             _profitFee >= 100 &&
             _profitFee <= 500
-        ) {
+        , "Controller: incorrect fees");
             platformFees = _platformFee;
             profitFees = _profitFee;
-        }
+
     }
 
     function setTreasury(address _treasury) external {

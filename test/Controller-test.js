@@ -11,9 +11,9 @@ const init = require("./test-init.js");
 const deploy = async () => {
   const setup = await init.initialize(await ethers.getSigners());
 
-  setup.controller = await init.getContractInstance("Controller", setup.roles.prime);
-
   setup.token = await init.gettokenInstances(setup);
+
+  setup.controller = await init.controller(setup);
 
   setup.data = {};
 
@@ -55,31 +55,50 @@ describe("Contract: Controller", async () => {
 
 
       //TODO: fill () with arguments
-      await setup.controller.setOwner();
-      await setup.controller.setFeeManager();
-      await setup.controller.setPoolManager();
-      await setup.controller.setFactories();
-      await setup.controller.setArbitrator();
-      await setup.controller.setVoteDelegate();
-      await setup.controller.setRewardContracts();
-      await setup.controller.setFeeInfo();
-    //   await setup.controller.setFees(); - test below
-      await setup.controller.setTreasury();
+    //   await setup.controller.setOwner();
+    //   await setup.controller.setPoolManager();
+    //   await setup.controller.setFactories();
+    //   await setup.controller.setArbitrator();
+    //   await setup.controller.setVoteDelegate();
+    //   await setup.controller.setRewardContracts();
+    //   await setup.controller.setFeeInfo();
+    // //   await setup.controller.setFees(); - test below
+    //   await setup.controller.setTreasury();
 
     });
 
     context("» Testing changed functions", () => {
         context("» setFees testing", () => {
-            it("Should fail platformFee is too small", async () => {
+            it("Should fail if total >MaxFees", async () => {
+                platformFee = 1000;
+                profitFee = 1001;
+                //MaxFees = 2000;
+                await expectRevert(
+                    setup.controller
+                        .connect(root)
+                        .setFees(platformFee, profitFee),
+                    ">MaxFees"
+                );                
+            });
+            it("Should fail if platformFee is too small", async () => {
                 platformFee = 400; //expect too smatt
                 profitFee = 100;
                 await expectRevert(
                     setup.controller
                         .connect(root)
                         .setFees(platformFee, profitFee),
-                    "Controller: "
-                );
-                
+                    "Controller: incorrect fees"
+                );                
+            });
+            it("Should fail if profitFee is too big", async () => {
+                platformFee = 500; //expect too smatt
+                profitFee = 1000;
+                await expectRevert(
+                    setup.controller
+                        .connect(root)
+                        .setFees(platformFee, profitFee),
+                    "Controller: incorrect fees"
+                );                
             });
         });
     });
