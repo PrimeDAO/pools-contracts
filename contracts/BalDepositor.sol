@@ -9,8 +9,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract BalDepositor {
     using Address for address;
 
-    address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
+    // address public constant bal =
+    //     address(0xba100000625a3754423978a60c9317c58a424e3D);
+    address public immutable bal;
     address public immutable escrow;
     uint256 private constant MAXTIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
@@ -25,10 +26,12 @@ contract BalDepositor {
     uint256 public unlockTime;
 
     constructor(
+        address _bal,
         address _staker,
         address _minter,
         address _escrow
     ) public {
+        bal = _bal;
         staker = _staker;
         minter = _minter;
         feeManager = msg.sender;
