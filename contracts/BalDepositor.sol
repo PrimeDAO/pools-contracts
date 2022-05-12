@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract BalDepositor {
     using Address for address;
 
-    address public immutable bal;
+    address public immutable wethBal;
     address public immutable escrow;
     uint256 private constant MAXTIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
@@ -24,12 +24,12 @@ contract BalDepositor {
     uint256 public unlockTime;
 
     constructor(
-        address _bal,
+        address _wethBal,
         address _staker,
         address _minter,
         address _escrow
     ) public {
-        bal = _bal;
+        wethBal = _wethBal;
         staker = _staker;
         minter = _minter;
         feeManager = msg.sender;
@@ -60,26 +60,26 @@ contract BalDepositor {
             //release old lock if exists
             IStaker(staker).release();
             //create new lock
-            uint256 balBalanceStaker = IERC20(bal).balanceOf(staker);
-            IStaker(staker).createLock(balBalanceStaker, unlockAt);
+            uint256 wethBalBalanceStaker = IERC20(wethBal).balanceOf(staker);
+            IStaker(staker).createLock(wethBalBalanceStaker, unlockAt);
             unlockTime = unlockInWeeks;
         }
     }
 
     function _lockBalancer() internal {
-        uint256 balBalance = IERC20(bal).balanceOf(address(this));
-        if (balBalance > 0) {
-            IERC20(bal).transfer(staker, balBalance);
+        uint256 wethBalBalance = IERC20(wethBal).balanceOf(address(this));
+        if (wethBalBalance > 0) {
+            IERC20(wethBal).transfer(staker, wethBalBalance);
         }
 
         //increase ammount
-        uint256 balBalanceStaker = IERC20(bal).balanceOf(staker);
-        if (balBalanceStaker == 0) {
+        uint256 wethBalBalanceStaker = IERC20(wethBal).balanceOf(staker);
+        if (wethBalBalanceStaker == 0) {
             return;
         }
 
         //increase amount
-        IStaker(staker).increaseAmount(balBalanceStaker);
+        IStaker(staker).increaseAmount(wethBalBalanceStaker);
 
         uint256 unlockAt = block.timestamp + MAXTIME;
         uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
@@ -110,7 +110,7 @@ contract BalDepositor {
 
         if (_lock) {
             //lock immediately, transfer directly to staker to skip an erc20 transfer
-            IERC20(bal).transferFrom(msg.sender, staker, _amount);
+            IERC20(wethBal).transferFrom(msg.sender, staker, _amount);
             _lockBalancer();
             if (incentiveBal > 0) {
                 //add the incentive tokens here so they can be staked together
@@ -119,7 +119,7 @@ contract BalDepositor {
             }
         } else {
             //move tokens here
-            IERC20(bal).transferFrom(msg.sender, address(this), _amount);
+            IERC20(wethBal).transferFrom(msg.sender, address(this), _amount);
             //defer lock cost to another user
             uint256 callIncentive = ((_amount * lockIncentive) /
                 FEE_DENOMINATOR);
@@ -148,7 +148,7 @@ contract BalDepositor {
     }
 
     function depositAll(bool _lock, address _stakeAddress) external {
-        uint256 balBal = IERC20(bal).balanceOf(msg.sender); //This is balancer balance of msg.sender
-        deposit(balBal, _lock, _stakeAddress);
+        uint256 wethBalBalance = IERC20(wethBal).balanceOf(msg.sender); //This is balancer balance of msg.sender
+        deposit(wethBalBalance, _lock, _stakeAddress);
     }
 }
