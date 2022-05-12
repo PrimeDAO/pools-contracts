@@ -10,7 +10,7 @@ const initialize = async (accounts) => {
     beneficiary: accounts[2],
     buyer1: accounts[3],
     buyer2: accounts[4],
-    buyer3: accounts[5],
+    authorizer_adaptor: accounts[5],
     staker: accounts[6],
   };
 
@@ -73,13 +73,19 @@ const getTokenInstances = async (setup) => {
   );
   const PoolContract = await PoolContract_Factory.deploy("PoolToken", "BALP", decimals);
 
-  const VeBal_Factory =  await ethers.getContractFactory(
+  const WethBal_Factory =  await ethers.getContractFactory(
   "ERC20Mock",
   setup.roles.root
   );
-  const VeBal = await VeBal_Factory.deploy("VeBal", "VeBAL");  // TODO: Change to VeBal mock
+  const WethBal = await WethBal_Factory.deploy("VeBal", "VeBAL");  // TODO: Change to VeBal mock
 
-  return { D2DToken, PoolContract, VeBal };
+  const VeBal_Factory =  await ethers.getContractFactory(
+  "VeBalMock",
+  setup.roles.root
+  );
+  const VeBal = await VeBal_Factory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
+
+  return { D2DToken, PoolContract, WethBal, VeBal };
 };
 
 const balDepositor = async (setup) => {
