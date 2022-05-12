@@ -330,8 +330,8 @@ contract Controller {
             //mint here and send to rewards on user behalf
             ITokenMinter(token).mint(address(this), _amount);
             address rewardContract = pool.balRewards;
-            IERC20(token).safeApprove(rewardContract, 0);
-            IERC20(token).safeApprove(rewardContract, _amount);
+            IERC20(token).approve(rewardContract, 0);
+            IERC20(token).approve(rewardContract, _amount);
             IRewards(rewardContract).stakeFor(msg.sender, _amount);
         } else {
             //add user balance directly
@@ -474,7 +474,7 @@ contract Controller {
         // IStaker(staker).withdraw(lptoken, gauge, _amount); - in withdraw --> so need this address to check current balance of msg.sender
         uint256 _amount = IERC20(staker).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
 
-        IERC20(token).safeApprove(rewardContract, _amount);
+        IERC20(token).approve(rewardContract, _amount);
 
         emit ReDeposited(msg.sender, _pid, _amount);
         return true;
