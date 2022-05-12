@@ -39,6 +39,9 @@ describe("Contract: Controller", async () => {
   let platformFee;
   let profitFee;
   let pid;
+  let lptoken;
+  let gauge;
+  let stashVersion;
 
   //constants
   const zero_address = "0x0000000000000000000000000000000000000000";
@@ -139,6 +142,23 @@ describe("Contract: Controller", async () => {
         });
         context("» _earmarkRewards testing", () => {
             it("Calls earmarkRewards with non existing pool number", async () => {
+                pid = 1;
+                await expectRevert(
+                    setup.controller
+                        .connect(root)
+                        .earmarkRewards(pid),
+                    "Controller: pool is not exists"
+                );  
+            });
+            it("Adds pool", async () => {
+                lptoken = ;
+                gauge = ;
+                stashVersion = ;
+                expect(
+                    await setup.controller.connect(root).addPool(lptoken, gauge, stashVersion)
+                ).to.equal(true);
+            });
+            it("Calls earmarkRewards with existing pool number", async () => {
                 pid = 1;
                 await expectRevert(
                     setup.controller
