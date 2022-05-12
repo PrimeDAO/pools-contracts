@@ -53,7 +53,8 @@ describe("Contract: Controller", async () => {
       buyer3 = setup.roles.buyer3;
       buyer4 = setup.roles.buyer4;
 
-
+      platformFee = 500;
+      profitFee = 100;
       //TODO: fill () with arguments
     //   await setup.controller.setOwner();
     //   await setup.controller.setPoolManager();
@@ -69,6 +70,11 @@ describe("Contract: Controller", async () => {
 
     context("» Testing changed functions", () => {
         context("» setFees testing", () => {
+            it("Sets correct fees", async () => {
+                await setup.controller
+                        .connect(root)
+                        .setFees(platformFee, profitFee);            
+            });
             it("Should fail if total >MaxFees", async () => {
                 platformFee = 1000;
                 profitFee = 1001;
@@ -81,24 +87,21 @@ describe("Contract: Controller", async () => {
                 );                
             });
             it("Should fail if platformFee is too small", async () => {
-                platformFee = 400; //expect too smatt
+                platformFee = 400;
                 profitFee = 100;
-                await expectRevert(
-                    setup.controller
+                await setup.controller
                         .connect(root)
-                        .setFees(platformFee, profitFee),
-                    "Controller: incorrect fees"
-                );                
+                        .setFees(platformFee, profitFee);
+                expect((await setup.controller.platformFees()).toString()).to.equal("500");              
             });
             it("Should fail if profitFee is too big", async () => {
-                platformFee = 500; //expect too smatt
+                platformFee = 500;
                 profitFee = 1000;
-                await expectRevert(
-                    setup.controller
+                await setup.controller
                         .connect(root)
-                        .setFees(platformFee, profitFee),
-                    "Controller: incorrect fees"
-                );                
+                        .setFees(platformFee, profitFee);
+                expect((await setup.controller.profitFees()).toString()).to.equal("100");
+
             });
         });
     });
