@@ -1,10 +1,10 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
-const {
-  utils: { parseEther, parseUnits },
-  BigNumber,
-} = ethers;
+const { expectRevert } = require("@openzeppelin/test-helpers");
+// const {
+//   utils: { parseEther, parseUnits },
+//   BigNumber,
+// } = ethers;
 
 const init = require("./test-init.js");
 
@@ -20,21 +20,19 @@ const deploy = async () => {
   return setup;
 };
 
-const getDecimals = async (token) => await token.decimals();
+// const getDecimals = async (token) => await token.decimals();
 
-const getTokenAmount = (tokenDecimal) => (amount) =>
-    parseUnits(amount, tokenDecimal.toString());
+// const getTokenAmount = (tokenDecimal) => (amount) =>
+//     parseUnits(amount, tokenDecimal.toString());
 
 describe("Contract: Controller", async () => {
   let setup;
   let root;
-  let admin;
-  let buyer1;
-  let buyer2;
-  let buyer3;
-  let buyer4;
-
-  let Controller;
+//   let admin;
+//   let buyer1;
+//   let buyer2;
+//   let buyer3;
+//   let staker;
 
   let platformFee;
   let profitFee;
