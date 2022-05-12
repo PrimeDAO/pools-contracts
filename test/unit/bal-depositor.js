@@ -31,8 +31,6 @@ describe("Contract: BalDepositor", async () => {
   });
 
   it("checks BalDepositor construtor", async () => {
-    assert(setup.balDepositor.address != constants.ZERO_ADDRESS);
-
     const wethBalAdress = await setup.balDepositor.wethBal();
     const staker = await setup.balDepositor.staker();
     const minter = await setup.balDepositor.minter();
