@@ -93,12 +93,12 @@ const balDepositor = async (setup) => {
     "BalDepositor",
     setup.roles.root
   );
-  const bal = setup.bal.BAL;
-  const minter = setup.getTokenInstances.D2DToken;
+  const wethBal = setup.tokenInstances.WethBal;
+  const minter = setup.tokenInstances.D2DToken;
   const staker = setup.roles.staker;
-  const escrow = setup.getTokenInstances.VeBal;
+  const escrow = setup.tokenInstances.VeBal;
 
-  return await balDepositor.deploy(bal.address, staker.address, minter.address, escrow.address);
+  return await balDepositor.deploy(wethBal.address, staker.address, minter.address, escrow.address);
 };
 
 const baseRewardPool = async (setup) => {
