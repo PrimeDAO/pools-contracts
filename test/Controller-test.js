@@ -39,9 +39,9 @@ describe("Contract: Controller", async () => {
   let platformFee;
   let profitFee;
   let pid;
-  let lptoken;
-  let gauge;
-  let stashVersion;
+//   let lptoken;
+//   let gauge;
+//   let stashVersion;
 
   //constants
 //   const zero_address = "0x0000000000000000000000000000000000000000";
@@ -150,22 +150,22 @@ describe("Contract: Controller", async () => {
                     "Controller: pool is not exists"
                 );  
             });
-            it("Adds pool", async () => { //not this issue; now it is
-                //lp token is unwithdrawable --> PoolToken
-                lptoken = setup.token.PoolToken; //address; 
-                //reward contract is going to be BAL
-                gauge = setup.bal; //address of what? //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
-                stashVersion = 1; //uint256
-                expect(
-                    await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion)
-                ).to.equal(true);
-            });
-            it("Calls earmarkRewards with existing pool number", async () => {
-                pid = 1;
-                expect(
-                    await setup.controller.connect(root).earmarkRewards(pid)
-                ).to.equal(true);
-            });
+            // it("Adds pool", async () => { //not this issue; now it is
+            //     //lp token is unwithdrawable --> PoolToken
+            //     lptoken = setup.token.PoolToken; //address; 
+            //     //reward contract is going to be BAL
+            //     gauge = ;//address of what? gaugeMock //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
+            //     stashVersion = 1; //uint256
+            //     expect(
+            //         await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion)
+            //     ).to.equal(true);
+            // });
+            // it("Calls earmarkRewards with existing pool number", async () => {
+            //     pid = 1;
+            //     expect(
+            //         await setup.controller.connect(root).earmarkRewards(pid)
+            //     ).to.equal(true);
+            // });
         });
     });
   });
