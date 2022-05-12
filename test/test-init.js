@@ -4,7 +4,8 @@ const initialize = async (accounts) => {
     root: accounts[0],
     prime: accounts[1],
     staker: accounts[2],
-    authorizer_adaptor: accounts[3]
+    reward_manager: accounts[3],
+    authorizer_adaptor: accounts[4]
   };
 
   return setup;
@@ -34,13 +35,13 @@ const getTokens = async (setup) => {
 
   const BAL = await ERC20_Factory.deploy("Bal", "BAL");
 
-  const D2DToken = await D2DBal_Factory.deploy();
+  const D2DBal = await D2DBal_Factory.deploy();
 
   const PoolContract = await ERC20_Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20_Factory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBal_Factory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
-  return { BAL, D2DToken, PoolContract, WethBal, VeBal };
+  return { BAL, D2DBal, PoolContract, WethBal, VeBal };
 };
 
 const balDepositor = async (setup) => {
@@ -49,7 +50,7 @@ const balDepositor = async (setup) => {
     setup.roles.root
   );
   const wethBal = setup.tokens.WethBal;
-  const minter =  setup.tokens.D2DToken;
+  const minter =  setup.tokens.D2DBal;
   const staker =  setup.roles.staker;
   const escrow =  setup.tokens.VeBal;
 
@@ -58,17 +59,16 @@ const balDepositor = async (setup) => {
 
 const baseRewardPool = async (setup) => {
   const baseRewardPool = await ethers.getContractFactory(
-    "SignerV2",
+    "BaseRewardPool",
     setup.roles.root
   );
-  const pid = 1; //1 for example (set correct later_)
-  const stakingTokenInstance = await ethers.getContract("D2DToken");
-  const rewardToken = BAL_ADDRESS;
-  const operator = await ethers.getContract("Controller");
-  // TODO: remove magic value when refactor baseRewardPool tests
-  const rewardManager = "0xedccb35798fae4925718a43cc608ae136208aa8d";
+  const pid = 1; // pool id
+  const stakingToken = setup.tokens.D2DBal;
+  const rewardToken = setup.tokens.BAL;
+  const operator = await setup.controller;
+  const rewardManager = setup.roles.reward_manager;
 
-  return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingTokenInstance.address, rewardToken, operator.address, rewardManager);
+  return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingToken.address, rewardToken.address, operator.address, rewardManager.address);
 };
 
 const controller = async (setup) => {

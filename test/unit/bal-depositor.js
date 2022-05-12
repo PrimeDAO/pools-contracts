@@ -26,7 +26,7 @@ describe("Contract: BalDepositor", async () => {
   it("checks if deployed contracts are ZERO_ADDRESS", async () => {
     assert(setup.balDepositor.address != constants.ZERO_ADDRESS);
     assert(setup.tokens.WethBal.address != constants.ZERO_ADDRESS);
-    assert(setup.tokens.D2DToken.address != constants.ZERO_ADDRESS);
+    assert(setup.tokens.D2DBal.address != constants.ZERO_ADDRESS);
     assert(setup.tokens.VeBal.address != constants.ZERO_ADDRESS);
   });
 
@@ -40,7 +40,7 @@ describe("Contract: BalDepositor", async () => {
 
     assert(wethBalAdress == setup.tokens.WethBal.address);
     assert(staker == setup.roles.staker.address);
-    assert(minter == setup.tokens.D2DToken.address);
+    assert(minter == setup.tokens.D2DBal.address);
     assert(escrow == setup.tokens.VeBal.address);
     });
   });
