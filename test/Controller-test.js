@@ -150,7 +150,7 @@ describe("Contract: Controller", async () => {
                     "Controller: pool is not exists"
                 );  
             });
-            it("Adds pool", async () => {
+            it("Adds pool", async () => { //not this issue; that part shouls be done in "Develop tests for the Controller contract" issue 
                 lptoken = ;
                 gauge = ;
                 stashVersion = ;
