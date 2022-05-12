@@ -151,9 +151,9 @@ describe("Contract: Controller", async () => {
                 );  
             });
             it("Adds pool", async () => { //not this issue; that part shouls be done in "Develop tests for the Controller contract" issue 
-                lptoken = ;
-                gauge = ;
-                stashVersion = ;
+                // lptoken = ;
+                // gauge = ;
+                // stashVersion = ;
                 expect(
                     await setup.controller.connect(root).addPool(lptoken, gauge, stashVersion)
                 ).to.equal(true);
