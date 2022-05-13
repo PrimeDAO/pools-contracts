@@ -7,7 +7,7 @@ pragma solidity 0.8.13;
 // import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 interface VotingEscrow {
-    function get_last_user_slope(address addr) external view returns (int128);
+    function get_last_user_slope(address addr) external view returns (uint256);
     function locked__end(address addr) external view returns (uint256);
 
 }   
@@ -34,11 +34,11 @@ contract GaugeControllerMock {
 
     event CommitOwnership(address admin);
     event ApplyOwnership(address admin);
-    event AddType(string name, int128 type_id);
-    event NewTypeWeight(int128 type_id, uint256 time, uint256 weight, uint256 total_weight);
+    event AddType(string name, uint256 type_id);
+    event NewTypeWeight(uint256 type_id, uint256 time, uint256 weight, uint256 total_weight);
     event NewGaugeWeight(address gauge_address, uint256 time, uint256 weight, uint256 total_weight);
     event VoteForGauge(uint256 time, address user, address gauge_addr, uint256 weight);
-    event NewGauge(address addr, int128 gauge_type, uint256 weight);
+    event NewGauge(address addr, uint256 gauge_type, uint256 weight);
 
     address public admin;
     address public future_admin;
@@ -47,17 +47,17 @@ contract GaugeControllerMock {
 
     // Gauge parameters
     // All numbers are "fixed point" on the basis of 1e18
-    int128 public n_gauge_types;
-    int128 public n_gauges;
-    mapping(string => int128) public gauge_type_names;
+    uint256 public n_gauge_types;
+    uint256 public n_gauges;
+    mapping(uint256 => string) public gauge_type_names;
     // Needed for enumeration
     address[1000000000] public gauges;
     // we increment values by 1 prior to storing them here so we can rely on a value
     // of zero as meaning the gauge has not been set
-    mapping(address => int128) public gauge_types_;
+    mapping(address => uint256) public gauge_types_;
     mapping(address => mapping(address => VotedSlope)) public vote_user_slopes; // user -> gauge_addr -> VotedSlope
     mapping(address => uint256) public vote_user_power; // Total vote power used by user
-    mapping(string => mapping(address => uint256)) public last_user_vote; // Last user vote's timestamp for each gauge address
+    mapping(address => mapping(address => uint256)) public last_user_vote; // Last user vote's timestamp for each gauge address
 
     // Past and scheduled points for gauge weight, sum of weights per type, total weight
     // Point is for bias+slope
@@ -65,15 +65,15 @@ contract GaugeControllerMock {
     // time_* are for the last change timestamp
     // timestamps are rounded to whole weeks
 
-    mapping(address => mapping(address => Point)) public points_weight; // gauge_addr -> time -> Point
+    mapping(address => mapping(uint256 => Point)) public points_weight; // gauge_addr -> time -> Point
     mapping(address => mapping(uint256 => uint256)) public changes_weight; // gauge_addr -> time -> slope
     mapping(address => uint256) public time_weight; // gauge_addr -> last scheduled time (next week)
-    mapping(int128 => mapping(uint256 => Point)) public points_sum; // type_id -> time -> Point
-    mapping(int128 => mapping(uint256 => uint256)) public changes_sum; // type_id -> time -> slope
+    mapping(uint256 => mapping(uint256 => Point)) public points_sum; // type_id -> time -> Point
+    mapping(uint256 => mapping(uint256 => uint256)) public changes_sum; // type_id -> time -> slope
     uint256[1000000000] public time_sum; // type_id -> last scheduled time (next week)
     mapping(uint256 => uint256) public points_total; // time -> total weight
     uint256 public time_total; //last scheduled time
-    mapping(int128 => mapping(uint256 => uint256)) public points_type_weight; // type_id -> time -> type weight
+    mapping(uint256 => mapping(uint256 => uint256)) public points_type_weight; // type_id -> time -> type weight
     uint256[1000000000] public time_type_weight; // type_id -> last scheduled time (next week)
 
 
@@ -115,18 +115,18 @@ contract GaugeControllerMock {
         admin = _admin;
         emit ApplyOwnership(_admin);
     }
-    function gauge_types(address _addr) external view returns (int128) {
+    function gauge_types(address _addr) external view returns (uint256) {
         /**
         @notice Get gauge type for address
         @param _addr Gauge address
         @return Gauge type id
         */
-        int128 gauge_type = gauge_types_[_addr];
+        uint256 gauge_type = gauge_types_[_addr];
         require(gauge_type != 0, "GaugeControllerMock: gauge_type != 0");
 
         return gauge_type - 1;
     }
-    function _get_type_weight(int128 gauge_type) internal returns (uint256) {
+    function _get_type_weight(uint256 gauge_type) internal returns (uint256) {
         /**
         @notice Fill historic type weights week-over-week for missed checkins
                 and return the type weight for the future week
@@ -151,7 +151,7 @@ contract GaugeControllerMock {
             return 0;
         }
     }
-    function _get_sum(int128 gauge_type) internal returns (uint256) {
+    function _get_sum(uint256 gauge_type) internal returns (uint256) {
         /**
         @notice Fill sum of gauge weights for the same type week-over-week for
                 missed checkins and return the sum for the future week
@@ -192,7 +192,7 @@ contract GaugeControllerMock {
         @return Total weight
         */
         uint256 t = time_total;
-        int128 _n_gauge_types = n_gauge_types;
+        uint256 _n_gauge_types = n_gauge_types;
 
         if (t > block.timestamp) {
             // If we have already checkpointed - still need to change the value
@@ -270,7 +270,7 @@ contract GaugeControllerMock {
 
     // in original code uint256 weight = 0 by default
     // but Solidity does not support default parameters
-    function add_gauge(address addr, int256 gauge_type, uint256 weight) external {
+    function add_gauge(address addr, uint256 gauge_type, uint256 weight) external {
         /**
         @notice Add gauge `addr` of type `gauge_type` with weight `weight`
         @param addr Gauge address
@@ -281,7 +281,7 @@ contract GaugeControllerMock {
         require((gauge_type >= 0) && (gauge_type < n_gauge_types), "GaugeControllerMock: (gauge_type >= 0) && (gauge_type < n_gauge_types)");
         require(gauge_types_[addr] == 0, "GaugeControllerMock: gauge_types_[addr] == 0"); //dev: cannot add the same gauge twice
 
-        int128 n = n_gauges;
+        uint256 n = n_gauges;
         n_gauges = n + 1;
         gauges[n] = addr;
 
@@ -322,7 +322,7 @@ contract GaugeControllerMock {
         _get_weight(addr);
         _get_total();
     }
-    function _gauge_relative_weight(address addr, uint256 time) internal view {
+    function _gauge_relative_weight(address addr, uint256 time) internal view returns (uint256) {
         /**
         @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
             (e.g. 1.0 == 1e18). Inflation which will be received by it is
@@ -335,7 +335,7 @@ contract GaugeControllerMock {
         uint256 _total_weight = points_total[t];
 
         if (_total_weight > 0) {
-            int128 gauge_type = gauge_types_[addr] - 1;
+            uint256 gauge_type = gauge_types_[addr] - 1;
             uint256 _type_weight = points_type_weight[gauge_type][t];
             uint256 _gauge_weight = points_weight[addr][t].bias;
             return MULTIPLIER * _type_weight * _gauge_weight / _total_weight;
@@ -371,7 +371,7 @@ contract GaugeControllerMock {
         _get_total();  // Also calculates get_sum
         return _gauge_relative_weight(addr, time);
     }
-    function _change_type_weight(int256 type_id, uint256 weight) internal {
+    function _change_type_weight(uint256 type_id, uint256 weight) internal {
         /**
          @notice Change type weight
         @param type_id Type id
@@ -397,7 +397,7 @@ contract GaugeControllerMock {
         @param weight Weight of gauge type
         */
         require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
-        int128 type_id = n_gauge_types;
+        uint256 type_id = n_gauge_types;
         gauge_type_names[type_id] = _name;
         n_gauge_types = type_id + 1;
         if (weight != 0) {
@@ -405,7 +405,7 @@ contract GaugeControllerMock {
             emit AddType(_name, type_id);
         }
     }
-    function change_type_weight(int256 type_id, uint256 weight) external {
+    function change_type_weight(uint256 type_id, uint256 weight) external {
         /**
         @notice Change gauge type `type_id` weight to `weight`
         @param type_id Gauge type id
@@ -417,7 +417,7 @@ contract GaugeControllerMock {
     function _change_gauge_weight(address addr, uint256 weight) internal {
         // Change gauge weight
         // Only needed when testing in reality
-        int128 gauge_type = gauge_types_[addr] - 1;
+        uint256 gauge_type = gauge_types_[addr] - 1;
         uint256 old_gauge_weight = _get_weight(addr);
         uint256 type_weight = _get_type_weight(gauge_type);
         uint256 old_sum = _get_sum(gauge_type);
@@ -460,13 +460,13 @@ contract GaugeControllerMock {
         address escrow = voting_escrow;
         uint256 slope = uint256(VotingEscrow(escrow).get_last_user_slope(msg.sender));
         uint256 lock_end = VotingEscrow(escrow).locked__end(msg.sender);
-        int128 _n_gauges = n_gauges;
+        uint256 _n_gauges = n_gauges;
         uint256 next_time = (block.timestamp + WEEK) / WEEK * WEEK;
         require (lock_end > next_time, "Your token lock expires too soon");
         require ((_user_weight >= 0) && (_user_weight <= 10000), "You used all your voting power");
         require (block.timestamp >= last_user_vote[msg.sender][_gauge_addr] + WEIGHT_VOTE_DELAY, "Cannot vote so often");
 
-        int128 gauge_type = gauge_types_[_gauge_addr] - 1;
+        uint256 gauge_type = gauge_types_[_gauge_addr] - 1;
         require (gauge_type >= 0, "Gauge not added");
         // Prepare slopes and biases in memory;
         VotedSlope memory old_slope = vote_user_slopes[msg.sender][_gauge_addr];
