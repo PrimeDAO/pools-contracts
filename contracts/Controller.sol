@@ -208,7 +208,7 @@ contract Controller {
         console.log("_gauge %s", rewardFactory);
         console.log("staker %s", token);
         console.log("_stashVersion %s", _stashVersion);
-
+        // StashFactory from Booster contract https://etherscan.io/address/0x884da067b66677e72530df91eabb6e3ce69c2be4#code
         address stash = IStashFactory(stashFactory).CreateStash( // Error: Transaction reverted: function selector was not recognized and there's no fallback function
             pid,
             _gauge,
