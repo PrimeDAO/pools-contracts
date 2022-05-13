@@ -451,30 +451,38 @@ contract GaugeControllerMock {
         return a >= b ? a : b;
     }
 
+    // was CompilerError: Stack too deep, try removing local variables. in function vote_for_gauge_weights()
+    address private escrow;
+    uint256 private slope;
+    uint256 private lock_end;
+    uint256 private _n_gauges;
+    uint256 private gauge_type;
+    uint256 private old_dt;
+
     function vote_for_gauge_weights(address _gauge_addr, uint256 _user_weight) external {
         /**
         @notice Allocate voting power for changing pool weights
         @param _gauge_addr Gauge which `msg.sender` votes for
         @param _user_weight Weight for a gauge in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
         */
-        address escrow = voting_escrow;
-        uint256 slope = uint256(VotingEscrow(escrow).get_last_user_slope(msg.sender));
-        uint256 lock_end = VotingEscrow(escrow).locked__end(msg.sender);
-        uint256 _n_gauges = n_gauges;
+        escrow = voting_escrow;
+        slope = uint256(VotingEscrow(escrow).get_last_user_slope(msg.sender));
+         lock_end = VotingEscrow(escrow).locked__end(msg.sender);
+        _n_gauges = n_gauges;
         uint256 next_time = (block.timestamp + WEEK) / WEEK * WEEK;
         require (lock_end > next_time, "Your token lock expires too soon");
         require ((_user_weight >= 0) && (_user_weight <= 10000), "You used all your voting power");
         require (block.timestamp >= last_user_vote[msg.sender][_gauge_addr] + WEIGHT_VOTE_DELAY, "Cannot vote so often");
 
-        uint256 gauge_type = gauge_types_[_gauge_addr] - 1;
+        gauge_type = gauge_types_[_gauge_addr] - 1;
         require (gauge_type >= 0, "Gauge not added");
         // Prepare slopes and biases in memory;
         VotedSlope memory old_slope = vote_user_slopes[msg.sender][_gauge_addr];
-        uint256 old_dt = 0;
+        old_dt = 0;
         if (old_slope.end > next_time) {
             old_dt = old_slope.end - next_time;
         }
-        uint256 old_bias= old_slope.slope * old_dt;
+        uint256 old_bias = old_slope.slope * old_dt;
         VotedSlope memory new_slope = VotedSlope({
             slope: slope * _user_weight / 10000,
             end: lock_end,
