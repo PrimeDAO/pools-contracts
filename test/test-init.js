@@ -101,6 +101,8 @@ const controller = async (setup) => {
   const ERC20Mock = await ERC20Mock_Factory.deploy("ERC20Mock", "ERC20Mock");
 
   const staker = ERC20Mock;//await ethers.getContract("ERC20Mock");//await ethers.getContract("ERC20Mock");
+    //need to change staker mock as in addPool needed setStashAccess() function            
+    //IStaker(staker).setStashAccess(stash, true);
 
   return await controller.deploy(staker.address, setup.roles.root.address);
 };
