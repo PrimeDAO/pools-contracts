@@ -241,7 +241,7 @@ contract GaugeControllerMock {
         uint256 t = time_weight[gauge_addr];
 
         if (t > 0) {
-            Point pt = points_weight[gauge_addr][t];
+            Point memory pt = points_weight[gauge_addr][t];
             for (uint256 i = 0; i < 500; i++){
                 if (t > block.timestamp) {
                     break;
