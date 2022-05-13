@@ -152,11 +152,16 @@ describe("Contract: Controller", async () => {
                     "Controller: pool is not exists"
                 );  
             });
+            // it("Sets controller as operator ", async () => { //not this issue; now it is
+            //     expect(await setup.rewardFactory.connect(root).setAccess(setup.controller.address, true));
+            // });
             it("Sets factories", async () => { //not this issue; now it is
                 rewardFactory = setup.rewardFactory;
                 stashFactory = setup.rewardFactory; //stash to handle extra incentives
-                tokenFactory = setup.tokens.D2DBal; //create a tokenized deposit //booster tokenFactory https://etherscan.io/address/0x3c995e43e6ddd551e226f4c5544c77bfed147ab9
+                tokenFactory = setup.tokens.TokenFactory; //create a tokenized deposit //booster tokenFactory https://etherscan.io/address/0x3c995e43e6ddd551e226f4c5544c77bfed147ab9                
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+                // Error: VM Exception while processing transaction: reverted with reason string '!auth'
+                // at RewardFactory.CreateBalRewards 
             });
 
             //FIRSTLY need to SET FACTORIES

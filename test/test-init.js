@@ -53,7 +53,15 @@ const getTokens = async (setup) => {
   //VotingEscrow = VeBal
   const GaugeController = await GaugeControllerFactoty.deploy(BAL.address, VeBal.address);
 
-  return { BAL, D2DBal, PoolContract, WethBal, VeBal, GaugeController };
+
+  const TokenFactoryFactory = await ethers.getContractFactory(
+    "TokenFactory",
+    setup.roles.root
+  );
+  const TokenFactory = await TokenFactoryFactory.deploy(setup.roles.operator.address);
+
+
+  return { BAL, D2DBal, PoolContract, WethBal, VeBal, GaugeController, TokenFactory };
 };
 
 const balDepositor = async (setup) => {
@@ -104,9 +112,9 @@ const rewardFactory = async (setup) => {
   );
 
   const bal = setup.tokens.BAL;
-  const operator = setup.roles.operator;
+  const operator = setup.controller;//roles.operator;
 
-  return await RewardFactoryFactory.deploy(bal.address, operator.address);
+  return await RewardFactoryFactory.deploy(operator.address, bal.address);
 };
 
 module.exports = {

@@ -5,6 +5,7 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "hardhat/console.sol";
 
 contract Controller {
     using Address for address;
@@ -184,6 +185,9 @@ contract Controller {
         address _gauge,
         uint256 _stashVersion
     ) external returns (bool) {
+        console.log("o %s", owner);
+        console.log("pm %s", poolManager);
+
         require(msg.sender == poolManager && !isShutdown, "!add");
         require(_gauge != address(0) && _lptoken != address(0), "!param");
 
@@ -200,7 +204,12 @@ contract Controller {
             token
         );
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).CreateStash(
+        console.log("pid %s", pid);
+        console.log("_gauge %s", rewardFactory);
+        console.log("staker %s", token);
+        console.log("_stashVersion %s", _stashVersion);
+
+        address stash = IStashFactory(stashFactory).CreateStash( // Error: Transaction reverted: function selector was not recognized and there's no fallback function
             pid,
             _gauge,
             staker,

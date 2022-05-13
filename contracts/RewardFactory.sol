@@ -7,6 +7,7 @@ import "./VirtualBalanceRewardPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "hardhat/console.sol";
 
 contract RewardFactory {
     using Address for address;
@@ -86,6 +87,8 @@ contract RewardFactory {
         external
         returns (address)
     {
+        console.log("ms cr %s", msg.sender);
+        console.log("o cr %s",operator);
         require(msg.sender == operator, "!auth");
 
         //operator = booster(deposit) contract so that new bal can be added and distributed
