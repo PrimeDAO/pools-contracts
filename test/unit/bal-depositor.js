@@ -8,7 +8,7 @@ const init = require("../test-init.js");
 const deploy = async () => {
   const setup = await init.initialize(await ethers.getSigners());
 
-  setup.tokenInstances = await init.getTokenInstances(setup);
+  setup.tokens = await init.getTokens(setup);
 
   setup.balDepositor = await init.balDepositor(setup);
 
@@ -25,9 +25,9 @@ describe("Contract: BalDepositor", async () => {
   // first deployment test
   it("checks if deployed contracts are ZERO_ADDRESS", async () => {
     assert(setup.balDepositor.address != constants.ZERO_ADDRESS);
-    assert(setup.tokenInstances.WethBal.address != constants.ZERO_ADDRESS);
-    assert(setup.tokenInstances.D2DToken.address != constants.ZERO_ADDRESS);
-    assert(setup.tokenInstances.VeBal.address != constants.ZERO_ADDRESS);
+    assert(setup.tokens.WethBal.address != constants.ZERO_ADDRESS);
+    assert(setup.tokens.D2DBal.address != constants.ZERO_ADDRESS);
+    assert(setup.tokens.VeBal.address != constants.ZERO_ADDRESS);
   });
 
   it("checks BalDepositor construtor", async () => {
@@ -36,10 +36,10 @@ describe("Contract: BalDepositor", async () => {
     const minter = await setup.balDepositor.minter();
     const escrow =  await setup.balDepositor.escrow();
 
-    assert(wethBalAdress == setup.tokenInstances.WethBal.address);
+    assert(wethBalAdress == setup.tokens.WethBal.address);
     assert(staker == setup.roles.staker.address);
-    assert(minter == setup.tokenInstances.D2DToken.address);
-    assert(escrow == setup.tokenInstances.VeBal.address);
+    assert(minter == setup.tokens.D2DBal.address);
+    assert(escrow == setup.tokens.VeBal.address);
     });
   });
 });
