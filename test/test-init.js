@@ -5,7 +5,8 @@ const initialize = async (accounts) => {
     prime: accounts[1],
     staker: accounts[2],
     reward_manager: accounts[3],
-    authorizer_adaptor: accounts[4]
+    authorizer_adaptor: accounts[4],
+    operator: accounts[5]    
   };
 
   return setup;
@@ -80,6 +81,18 @@ const controller = async (setup) => {
   const minter = staker;
 
   return await controller.deploy(setup.roles.root.address, staker.address, minter.address);
+};
+
+const rewardFactory = async (setup) => {
+  const RewardFactoryFactory = await ethers.getContractFactory(
+    "RewardFactory",
+    setup.roles.root
+  );
+
+  const bal = setup.tokens.BAL;
+  const operator = setup.roles.operator;
+
+  return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
 module.exports = {
