@@ -18,28 +18,28 @@ const getVoterProxy = async (setup) => {
 };
 
 const getTokens = async (setup) => {
-  const ERC20_Factory =  await ethers.getContractFactory(
+  const ERC20Factory =  await ethers.getContractFactory(
     "ERC20Mock",
     setup.roles.root
   ); 
 
-  const VeBal_Factory =  await ethers.getContractFactory(
+  const VeBalFactory =  await ethers.getContractFactory(
     "VeBalMock",
     setup.roles.root
   );
 
-  const D2DBal_Factory = await ethers.getContractFactory(
+  const D2DBalFactory = await ethers.getContractFactory(
     "D2DBAL",
     setup.roles.root
   );
 
-  const BAL = await ERC20_Factory.deploy("Bal", "BAL");
+  const BAL = await ERC20Factory.deploy("Bal", "BAL");
 
-  const D2DBal = await D2DBal_Factory.deploy();
+  const D2DBal = await D2DBalFactory.deploy();
 
-  const PoolContract = await ERC20_Factory.deploy("PoolToken", "BALP");
-  const WethBal = await ERC20_Factory.deploy("WethBal", "WethBAL");
-  const VeBal = await VeBal_Factory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
+  const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
+  const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
+  const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
   return { BAL, D2DBal, PoolContract, WethBal, VeBal };
 };
