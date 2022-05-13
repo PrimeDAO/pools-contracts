@@ -155,7 +155,7 @@ describe("Contract: Controller", async () => {
             it("Sets factories", async () => { //not this issue; now it is
                 rewardFactory = setup.rewardFactory;
                 stashFactory = setup.rewardFactory; //stash to handle extra incentives
-                tokenFactory = setup.tokens.D2DBal;
+                tokenFactory = setup.tokens.D2DBal; //create a tokenized deposit //booster tokenFactory https://etherscan.io/address/0x3c995e43e6ddd551e226f4c5544c77bfed147ab9
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
 
