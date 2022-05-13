@@ -14,10 +14,6 @@ contract BalDepositor {
     using Address for address;
 
     IERC20 public immutable balWeth;
-    IERC20 public immutable veBal;
-
-    error Unauthorized();
-
     uint256 private constant MAX_TIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
 
@@ -33,48 +29,35 @@ contract BalDepositor {
     constructor(
         address _staker,
         address _minter,
-        address _veBal,
         address _balWeth
     ) public {
         staker = _staker;
         minter = _minter;
         feeManager = msg.sender;
-        veBal = IERC20(_veBal);
         balWeth = IERC20(_balWeth);
-    }
-
-    /// @notice  Confirms caller is the current fee manager
-    modifier onlyFeeManager(address _feeManager) {
-        if (msg.sender != _feeManager) {
-            revert Unauthorized();
-        }
-        _;
     }
 
     /// @notice Sets the contracts feeManager variable
     /// @param _feeManager The address of the fee manager
-    function setFeeManager(address _feeManager)
-        external
-        onlyFeeManager(msg.sender)
-    {
+    function setFeeManager(address _feeManager) external {
+        require(msg.sender == feeManager, "!auth");
         feeManager = _feeManager;
     }
 
     /// @notice Sets the lock incentive variable
     /// @param _lockIncentive Time to lock tokens
-    function setFees(uint256 _lockIncentive)
-        external
-        onlyFeeManager(msg.sender)
-    {
+    function setFees(uint256 _lockIncentive) external {
+        require(msg.sender == feeManager, "!auth");
         if (_lockIncentive >= 0 && _lockIncentive <= 30) {
             lockIncentive = _lockIncentive;
         }
     }
 
     /// @notice Locks initial balance of Weth/Bal in Voter Proxy
-    function initialLock() external onlyFeeManager(msg.sender) {
-        uint256 vBal = IERC20(veBal).balanceOf(staker);
-        if (vBal == 0) {
+    function initialLock() external {
+        require(msg.sender == feeManager, "!auth");
+        uint256 balBalance = IERC20(balWeth).balanceOf(staker);
+        if (balBalance == 0) {
             uint256 unlockAt = block.timestamp + MAX_TIME;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
@@ -130,44 +113,49 @@ contract BalDepositor {
     /// All of the minted d2dBal will be automatically staked to the Rewards contract
     /// @param _amount The amount of tokens user wants to stake
     /// @param _stakeAddress The Reward contract address
-    function deposit(uint256 _amount, address _stakeAddress) public {
+    function deposit(uint256 _amount, bool _lock, address _stakeAddress) public {
         require(_amount > 0, "!>0");
 
-        //lock immediately, transfer directly to staker to skip an erc20 transfer
-        IERC20(balWeth).transferFrom(msg.sender, staker, _amount);
-        _lockToken();
-        if (incentiveBal > 0) {
-            //add the incentive tokens here so they can be staked together
-            _amount = _amount + incentiveBal;
-            incentiveBal = 0;
-        }
-
-        bool depositOnly = _stakeAddress == address(0);
-
-        if (depositOnly) {
-            //mint for msg.sender
-            ITokenMinter(minter).mint(msg.sender, _amount);
+        if (_lock) {
+            //lock immediately, transfer directly to staker to skip an erc20 transfer
+            IERC20(balWeth).transferFrom(msg.sender, staker, _amount);
+            _lockToken();
+            if (incentiveBal > 0) {
+                //add the incentive tokens here so they can be staked together
+                _amount = _amount + incentiveBal;
+                incentiveBal = 0;
+            }
         } else {
+            //move tokens here
+            IERC20(balWeth).transferFrom(msg.sender, address(this), _amount);
+            //defer lock cost to another user
+            uint256 callIncentive = ((_amount * lockIncentive) /
+                FEE_DENOMINATOR);
+            _amount = _amount - callIncentive;
+
+            //add to a pool for lock caller
+            incentiveBal = incentiveBal + callIncentive;
+        }
             //mint here
             ITokenMinter(minter).mint(address(this), _amount);
             //stake for msg.sender
             IERC20(minter).approve(_stakeAddress, 0);
             IERC20(minter).approve(_stakeAddress, _amount);
             IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
-        }
+
     }
 
     /// @notice Mints & stakes `_amount` of rewards tokens for caller in Rewards contract
     /// @dev Does not stake `_amount` in Rewards contract, just mints d2dbal to caller
     /// @param _amount The amount of Weth/Bal we are staking
-    function deposit(uint256 _amount) external {
-        deposit(_amount, address(0));
+    function deposit(uint256 _amount, bool _lock) external {
+        deposit(_amount,_lock,address(0));
     }
 
     /// @notice Deposits entire Weth/Bal balance of caller. Stakes same amount in Rewards contract
     /// @param _stakeAddress The Reward contract address
-    function depositAll(address _stakeAddress) external {
+    function depositAll(bool _lock, address _stakeAddress) external {
         uint256 balBal = IERC20(balWeth).balanceOf(msg.sender);
-        deposit(balBal, _stakeAddress);
+        deposit(balBal,_lock,_stakeAddress);
     }
 }
