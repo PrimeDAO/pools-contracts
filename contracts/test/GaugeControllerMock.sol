@@ -534,7 +534,7 @@ contract GaugeControllerMock {
         */
         return points_weight[addr][time_weight[addr]].bias;
     }
-    function get_type_weight(int256 type_id) external view returns (uint256) {
+    function get_type_weight(uint256 type_id) external view returns (uint256) {
         /**
         @notice Get current type weight
         @param type_id Type id
@@ -549,7 +549,7 @@ contract GaugeControllerMock {
         */
         return points_total[time_total];
     }
-    function get_weights_sum_per_type(int256 type_id) external view returns (uint256) {
+    function get_weights_sum_per_type(uint256 type_id) external view returns (uint256) {
         /**
         @notice Get sum of gauge weights per type
         @param type_id Type id
