@@ -322,8 +322,97 @@ contract GaugeControllerMock {
         _get_weight(addr);
         _get_total();
     }
+    function _gauge_relative_weight(address addr, uint256 time) internal view {
+        /**
+        @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
+            (e.g. 1.0 == 1e18). Inflation which will be received by it is
+            inflation_rate * relative_weight / 1e18
+        @param addr Gauge address
+        @param time Relative weight at the specified timestamp in the past or present
+        @return Value of relative weight normalized to 1e18
+        */
+        uint256 t = time / WEEK * WEEK;
+        uint256 _total_weight = points_total[t];
 
+        if (_total_weight > 0) {
+            int128 gauge_type = gauge_types_[addr] - 1;
+            uint256 _type_weight = points_type_weight[gauge_type][t];
+            uint256 _gauge_weight = points_weight[addr][t].bias;
+            return MULTIPLIER * _type_weight * _gauge_weight / _total_weight;
+        } else {
+            return 0;
+        }
+    }
 
+    //in original code uint256 time = block.timestamp by default
+    function gauge_relative_weight(address addr, uint256 time) external view returns (uint256) {
+        /**
+        @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
+                (e.g. 1.0 == 1e18). Inflation which will be received by it is
+                inflation_rate * relative_weight / 1e18
+        @param addr Gauge address
+        @param time Relative weight at the specified timestamp in the past or present
+        @return Value of relative weight normalized to 1e18
+        */
+        return _gauge_relative_weight(addr, time);
+    }
 
+    //in original code uint256 time = block.timestamp by default
+    function gauge_relative_weight_write(address addr, uint256 time) external returns (uint256) {
+        /**
+        @notice Get gauge weight normalized to 1e18 and also fill all the unfilled
+                values for type and gauge records
+        @dev Any address can call, however nothing is recorded if the values are filled already
+        @param addr Gauge address
+        @param time Relative weight at the specified timestamp in the past or present
+        @return Value of relative weight normalized to 1e18
+        */
+        _get_weight(addr);
+        _get_total();  // Also calculates get_sum
+        return _gauge_relative_weight(addr, time);
+    }
+    function _change_type_weight(int256 type_id, uint256 weight) internal {
+        /**
+         @notice Change type weight
+        @param type_id Type id
+        @param weight New type weight
+        */
+        uint256 old_weight = _get_type_weight(type_id);
+        uint256 old_sum = _get_sum(type_id);
+        uint256 _total_weight = _get_total();
+        uint256 next_time = (block.timestamp + WEEK) / WEEK * WEEK;
+
+        _total_weight = _total_weight + old_sum * weight - old_sum * old_weight;
+        points_total[next_time] = _total_weight;
+        points_type_weight[type_id][next_time] = weight;
+        time_total = next_time;
+        time_type_weight[type_id] = next_time;
+
+        emit NewTypeWeight(type_id, next_time, weight, _total_weight);
+    }
+    function add_type(string _name, uint256 weight) external {
+        /**
+        @notice Add gauge type with name `_name` and weight `weight`
+        @param _name Name of gauge type
+        @param weight Weight of gauge type
+        */
+        require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
+        int128 type_id = n_gauge_types;
+        gauge_type_names[type_id] = _name;
+        n_gauge_types = type_id + 1;
+        if (weight != 0) {
+            _change_type_weight(type_id, weight);
+            emit AddType(_name, type_id);
+        }
+    }
+    function change_type_weight(int256 type_id, uint256 weight) external {
+        /**
+        @notice Change gauge type `type_id` weight to `weight`
+        @param type_id Gauge type id
+        @param weight New Gauge weight
+        */
+        require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
+        _change_type_weight(type_id, weight);
+    }
 
 }
