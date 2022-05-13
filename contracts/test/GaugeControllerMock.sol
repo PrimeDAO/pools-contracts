@@ -160,7 +160,7 @@ contract GaugeControllerMock {
         */
         uint256 t = time_sum[gauge_type];
         if (t > 0) {
-            Point pt = points_sum[gauge_type][t];
+            Point memory pt = points_sum[gauge_type][t];
             for (uint256 i = 0; i < 500; i++){
                 if (t > block.timestamp) {
                     break;
@@ -390,7 +390,7 @@ contract GaugeControllerMock {
 
         emit NewTypeWeight(type_id, next_time, weight, _total_weight);
     }
-    function add_type(string _name, uint256 weight) external {
+    function add_type(string memory _name, uint256 weight) external {
         /**
         @notice Add gauge type with name `_name` and weight `weight`
         @param _name Name of gauge type
@@ -446,6 +446,11 @@ contract GaugeControllerMock {
         require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
         _change_gauge_weight(addr, weight);
     }
+
+    function max(uint256 a, uint256 b) public returns (uint256) {
+        return a >= b ? a : b;
+    }
+
     function vote_for_gauge_weights(address _gauge_addr, uint256 _user_weight) external {
         /**
         @notice Allocate voting power for changing pool weights
@@ -464,13 +469,13 @@ contract GaugeControllerMock {
         int128 gauge_type = gauge_types_[_gauge_addr] - 1;
         require (gauge_type >= 0, "Gauge not added");
         // Prepare slopes and biases in memory;
-        VotedSlope old_slope = vote_user_slopes[msg.sender][_gauge_addr];
+        VotedSlope memory old_slope = vote_user_slopes[msg.sender][_gauge_addr];
         uint256 old_dt = 0;
         if (old_slope.end > next_time) {
             old_dt = old_slope.end - next_time;
         }
         uint256 old_bias= old_slope.slope * old_dt;
-        VotedSlope new_slope = VotedSlope({
+        VotedSlope memory new_slope = VotedSlope({
             slope: slope * _user_weight / 10000,
             end: lock_end,
             power: _user_weight
@@ -482,7 +487,7 @@ contract GaugeControllerMock {
         uint256 power_used = vote_user_power[msg.sender];
         power_used = power_used + new_slope.power - old_slope.power;
         vote_user_power[msg.sender] = power_used;
-        require ((power_used >= 0) && (power_used <= 10000), 'Used too much power');
+        require ((power_used >= 0) && (power_used <= 10000), "Used too much power");
 
         // Remove old and schedule new slope changes
         // Remove slope changes for old slopes
@@ -520,7 +525,6 @@ contract GaugeControllerMock {
         emit VoteForGauge(block.timestamp, msg.sender, _gauge_addr, _user_weight);
 
     }
-
 
     function get_gauge_weight(address addr) external view returns (uint256) {
         /**
