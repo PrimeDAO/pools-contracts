@@ -7,11 +7,10 @@ const initialize = async (accounts) => {
   setup.roles = {
     root: accounts[0],
     prime: accounts[1],
-    beneficiary: accounts[2],
-    buyer1: accounts[3],
-    buyer2: accounts[4],
-    authorizer_adaptor: accounts[5],
-    staker: accounts[6],
+    staker: accounts[2],
+    reward_manager: accounts[3],
+    authorizer_adaptor: accounts[4],
+    operator: accounts[5],
   };
 
   return setup;

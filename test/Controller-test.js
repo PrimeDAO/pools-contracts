@@ -11,10 +11,8 @@ const init = require("./test-init.js");
 const deploy = async () => {
   const setup = await init.initialize(await ethers.getSigners());
 
-  setup.token = await init.getTokens(setup);
+  setup.tokens = await init.getTokens(setup);
   
-  setup.bal = await setup.token.bal;
-
   setup.controller = await init.controller(setup);
 
   setup.rewardFactory = await init.rewardFactory(setup);
@@ -58,12 +56,11 @@ describe("Contract: Controller", async () => {
 
       // // Roles
       root = setup.roles.root;
-      beneficiary = setup.roles.beneficiary;
-      admin = setup.roles.prime;
-      buyer1 = setup.roles.buyer1;
-      buyer2 = setup.roles.buyer2;
-      authorizer_adaptor = setup.roles.buyer3;
       staker = setup.roles.staker;
+      admin = setup.roles.prime;
+      reward_manager = setup.roles.reward_manager;
+      authorizer_adaptor = setup.roles.authorizer_adaptor;
+      operator = setup.roles.operator;
 
       platformFee = 500;
       profitFee = 100;
@@ -157,17 +154,17 @@ describe("Contract: Controller", async () => {
             });
             it("Sets factories", async () => { //not this issue; now it is
                 rewardFactory = setup.rewardFactory;
-                stashFactory = ;
-                tokenFactory = ;
+                stashFactory = setup.rewardFactory; //stash to handle extra incentives
+                tokenFactory = setup.tokens.D2DBal;
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
 
             //FIRSTLY need to SET FACTORIES
             it("Adds pool", async () => { //not this issue; now it is
                 //lp token is unwithdrawable --> PoolToken
-                lptoken = setup.token.PoolContract; //address; 
+                lptoken = setup.tokens.PoolContract; //address; 
                 //reward contract is going to be BAL
-                gauge = setup.token.GaugeController;// gauge controller Mock //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
+                gauge = setup.tokens.GaugeController;// gauge controller Mock //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
                 stashVersion = 1; //uint256
                 expect(
                     await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion)
