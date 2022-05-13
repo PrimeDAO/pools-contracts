@@ -100,6 +100,7 @@ module.exports = {
   getVoterProxy,
   getTokens,
   balDepositor,
+  rewardFactory,
   baseRewardPool,
   controller,
 };
