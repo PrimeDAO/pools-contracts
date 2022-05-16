@@ -103,8 +103,8 @@ const controller = async (setup) => {
     setup.roles.root
   );
 
-  const ERC20Mock_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
-  const ERC20Mock = await ERC20Mock_Factory.deploy("ERC20Mock", "ERC20Mock");
+  // const ERC20Mock_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
+  // const ERC20Mock = await ERC20Mock_Factory.deploy("ERC20Mock", "ERC20Mock");
 
   // const staker = ERC20Mock;//await ethers.getContract("ERC20Mock");//await ethers.getContract("ERC20Mock");
     //need to change staker mock as in addPool needed setStashAccess() function            
