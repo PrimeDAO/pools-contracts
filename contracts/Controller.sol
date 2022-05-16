@@ -69,11 +69,7 @@ contract Controller {
         uint256 indexed poolid,
         uint256 amount
     );
-    event ReDeposited(
-        address indexed user,
-        uint256 indexed poolid,
-        uint256 amount
-    );
+
     event Withdrawn(
         address indexed user,
         uint256 indexed poolid,
@@ -82,7 +78,7 @@ contract Controller {
 
     constructor(address _staker, address _minter) public {
         isShutdown = false;
-        staker = _staker;
+        staker = _staker; //voterProxy
         owner = msg.sender;
         voteDelegate = msg.sender;
         feeManager = msg.sender;
@@ -325,7 +321,7 @@ contract Controller {
         //save timelock info
         userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
 
-        address token = pool.token;
+        address token = pool.token; //D2DPool token
         if (_stake) {
             //mint here and send to rewards on user behalf
             ITokenMinter(token).mint(address(this), _amount);
@@ -469,14 +465,14 @@ contract Controller {
 
         //mint here and send to rewards on user behalf
         // ITokenMinter(token).mint(address(this), _amount); //no need as _amount of tokens already inside
-        address rewardContract = pool.balRewards;
+        // address rewardContract = pool.balRewards;
 
-        // IStaker(staker).withdraw(lptoken, gauge, _amount); - in withdraw --> so need this address to check current balance of msg.sender
-        uint256 _amount = IERC20(staker).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+        uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+        ICurveVoteEscrow(token).increase_unlock_time(lockTime);
 
-        IERC20(token).approve(rewardContract, _amount);
+        // IERC20(token).approve(rewardContract, _amount);
 
-        emit ReDeposited(msg.sender, _pid, _amount);
+        emit Deposited(msg.sender, _pid, _amount);
         return true;
     }
 
