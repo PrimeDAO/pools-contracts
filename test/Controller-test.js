@@ -19,6 +19,8 @@ const deploy = async () => {
 
   setup.rewardFactory = await init.rewardFactory(setup);
 
+  setup.stashFactory = await init.stashFactory(setup);
+
   setup.data = {};
 
   return setup;
@@ -159,7 +161,7 @@ describe("Contract: Controller", async () => {
             });
             it("Sets factories", async () => { //not this issue; now it is
                 rewardFactory = setup.rewardFactory;
-                stashFactory = setup.tokens.TokenFactory; //stash to handle extra incentives
+                stashFactory = setup.stashFactory; //stash to handle extra incentives
                 tokenFactory = setup.tokens.TokenFactory; //create a tokenized deposit //booster tokenFactory https://etherscan.io/address/0x3c995e43e6ddd551e226f4c5544c77bfed147ab9                
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
                 // Error: VM Exception while processing transaction: reverted with reason string '!auth'

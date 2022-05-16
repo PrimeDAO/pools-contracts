@@ -54,7 +54,6 @@ const getTokens = async (setup) => {
   );
   const TokenFactory = await TokenFactoryFactory.deploy(setup.roles.operator.address);
 
-
   return { BAL, D2DBal, PoolContract, WethBal, VeBal, GaugeController, TokenFactory };
 };
 
@@ -115,7 +114,7 @@ const controller = async (setup) => {
 };
 
 const rewardFactory = async (setup) => {
-  const RewardFactoryFactory = await ethers.getContractFactory(
+  const RewardFactory = await ethers.getContractFactory(
     "RewardFactory",
     setup.roles.root
   );
@@ -123,8 +122,20 @@ const rewardFactory = async (setup) => {
   const bal = setup.tokens.BAL;
   const operator = setup.controller;//roles.operator;
 
-  return await RewardFactoryFactory.deploy(operator.address, bal.address);
+  return await RewardFactory.deploy(operator.address, bal.address);
 };
+
+const stashFactory = async (setup) => {
+  const StashFactory = await ethers.getContractFactory(
+    "StashFactoryMock",
+    setup.roles.root
+  );
+  const operator = setup.controller;
+  const rewardFactory = setup.rewardFactory;
+  const proxyFactory =  setup.VoterProxy;
+  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+};
+
 
 module.exports = {
   initialize,
@@ -134,4 +145,5 @@ module.exports = {
   rewardFactory,
   baseRewardPool,
   controller,
+  stashFactory
 };
