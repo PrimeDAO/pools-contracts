@@ -19,11 +19,12 @@ contract BaseRewardPool {
     uint256 public constant DURATION = 7 days;
     uint256 public constant NEW_REWARD_RATIO = 830;
 
-    // Rewards token is Bal.
+    // Rewards token is Bal
     IERC20 public immutable rewardToken;
-    //Staking token is d2dBal.
+    // Staking token is d2dBal
     IERC20 public immutable stakingToken;
 
+    // Operator is Controller smart contract
     address public immutable operator;
     address public immutable rewardManager;
 

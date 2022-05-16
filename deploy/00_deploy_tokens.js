@@ -1,5 +1,4 @@
 const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
-  console.log(`Deploying on network ${network.name}`);
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
@@ -13,9 +12,9 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
 
   const decimals2 = 18; //uint8 decimals_ ; 10 for example (set correct later)
   await deploy("PoolToken", {
-    contract: "PoolToken",
+    contract: "ERC20Mock",
     from: root,
-    args: ["Pool Token", "BALP", decimals2],
+    args: ["Pool Token", "BALP"],
     log: true,
   });
 

@@ -19,3 +19,5 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
 module.exports = deployFunction;
 module.exports.tags = ["BalDepositor"];
 
+const dplMock = () => {}
+module.exports = dplMock;

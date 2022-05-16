@@ -1,3 +1,5 @@
+const { deployments } = require('hardhat')
+
 const initialize = async (accounts) => {
   const setup = {};
   setup.roles = {
@@ -30,13 +32,13 @@ const getTokens = async (setup) => {
   );
 
   const D2DBalFactory = await ethers.getContractFactory(
-    "D2DBAL",
+    "ERC20Mock",
     setup.roles.root
   );
 
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
 
-  const D2DBal = await D2DBalFactory.deploy();
+  const D2DBal = await D2DBalFactory.deploy("D2D", "D2D");
 
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
@@ -56,20 +58,6 @@ const balDepositor = async (setup) => {
   const escrow =  setup.tokens.VeBal;
 
   return await balDepositor.deploy(wethBal.address, staker.address, minter.address, escrow.address);
-};
-
-const baseRewardPool = async (setup) => {
-  const baseRewardPool = await ethers.getContractFactory(
-    "BaseRewardPool",
-    setup.roles.root
-  );
-  const pid = 1; // pool id
-  const stakingToken = setup.tokens.D2DBal;
-  const rewardToken = setup.tokens.BAL;
-  const operator = await setup.controller;
-  const rewardManager = setup.roles.reward_manager;
-
-  return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingToken.address, rewardToken.address, operator.address, rewardManager.address);
 };
 
 const controller = async (setup) => {
@@ -95,12 +83,60 @@ const rewardFactory = async (setup) => {
   return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
+const getBaseRewardPool = async () => {
+  const BaseRewardPoolDeployement = await deployments.get("BaseRewardPool");
+  const BaseRewardPool = await hre.ethers.getContractFactory("BaseRewardPoolInTest");
+  return BaseRewardPool.attach(BaseRewardPoolDeployement.address);
+}
+
+const getControllerMock = async () => {
+  const ControllerDeployement = await deployments.get("ControllerMock");
+  const ControllerMock = await hre.ethers.getContractFactory("ControllerMock");
+  return ControllerMock.attach(ControllerDeployement.address);
+}
+
+const getVeBalMock = async () => {
+  const veBalMockDeployement = await deployments.get("veBalMock");
+  const VeBalMock = await hre.ethers.getContractFactory("veBalMock");
+  return VeBalMock.attach(veBalMockDeployement.address);
+}
+
+const getBalMock = async () => {
+  const BalMockDeployement = await deployments.get("BalMock");
+  const BalMock = await hre.ethers.getContractFactory("ERC20Mock");
+  return BalMock.attach(BalMockDeployement.address);
+}
+
+const getBalancer80BAL20WETHMock = async () => {
+  const Balancer80BAL20WETHMockDeployement = await deployments.get("Balancer80BAL20WETHMock");
+  const Balancer80BAL20WETHMoc = await hre.ethers.getContractFactory("ERC20Mock");
+  return Balancer80BAL20WETHMoc.attach(Balancer80BAL20WETHMockDeployement.address);
+}
+
+const getD2DTokenMock = async () => {
+  const D2DTokenDeployement = await deployments.get("D2DTokenMock");
+  const D2DToken = await hre.ethers.getContractFactory("D2DToken");
+  return D2DToken.attach(D2DTokenDeployement.address);
+}
+
+const getExtraRewardMock = async () => {
+  const ExtraRewardMockDeployement = await deployments.get("ExtraRewardMock");
+  const ExtraRewardMock = await hre.ethers.getContractFactory("ExtraRewardMock");
+  return ExtraRewardMock.attach(ExtraRewardMockDeployement.address);
+}
+
 module.exports = {
   initialize,
   getVoterProxy,
   getTokens,
   balDepositor,
   rewardFactory,
-  baseRewardPool,
   controller,
+  getBaseRewardPool,
+  getBalMock,
+  getVeBalMock,
+  getD2DTokenMock,
+  getControllerMock,
+  getExtraRewardMock,
+  getBalancer80BAL20WETHMock,
 };
