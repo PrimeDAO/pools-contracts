@@ -187,9 +187,6 @@ contract Controller {
         address _gauge,
         uint256 _stashVersion
     ) external returns (bool) {
-        // console.log("o %s", owner);
-        // console.log("pm %s", poolManager);
-
         require(msg.sender == poolManager && !isShutdown, "!add");
         require(_gauge != address(0) && _lptoken != address(0), "!param");
 
@@ -206,13 +203,8 @@ contract Controller {
             token
         );
         //create a stash to handle extra incentives
-        console.log("pid %s", pid);
-        console.log("_gauge %s", rewardFactory);
-        console.log("staker %s", token);
-        console.log("_stashVersion %s", _stashVersion);
         // StashFactory from Booster contract https://etherscan.io/address/0x884da067b66677e72530df91eabb6e3ce69c2be4#code
-        // address stash = VoterProxy;
-        address stash = IStashFactory(stashFactory).CreateStash( // Error: Transaction reverted: function selector was not recognized and there's no fallback function
+        address stash = IStashFactory(stashFactory).CreateStash( // address stash = VoterProxy;
             pid,
             _gauge,
             staker,

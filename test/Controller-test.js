@@ -168,24 +168,26 @@ describe("Contract: Controller", async () => {
                 // at RewardFactory.CreateBalRewards 
             });
 
-            //FIRSTLY need to SET FACTORIES
             it("Adds pool", async () => { //not this issue; now it is
                 //lp token is unwithdrawable --> PoolToken
                 lptoken = setup.tokens.PoolContract; //address; 
                 //reward contract is going to be BAL
                 gauge = setup.tokens.GaugeController;// gauge controller Mock //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
                 stashVersion = 1; //uint256
-                console.log("log1 %s",await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion));
+                await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
                 expect(
-                    await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion)
-                ).to.equal(true);
+                    (await setup.controller.poolLength()).toNumber()
+                ).to.equal(1);
+
+                //TODO: add more expects for added data
+                console.log("lptoken %s ", (await setup.controller.poolInfo[0]));
+                console.log("token %s ", await setup.controller.token);
             });
             it("Calls earmarkRewards with existing pool number", async () => {
                 pid = 1;
-                console.log("log2 %s", await setup.controller.connect(root).earmarkRewards(pid));
+                await setup.controller.connect(root).earmarkRewards(pid);
 
                 expect(
-                    await setup.controller.connect(root).earmarkRewards(pid)
                 ).to.equal(true);
             });
         });
