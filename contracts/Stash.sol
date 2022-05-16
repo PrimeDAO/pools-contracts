@@ -5,8 +5,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-
 import "./utils/Interfaces.sol";
+
 //Stash v3: support for curve gauge reward redirect
 //v3.1: support for arbitrary token rewards outside of gauge rewards
 //      add reward hook to pull rewards during claims
@@ -15,7 +15,8 @@ import "./utils/Interfaces.sol";
 contract ExtraRewardStashV3 {
     using Address for address;
 
-    address public constant bal = address(0xba100000625a3754423978a60c9317c58a424e3D);//0xD533a949740bb3306d119CC777fa900bA034cd52);
+    address public constant bal =
+            address(0xba100000625a3754423978a60c9317c58a424e3D);//0xD533a949740bb3306d119CC777fa900bA034cd52);
     uint256 private constant maxRewards = 8;
 
     uint256 public pid;
@@ -23,7 +24,7 @@ contract ExtraRewardStashV3 {
     address public staker;
     address public gauge;
     address public rewardFactory;
-   
+
     mapping(address => uint256) public historicalRewards;
     bool public hasRedirected;
     bool public hasCurveRewards;
@@ -43,7 +44,13 @@ contract ExtraRewardStashV3 {
     constructor() public {
     }
 
-    function initialize(uint256 _pid, address _operator, address _staker, address _gauge, address _rFactory) external {
+    function initialize(
+        uint256 _pid,
+        address _operator,
+        address _staker,
+        address _gauge,
+        address _rFactory
+    ) external {
         require(gauge == address(0),"2init");
         pid = _pid;
         operator = _operator;
