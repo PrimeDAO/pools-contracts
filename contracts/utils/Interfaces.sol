@@ -99,7 +99,8 @@ interface IStaker {
 
     function release() external;
 
-    function claimCrv(address) external returns (uint256);
+    // function claimCrv(address) external returns (uint256);
+    function claimBal(address) external returns (uint256);
 
     function claimRewards(address) external;
 
