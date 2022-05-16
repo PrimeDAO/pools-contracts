@@ -175,13 +175,15 @@ describe("Contract: Controller", async () => {
                 //reward contract is going to be BAL
                 gauge = setup.tokens.GaugeController;// gauge controller Mock //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
                 stashVersion = 1; //uint256
-                console.log(await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion));
+                console.log("log1 %s",await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion));
                 expect(
                     await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion)
                 ).to.equal(true);
             });
             it("Calls earmarkRewards with existing pool number", async () => {
                 pid = 1;
+                console.log("log2 %s", await setup.controller.connect(root).earmarkRewards(pid));
+
                 expect(
                     await setup.controller.connect(root).earmarkRewards(pid)
                 ).to.equal(true);

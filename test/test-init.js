@@ -127,7 +127,7 @@ const rewardFactory = async (setup) => {
 
 const stashFactory = async (setup) => {
   const StashFactory = await ethers.getContractFactory(
-    "StashFactoryMock",
+    "StashFactory",
     setup.roles.root
   );
   const operator = setup.controller;
