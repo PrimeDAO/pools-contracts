@@ -417,9 +417,9 @@ contract Controller {
         return true;
     }
 
-    //withdraw veBAL, which was unlocked after a year of usage
+    //withdraw wethBal, which was unlocked after a year of usage
     //upd of issue: Add withdraw function, which withdraws tokens from the veBal address, and redirects them to the treasury contract
-    function withdrawUnlockedVeBAL(uint256 _pid, uint256 _amount)
+    function withdrawUnlockedWethBal(uint256 _pid, uint256 _amount)
         public
         returns (bool)
     {
