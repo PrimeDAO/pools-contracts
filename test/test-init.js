@@ -38,7 +38,7 @@ const getTokens = async (setup) => {
 
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
 
-  const D2DBal = await D2DBalFactory.deploy("D2D", "D2D");
+  const D2DBal = await D2DBalFactory.deploy("D2DBal", "D2DBAL");
 
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
@@ -113,10 +113,10 @@ const getBalancer80BAL20WETHMock = async () => {
   return Balancer80BAL20WETHMoc.attach(Balancer80BAL20WETHMockDeployement.address);
 }
 
-const getD2DTokenMock = async () => {
-  const D2DTokenDeployement = await deployments.get("D2DTokenMock");
-  const D2DToken = await hre.ethers.getContractFactory("D2DToken");
-  return D2DToken.attach(D2DTokenDeployement.address);
+const getD2DBalMock = async () => {
+  const D2DBalDeployement = await deployments.get("D2DTokenMock");
+  const D2DBal = await hre.ethers.getContractFactory("D2DBal");
+  return D2DBal.attach(D2DBalDeployement.address);
 }
 
 const getExtraRewardMock = async () => {
@@ -135,7 +135,7 @@ module.exports = {
   getBaseRewardPool,
   getBalMock,
   getVeBalMock,
-  getD2DTokenMock,
+  getD2DBalMock,
   getControllerMock,
   getExtraRewardMock,
   getBalancer80BAL20WETHMock,

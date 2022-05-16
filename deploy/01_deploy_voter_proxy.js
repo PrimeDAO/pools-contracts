@@ -2,7 +2,7 @@ const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  let bal = await ethers.getContract("D2DToken");
+  let bal = await ethers.getContract("D2DBal");
   let veBal = await deploy("VeBalMock", {
     from: root,
     args: [

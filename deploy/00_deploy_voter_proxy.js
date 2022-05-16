@@ -5,7 +5,7 @@
 //   //   network.name == "kovan" ? root : await ethers.getContract("VoterProxy");
 
 //   let minter;
-//   let bal = await ethers.getContract("D2DToken");
+//   let bal = await ethers.getContract("D2DBal");
 //   let veBal = await deploy("veBalMock", {
 //     from: root,
 //     args: [

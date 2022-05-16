@@ -3,8 +3,8 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { root } = await getNamedAccounts();
 
   const decimals1 = 18; //uint8 decimals_ ; 10 for example (set correct later)
-  await deploy("D2DToken", {
-    contract: "D2DToken",
+  await deploy("D2DBal", {
+    contract: "D2DBal",
     from: root,
     args: [decimals1],
     log: true,
@@ -20,4 +20,4 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["D2DToken", "PoolToken"];
+module.exports.tags = ["D2DBal", "PoolToken"];
