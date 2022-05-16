@@ -68,7 +68,7 @@ contract Controller {
 
     constructor(address _staker, address _feeManager) public {
         isShutdown = false;
-        staker = _staker;
+        staker = _staker; //VoterProxy
         owner = msg.sender;
         voteDelegate = msg.sender;
         feeManager = _feeManager;
@@ -185,8 +185,8 @@ contract Controller {
         address _gauge,
         uint256 _stashVersion
     ) external returns (bool) {
-        console.log("o %s", owner);
-        console.log("pm %s", poolManager);
+        // console.log("o %s", owner);
+        // console.log("pm %s", poolManager);
 
         require(msg.sender == poolManager && !isShutdown, "!add");
         require(_gauge != address(0) && _lptoken != address(0), "!param");
@@ -233,9 +233,10 @@ contract Controller {
         //   reward factory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
         if (stash != address(0)) {
             poolInfo[pid].stash = stash;
-            IStaker(staker).setStashAccess(stash, true);
+            IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy; staker from Booster 0x989aeb4d175e16225e39e87d0d97a3360524ad80 address
             IRewardFactory(rewardFactory).setAccess(stash, true);
         }
+        console.log(true);
         return true;
     }
 
@@ -444,7 +445,7 @@ contract Controller {
         address gauge = pool.gauge;
 
         //claim bal
-        IStaker(staker).claimCrv(gauge);
+        IStaker(staker).claimBal(gauge);
 
         //check if there are extra rewards
         address stash = pool.stash;
