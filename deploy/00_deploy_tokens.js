@@ -1,4 +1,4 @@
-const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
+const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
@@ -10,7 +10,6 @@ const deployFunction = async ({ getNamedAccounts, deployments, network }) => {
     log: true,
   });
 
-  const decimals2 = 18; //uint8 decimals_ ; 10 for example (set correct later)
   await deploy("PoolToken", {
     contract: "ERC20Mock",
     from: root,
