@@ -13,6 +13,8 @@ const deploy = async () => {
 
   setup.tokens = await init.getTokens(setup);
   
+  setup.VoterProxy = await init.getVoterProxy(setup);
+
   setup.controller = await init.controller(setup);
 
   setup.rewardFactory = await init.rewardFactory(setup);
@@ -152,9 +154,9 @@ describe("Contract: Controller", async () => {
                     "Controller: pool is not exists"
                 );  
             });
-            // it("Sets controller as operator ", async () => { //not this issue; now it is
-            //     expect(await setup.rewardFactory.connect(root).setAccess(setup.controller.address, true));
-            // });
+            it("Sets VoterProxy operator ", async () => {
+                expect(await setup.VoterProxy.connect(root).setOperator(setup.controller.address));
+            });
             it("Sets factories", async () => { //not this issue; now it is
                 rewardFactory = setup.rewardFactory;
                 stashFactory = setup.tokens.TokenFactory; //stash to handle extra incentives

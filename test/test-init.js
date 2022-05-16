@@ -16,12 +16,6 @@ const initialize = async (accounts) => {
   return setup;
 };
 
-const getVoterProxy = async (setup) => {
-  const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
-  const parameters = args ? args : [];
-  return await VoterProxy.deploy(...parameters);
-};
-
 const getTokens = async (setup) => {
   const ERC20Factory =  await ethers.getContractFactory(
     "ERC20Mock",
@@ -91,6 +85,18 @@ const baseRewardPool = async (setup) => {
   return await baseRewardPool.deploy(setup.roles.root.address, pid, stakingToken.address, rewardToken.address, operator.address, rewardManager.address);
 };
 
+const getVoterProxy = async (setup) => {
+  const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
+  // const parameters = args ? args : [];
+  // return await VoterProxy.deploy(...parameters);
+  const mintr = setup.tokens.D2DBal;
+  const bal = setup.tokens.BAL;
+  const veBal = setup.tokens.VeBal;
+  const gaugeController = setup.tokens.GaugeController;
+
+  return await VoterProxy.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
+};
+
 const controller = async (setup) => {
   const controller = await ethers.getContractFactory(
     "Controller",
@@ -100,10 +106,11 @@ const controller = async (setup) => {
   const ERC20Mock_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
   const ERC20Mock = await ERC20Mock_Factory.deploy("ERC20Mock", "ERC20Mock");
 
-  const staker = ERC20Mock;//await ethers.getContract("ERC20Mock");//await ethers.getContract("ERC20Mock");
+  // const staker = ERC20Mock;//await ethers.getContract("ERC20Mock");//await ethers.getContract("ERC20Mock");
     //need to change staker mock as in addPool needed setStashAccess() function            
     //IStaker(staker).setStashAccess(stash, true);
 
+  const staker = setup.VoterProxy; //row 236 asks for VoterProxt function  IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy; staker from Booster 0x989aeb4d175e16225e39e87d0d97a3360524ad80 address
   return await controller.deploy(staker.address, setup.roles.root.address);
 };
 
