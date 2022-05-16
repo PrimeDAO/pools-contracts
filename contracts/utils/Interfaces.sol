@@ -294,3 +294,7 @@ interface IVestedEscrow {
         external
         returns (bool);
 }
+
+interface IProxyFactory {
+    function clone(address _target) external returns(address);
+}
