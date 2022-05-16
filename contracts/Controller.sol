@@ -10,8 +10,9 @@ import "hardhat/console.sol";
 contract Controller {
     using Address for address;
 
-    address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
+    // address public constant bal =
+        // address(0xba100000625a3754423978a60c9317c58a424e3D);
+    address public immutable bal;//wethBal;
     address public constant registry =
         address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
@@ -66,8 +67,9 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _feeManager) public {
+    constructor(address _staker, address _feeManager, address _wethBal) public {
         isShutdown = false;
+        bal = _wethBal;
         staker = _staker; //VoterProxy
         owner = msg.sender;
         voteDelegate = msg.sender;
@@ -458,7 +460,7 @@ contract Controller {
         }
 
         //bal balance
-        uint256 balBal = IERC20(bal).balanceOf(address(this));
+        uint256 balBal = IERC20(bal).balanceOf(address(this)); //here an error
 
         if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.

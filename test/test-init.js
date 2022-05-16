@@ -108,9 +108,9 @@ const controller = async (setup) => {
   // const staker = ERC20Mock;//await ethers.getContract("ERC20Mock");//await ethers.getContract("ERC20Mock");
     //need to change staker mock as in addPool needed setStashAccess() function            
     //IStaker(staker).setStashAccess(stash, true);
-
+  const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy; //row 236 asks for VoterProxt function  IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy; staker from Booster 0x989aeb4d175e16225e39e87d0d97a3360524ad80 address
-  return await controller.deploy(staker.address, setup.roles.root.address);
+  return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address);
 };
 
 const rewardFactory = async (setup) => {
