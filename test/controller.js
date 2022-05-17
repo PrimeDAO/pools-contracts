@@ -166,9 +166,9 @@ describe("Contract: Controller", async () => {
                 expect(
                     (await setup.controller.poolLength()).toNumber()
                 ).to.equal(1);
-                // expect(
-                //     await tokenFactory.token()
-                // ).to.equal(1);
+                expect(
+                    (await setup.controller.poolInfo.lptoken())
+                ).to.equal(1);
                 // expect(
                 //     await tokenFactory.token()
                 // ).to.equal(gauge.address);
