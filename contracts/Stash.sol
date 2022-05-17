@@ -7,16 +7,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./utils/Interfaces.sol";
 
-//Stash v3: support for curve gauge reward redirect
-//v3.1: support for arbitrary token rewards outside of gauge rewards
-//      add reward hook to pull rewards during claims
-//v3.2: move constuctor to init function for proxy creation
-
 contract ExtraRewardStashV3 {
     using Address for address;
 
     address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D); //0xD533a949740bb3306d119CC777fa900bA034cd52);
+        address(0xba100000625a3754423978a60c9317c58a424e3D);
     uint256 private constant maxRewards = 8;
 
     uint256 public pid;

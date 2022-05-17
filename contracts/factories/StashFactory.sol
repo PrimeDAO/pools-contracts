@@ -28,9 +28,9 @@ contract StashFactory {
         address _rewardFactory,
         address _proxyFactory
     ) public {
-        operator = _operator; //controller
-        rewardFactory = _rewardFactory; //rewardfactory
-        proxyFactory = _proxyFactory; //voterproxy
+        operator = _operator;
+        rewardFactory = _rewardFactory;
+        proxyFactory = _proxyFactory;
     }
 
     function setImplementation(
