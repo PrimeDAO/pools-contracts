@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 // const { constants } = require("@openzeppelin/test-helpers");
-const { expectRevert } = require("@openzeppelin/test-helpers");
+// const { expectRevert } = require("@openzeppelin/test-helpers");
 
 
 const init = require("../test-init.js");
@@ -32,12 +32,12 @@ describe("Contract: Controller", async () => {
   let setup;
   let root;
 
-  let platformFee;
-  let profitFee;
-  let pid;
-  let rewardFactory;
-  let stashFactory;
-  let tokenFactory;
+//   let platformFee;
+//   let profitFee;
+//   let pid;
+//   let rewardFactory;
+//   let stashFactory;
+//   let tokenFactory;
 //   let lptoken;
 //   let gauge;
 //   let stashVersion;
