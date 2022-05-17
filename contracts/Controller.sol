@@ -443,15 +443,6 @@ contract Controller {
             "Controller: can't restake. userLockTime is not reached yet"
         );
 
-        //send to proxy to stake
-        // address lptoken = pool.lptoken;
-        // IERC20(lptoken).safeTransferFrom(msg.sender, staker, _amount);
-
-        //stake
-        // address gauge = pool.gauge;
-        // require(gauge != address(0), "!gauge setting");
-        // IStaker(staker).deposit(lptoken, gauge); //we restaking it. it is already in the pool
-
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;
         if (stash != address(0)) {
@@ -463,14 +454,8 @@ contract Controller {
         //update timelock info
         userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
 
-        //mint here and send to rewards on user behalf
-        // ITokenMinter(token).mint(address(this), _amount); //no need as _amount of tokens already inside
-        // address rewardContract = pool.balRewards;
-
         uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
-        ICurveVoteEscrow(token).increase_unlock_time(lockTime);
-
-        // IERC20(token).approve(rewardContract, _amount);
+        IBalVoteEscrow(token).increase_unlock_time(lockTime);
 
         emit Deposited(msg.sender, _pid, _amount);
         return true;

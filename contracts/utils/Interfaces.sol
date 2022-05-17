@@ -16,7 +16,7 @@ interface ICurveGauge {
     function lp_token() external view returns (address);
 }
 
-interface ICurveVoteEscrow {
+interface IBalVoteEscrow {
     function create_lock(uint256, uint256) external;
 
     function increase_amount(uint256) external;
