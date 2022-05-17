@@ -150,7 +150,7 @@ contract VoterProxy {
         require(msg.sender == depositor, "!auth");
         IERC20(bal).safeApprove(veBal, 0);
         IERC20(bal).safeApprove(veBal, _value);
-        ICurveVoteEscrow(veBal).create_lock(_value, _unlockTime);
+        IBalVoteEscrow(veBal).create_lock(_value, _unlockTime);
         return true;
     }
 
@@ -158,19 +158,19 @@ contract VoterProxy {
         require(msg.sender == depositor, "!auth");
         IERC20(bal).safeApprove(veBal, 0);
         IERC20(bal).safeApprove(veBal, _value);
-        ICurveVoteEscrow(veBal).increase_amount(_value);
+        IBalVoteEscrow(veBal).increase_amount(_value);
         return true;
     }
 
     function increaseTime(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
-        ICurveVoteEscrow(veBal).increase_unlock_time(_value);
+        IBalVoteEscrow(veBal).increase_unlock_time(_value);
         return true;
     }
 
     function release() external returns (bool) {
         require(msg.sender == depositor, "!auth");
-        ICurveVoteEscrow(veBal).withdraw();
+        IBalVoteEscrow(veBal).withdraw();
         return true;
     }
 
