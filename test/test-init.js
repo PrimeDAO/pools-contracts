@@ -140,18 +140,6 @@ const stashFactory = async (setup) => {
   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
 };
 
-const rewardFactory = async (setup) => {
-  const RewardFactoryFactory = await ethers.getContractFactory(
-    "RewardFactory",
-    setup.roles.root
-  );
-
-  const bal = setup.tokens.BAL;
-  const operator = setup.roles.operator;
-
-  return await RewardFactoryFactory.deploy(bal.address, operator.address);
-};
-
 module.exports = {
   initialize,
   getVoterProxy,
