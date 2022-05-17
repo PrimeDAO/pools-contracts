@@ -23,7 +23,11 @@ contract StashFactory {
     address public v2Implementation;
     address public v3Implementation;
 
-    constructor(address _operator, address _rewardFactory, address _proxyFactory) public {
+    constructor(
+        address _operator,
+        address _rewardFactory,
+        address _proxyFactory
+    ) public {
         operator = _operator; //controller
         rewardFactory = _rewardFactory; //rewardfactory
         proxyFactory = _proxyFactory; //voterproxy
@@ -33,7 +37,7 @@ contract StashFactory {
         address _v1,
         address _v2,
         address _v3
-    ) external{
+    ) external {
         require(msg.sender == IDeposit(operator).owner(), "!auth");
 
         v1Implementation = _v1;
@@ -51,9 +55,9 @@ contract StashFactory {
     ) external returns (address) {
         require(msg.sender == operator, "!authorized");
 
-        if(_stashVersion == uint256(3) && IsV3(_gauge)){
+        if (_stashVersion == uint256(3) && IsV3(_gauge)) {
             //v3
-            require(v3Implementation!=address(0), "0 impl");
+            require(v3Implementation != address(0), "0 impl");
             address stash = IProxyFactory(proxyFactory).clone(v3Implementation);
             IStash(stash).initialize(
                 _pid,
@@ -63,11 +67,9 @@ contract StashFactory {
                 rewardFactory
             );
             return stash;
-        }else if(
-            _stashVersion == uint256(1) && IsV1(_gauge)
-        ){
+        } else if (_stashVersion == uint256(1) && IsV1(_gauge)) {
             //v1
-            require(v1Implementation!=address(0), "0 impl");
+            require(v1Implementation != address(0), "0 impl");
             address stash = IProxyFactory(proxyFactory).clone(v1Implementation);
             IStash(stash).initialize(
                 _pid,
@@ -77,11 +79,11 @@ contract StashFactory {
                 rewardFactory
             );
             return stash;
-        }else if(
+        } else if (
             _stashVersion == uint256(2) && !IsV3(_gauge) && IsV2(_gauge)
-        ){
+        ) {
             //v2
-            require(v2Implementation!=address(0), "0 impl");
+            require(v2Implementation != address(0), "0 impl");
             address stash = IProxyFactory(proxyFactory).clone(v2Implementation);
             IStash(stash).initialize(
                 _pid,
