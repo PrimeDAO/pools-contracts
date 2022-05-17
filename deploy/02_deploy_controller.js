@@ -23,3 +23,6 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
 module.exports = deployFunction;
 module.exports.tags = ["Controller"];
+
+const dplMock = () => {}
+module.exports = dplMock;
