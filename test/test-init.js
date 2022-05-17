@@ -125,6 +125,14 @@ const rewardFactory = async (setup) => {
   return await RewardFactory.deploy(operator.address, bal.address);
 };
 
+const proxyFactory = async (setup) => {
+  const ProxyFactory = await ethers.getContractFactory(
+    "ProxyFactory",
+    setup.roles.root
+  );
+  return await ProxyFactory.deploy();
+};
+
 const stashFactory = async (setup) => {
   const StashFactory = await ethers.getContractFactory(
     "StashFactory",
@@ -132,10 +140,9 @@ const stashFactory = async (setup) => {
   );
   const operator = setup.controller;
   const rewardFactory = setup.rewardFactory;
-  const proxyFactory =  setup.VoterProxy;
+  const proxyFactory =  setup.proxyFactory;//VoterProxy;
   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
 };
-
 
 module.exports = {
   initialize,
@@ -145,5 +152,6 @@ module.exports = {
   rewardFactory,
   baseRewardPool,
   controller,
-  stashFactory
+  stashFactory,
+  proxyFactory
 };

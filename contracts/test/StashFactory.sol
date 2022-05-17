@@ -26,13 +26,13 @@ contract StashFactory {
     constructor(address _operator, address _rewardFactory, address _proxyFactory) public {
         operator = _operator; //controller
         rewardFactory = _rewardFactory; //rewardfactory
-        proxyFactory = _proxyFactory; //voterproxy
+        proxyFactory = _proxyFactory; //proxyFactory //voterproxy
     }
 
     function setImplementation(address _v1, address _v2, address _v3) external{
         require(msg.sender == IDeposit(operator).owner(),"!auth");
 
-        v1Implementation = _v1;
+        v1Implementation = _v1; //voterproxy
         v2Implementation = _v2;
         v3Implementation = _v3;
     }
@@ -41,6 +41,8 @@ contract StashFactory {
     //function calls are different depending on the version of curve gauges so determine which stash type is needed
     function CreateStash(uint256 _pid, address _gauge, address _staker, uint256 _stashVersion) external returns(address){
         require(msg.sender == operator, "!authorized");
+console.log("StashFactory: _stashVersion %s", _stashVersion);
+console.log("StashFactory: v1Implementation %s", v1Implementation);
 
         if(_stashVersion == uint256(3) && IsV3(_gauge)){
             //v3
@@ -69,7 +71,8 @@ console.log("StashFactory: elif v1  stash %s", stash);
         return address(0);
     }
 
-    function IsV1(address _gauge) private returns(bool){
+    function IsV1(address _gauge) private returns(bool){ //TODO: fix; here it breaks
+console.log("StashFactory: IsV1 _gauge %s", _gauge);
         bytes memory data = abi.encode(rewarded_token);
         (bool success,) = _gauge.call(data);
         return success;

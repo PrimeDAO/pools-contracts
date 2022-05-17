@@ -21,6 +21,8 @@ const deploy = async () => {
 
   setup.rewardFactory = await init.rewardFactory(setup);
 
+  setup.proxyFactory = await init.proxyFactory(setup);
+
   setup.stashFactory = await init.stashFactory(setup);
 
   setup.data = {};
@@ -169,7 +171,9 @@ describe("Contract: Controller", async () => {
                 // Error: VM Exception while processing transaction: reverted with reason string '!auth'
                 // at RewardFactory.CreateBalRewards 
             });
-
+            it("Sets VoterProxy as StashFactory implementation ", async () => {
+                expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
+            });
             it("Adds pool", async () => { //not this issue; now it is
                 //lp token is unwithdrawable --> PoolToken
                 lptoken = setup.tokens.PoolContract; //address; 
