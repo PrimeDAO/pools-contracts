@@ -296,7 +296,7 @@ interface IVestedEscrow {
 }
 
 interface IProxyFactory {
-    function clone(address _target) external returns(address);
+    function clone(address _target) external returns (address);
 }
 
 interface IRewardHook {

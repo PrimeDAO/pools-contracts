@@ -16,7 +16,7 @@ contract ExtraRewardStashV3 {
     using Address for address;
 
     address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);//0xD533a949740bb3306d119CC777fa900bA034cd52);
+        address(0xba100000625a3754423978a60c9317c58a424e3D); //0xD533a949740bb3306d119CC777fa900bA034cd52);
     uint256 private constant maxRewards = 8;
 
     uint256 public pid;
@@ -50,7 +50,7 @@ contract ExtraRewardStashV3 {
         address _gauge,
         address _rFactory
     ) external {
-        require(gauge == address(0),"2init");
+        require(gauge == address(0), "2init");
         pid = _pid;
         operator = _operator;
         staker = _staker;
@@ -63,7 +63,7 @@ contract ExtraRewardStashV3 {
         return "ExtraRewardStashV3.2";
     }
 
-    function tokenCount() external view returns (uint256){
+    function tokenCount() external view returns (uint256) {
         return tokenList.length;
     }
 
@@ -83,7 +83,7 @@ contract ExtraRewardStashV3 {
         if (hasCurveRewards) {
             //claim rewards on gauge for staker
             //using reward_receiver so all rewards will be moved to this stash
-            IDeposit(operator).claimRewards(pid,gauge);
+            IDeposit(operator).claimRewards(pid, gauge);
         }
 
         //hook for reward pulls
@@ -100,7 +100,7 @@ contract ExtraRewardStashV3 {
             if (token == address(0)) {
                 break;
             }
-            if(!hasCurveRewards){
+            if (!hasCurveRewards) {
                 hasCurveRewards = true;
             }
             setToken(token);
@@ -132,13 +132,14 @@ contract ExtraRewardStashV3 {
             //check if bal
             if (_token != bal) {
                 //create new reward contract (for NON-bal tokens only)
-                ( , , , address mainRewardContract, , ) = IDeposit(operator)
+                (, , , address mainRewardContract, , ) = IDeposit(operator)
                     .poolInfo(pid);
-                address rewardContract = IRewardFactory(rewardFactory).CreateTokenRewards(
-                    _token,
-                    mainRewardContract,
-                    address(this)
-                );
+                address rewardContract = IRewardFactory(rewardFactory)
+                    .CreateTokenRewards(
+                        _token,
+                        mainRewardContract,
+                        address(this)
+                    );
 
                 t.rewardAddress = rewardContract;
             }
@@ -149,7 +150,6 @@ contract ExtraRewardStashV3 {
 
     //pull assigned tokens from staker to stash
     function stashRewards() external pure returns (bool) {
-
         //after depositing/withdrawing, extra incentive tokens are claimed
         //but from v3 this is default to off, and this stash is the reward receiver too.
 
@@ -161,7 +161,7 @@ contract ExtraRewardStashV3 {
         require(msg.sender == operator, "!operator");
 
         uint256 tCount = tokenList.length;
-        for (uint i=0; i < tCount; i++) {
+        for (uint i = 0; i < tCount; i++) {
             TokenInfo storage t = tokenInfo[tokenList[i]];
             address token = t.token;
             if (token == address(0)) continue;
