@@ -1,6 +1,6 @@
-const { assert } = require("chai");
+const { assert, expect } = require("chai");
 const { ethers } = require("hardhat");
-const { constants } = require("@openzeppelin/test-helpers");
+const { BigNumber, constants } = require("ethers");
 
 const init = require("../test-init.js");
 
@@ -11,7 +11,9 @@ const deploy = async () => {
 
     setup.balDepositor = await init.balDepositor(setup);
 
-    setup.rewardFactory = await init.rewardFactory(setup);
+    setup.voterProxy = await init.getVoterProxy(setup);
+
+    setup.baseRewardPool = await init.getBaseRewardPool(setup);
 
     setup.data = {};
 
@@ -19,22 +21,28 @@ const deploy = async () => {
 };
 
 describe("Contract: BalDepositor", async () => {
-    let incentiveInRange = 15;
-    let incentiveOutRange = 45;
-    let originalIncentive = 10;
     let root;
     let staker;
+    let buyer1;
+    let incentiveInRange = 15;
+    let incentiveOutRange = 45;
     let insufficentDepositAmount = 0;
     let depositAmount = 20;
     let _lock = true;
-    let veBalAddress = setup.tokens.VeBal.address;
-    let d2dAddress = setup.tokens.D2DBal.address;
-    let rewardFactory = setup.rewardFactory.address;
+    let BalWethContract;
+    let rewardContract;
+    let Bal80BAL20WETH;
+    let wethBalAdress;
     context("» first test", () => {
         before("!! setup", async () => {
             setup = await deploy();
             root = setup.roles.root;
-            staker = setup.roles.staker;
+            buyer1 = setup.roles.buyer1;
+            buyer2 = setup.roles.buyer2;
+            BalWethContract = await setup.tokens.WethBal;
+            BalDepositorAddress = await setup.balDepositor.address;
+            Bal80BAL20WETH = await setup.tokens.Balancer80BAL20WETH;
+            rewardContract = await setup.baseRewardPool.address;
         });
         // first deployment test
         it("checks if deployed contracts are ZERO_ADDRESS", async () => {
@@ -44,76 +52,86 @@ describe("Contract: BalDepositor", async () => {
             assert(setup.tokens.VeBal.address != constants.ZERO_ADDRESS);
         });
 
-        it("checks BalDepositor constructor", async () => {
-            const wethBalAddress = await setup.balDepositor.wethBal();
-            const staker = await setup.balDepositor.staker();
+        it("checks BalDepositor constrcutor", async () => {
+            wethBalAdress = await setup.balDepositor.balWeth();
+            staker = await setup.balDepositor.staker();
             const minter = await setup.balDepositor.minter();
-            const escrow = await setup.balDepositor.escrow();
 
-            assert(wethBalAddress == setup.tokens.WethBal.address);
-            assert(staker == setup.roles.staker.address);
+            assert(wethBalAdress == setup.tokens.WethBal.address);
             assert(minter == setup.tokens.D2DBal.address);
-            assert(escrow == setup.tokens.VeBal.address);
         });
     });
     context("» setFeeManager testing", () => {
-        it("Sets the fee manager", async () => {
+        it("sets the fee manager", async () => {
             await setup.balDepositor.connect(root).setFeeManager(root.address);
             expect(await setup.balDepositor.feeManager()).to.equal(
                 root.address
             );
         });
-        it("Should fail if caller is not the fee manager", async () => {
-            await expectRevert(
-                setup.balDepositor.connect(buyer1).setFeeManager(root.address),
-                "!auth"
-            );
+        it("fails if caller is not the fee manager", async () => {
+            await expect(
+                setup.balDepositor.connect(buyer1).setFeeManager(root.address)
+            ).to.be.revertedWith("!auth");
         });
     });
     context("» setFees testing", () => {
-        it("Should fail if caller is not the feeManager", async () => {
-            await expectRevert(
-                setup.balDepositor.connect(buyer1).setFees(incentiveInRange),
-                "!auth"
-            );
+        it("fails if caller is not the feeManager", async () => {
+            await expect(
+                setup.balDepositor.connect(buyer1).setFees(incentiveInRange)
+            ).to.be.revertedWith("!auth");
         });
-        it("Allow feeManager to set a new lockIncentive", async () => {
+        it("allows feeManager to set a new lockIncentive", async () => {
             await setup.balDepositor.connect(root).setFees(incentiveInRange);
             expect(await setup.balDepositor.lockIncentive()).to.equal(
                 incentiveInRange
             );
         });
-        it("Should not update lockIncentive if lockIncentive proposed is outside of the range", async () => {
+        it("does not update lockIncentive if lockIncentive proposed is outside of the range", async () => {
             await setup.balDepositor.connect(root).setFees(incentiveOutRange);
             expect(await setup.balDepositor.lockIncentive()).to.equal(
-                originalIncentive
+                incentiveInRange
             );
         });
     });
     context("» deposit testing", () => {
-        it("Should fail if deposit amount is too small", async () => {
-            await expectRevert(
-                setup.balDepositor
-                    .connect(root)
-                    .deposit(insufficentDepositAmount, _lock, staker.address),
-                "!>0"
-            );
+        it("fails if deposit amount is too small", async () => {
+            await expect(
+                setup.balDepositor.deposit(
+                    insufficentDepositAmount,
+                    _lock,
+                    staker
+                )
+            ).to.be.revertedWith("!>0");
         });
-        it("Should allow deposits, transfer tokens to veBal contract, mint D2DToken, and stake D2DTokens in Rewards contract", async () => {
+        it("allows deposits, transfers tokens to veBal contract, mints D2DToken, and stakes D2DTokens in Rewards contract", async () => {
+            let staker = await setup.balDepositor.staker();
+            let voteProx = await ethers.getContractAt("VoterProxy", staker);
+            let d2dAd = await setup.balDepositor.minter();
+            let d2dBal_Contract = await ethers.getContractAt("D2DBAL", d2dAd);
+
+            await d2dBal_Contract
+                .connect(root)
+                .transferOwnership(BalDepositorAddress);
+
+            await voteProx.setOperator(root.address); //I nned to set the oeprator of the voterProxy. Not sure why Iam hitting the wothdraw function in VP from the deposit call
+
+            await BalWethContract.approve(
+                BalDepositorAddress,
+                constants.MaxUint256
+            );
+            await Bal80BAL20WETH.connect(root).increaseAllowance(
+                setup.baseRewardPool.address,
+                1000
+            );
+
             await setup.balDepositor
                 .connect(root)
-                .deposit(depositAmount, _lock, staker.address);
+                .deposit(depositAmount, _lock, setup.baseRewardPool.address);
 
-            let vBal_contract_WethBalBalance = await wethBalAddress.balanceOf(
-                veBalAddress
-            );
-            let rewards_Contract_d2dBalance = await d2dAddress.balanceOf(
-                rewardFactory
+            let rewards_Contract_d2dBalance = await d2dBal_Contract.balanceOf(
+                setup.baseRewardPool.address
             );
 
-            expect(vBal_contract_WethBalBalance.toString()).to.equal(
-                depositAmount.toString()
-            );
             expect(rewards_Contract_d2dBalance.toString()).to.equal(
                 depositAmount.toString()
             );

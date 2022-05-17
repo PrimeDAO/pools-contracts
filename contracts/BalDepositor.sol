@@ -14,6 +14,7 @@ contract BalDepositor {
     using Address for address;
 
     IERC20 public immutable balWeth;
+
     uint256 private constant MAX_TIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
 
@@ -148,7 +149,7 @@ contract BalDepositor {
     /// @notice Mints & stakes `_amount` of rewards tokens for caller in Rewards contract
     /// @dev Does not stake `_amount` in Rewards contract, just mints d2dbal to caller
     /// @param _amount The amount of Weth/Bal we are staking
-    function deposit(uint256 _amount, bool _lock) external {
+    function _deposit(uint256 _amount, bool _lock) external {
         deposit(_amount,_lock,address(0));
     }
 

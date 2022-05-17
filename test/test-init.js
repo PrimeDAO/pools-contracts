@@ -7,6 +7,9 @@ const initialize = async (accounts) => {
         reward_manager: accounts[3],
         authorizer_adaptor: accounts[4],
         operator: accounts[5],
+        buyer1: accounts[6],
+        buyer2: accounts[7],
+        buyer3: accounts[6],
     };
 
     return setup;
@@ -17,8 +20,21 @@ const getVoterProxy = async (setup) => {
         "VoterProxy",
         setup.roles.root
     );
-    const parameters = args ? args : [];
-    return await VoterProxy.deploy(...parameters);
+    // const parameters = args ? args : [];
+    // return await VoterProxy.deploy(...parameters);
+    const mintr = setup.tokens.D2DBal;
+    const bal = setup.tokens.BAL;
+    const veBal = setup.tokens.VeBal;
+    const gaugeController = setup.tokens.GaugeController;
+
+    let contract = await VoterProxy.deploy(
+        mintr.address,
+        bal.address,
+        veBal.address,
+        gaugeController.address
+    );
+    let contractAddress = contract.address;
+    return contractAddress;
 };
 
 const getTokens = async (setup) => {
@@ -37,6 +53,11 @@ const getTokens = async (setup) => {
         setup.roles.root
     );
 
+    const Balancer80BAL20WETH = await ERC20Factory.deploy(
+        "Balancer80BAL20WETH",
+        "Balancer80BAL20WETH"
+    );
+
     const BAL = await ERC20Factory.deploy("Bal", "BAL");
 
     const D2DBal = await D2DBalFactory.deploy();
@@ -50,7 +71,25 @@ const getTokens = async (setup) => {
         setup.roles.authorizer_adaptor.address
     );
 
-    return { BAL, D2DBal, PoolContract, WethBal, VeBal };
+    const GaugeControllerFactory = await ethers.getContractFactory(
+        "GaugeControllerMock",
+        setup.roles.root
+    );
+    //VotingEscrow = VeBal
+    const GaugeController = await GaugeControllerFactory.deploy(
+        BAL.address,
+        VeBal.address
+    );
+
+    return {
+        BAL,
+        D2DBal,
+        PoolContract,
+        WethBal,
+        VeBal,
+        GaugeController,
+        Balancer80BAL20WETH,
+    };
 };
 
 const balDepositor = async (setup) => {
@@ -58,37 +97,27 @@ const balDepositor = async (setup) => {
         "BalDepositor",
         setup.roles.root
     );
-    const wethBal = setup.tokens.WethBal;
+    const balWeth = setup.tokens.WethBal;
     const minter = setup.tokens.D2DBal;
-    const staker = setup.roles.staker;
-    const escrow = setup.tokens.VeBal;
+    const staker = await getVoterProxy(setup);
 
-    return await balDepositor.deploy(
-        wethBal.address,
-        staker.address,
-        minter.address,
-        escrow.address
-    );
+    return await balDepositor.deploy(staker, minter.address, balWeth.address);
 };
 
-const baseRewardPool = async (setup) => {
-    const baseRewardPool = await ethers.getContractFactory(
-        "BaseRewardPool",
+const getBaseRewardPool = async (setup) => {
+    const BaseRewardPoolFactory = await ethers.getContractFactory(
+        "BaseRewardPoolInTest",
         setup.roles.root
     );
-    const pid = 1; // pool id
-    const stakingToken = setup.tokens.D2DBal;
-    const rewardToken = setup.tokens.BAL;
-    const operator = await setup.controller;
-    const rewardManager = setup.roles.reward_manager;
 
-    return await baseRewardPool.deploy(
-        setup.roles.root.address,
-        pid,
-        stakingToken.address,
-        rewardToken.address,
-        operator.address,
-        rewardManager.address
+    const controller = await getControllerMock(setup);
+
+    return await BaseRewardPoolFactory.deploy(
+        1,
+        setup.tokens.D2DBal.address,
+        setup.tokens.BAL.address,
+        controller.address,
+        setup.roles.reward_manager.address
     );
 };
 
@@ -105,6 +134,15 @@ const controller = async (setup) => {
         staker.address,
         minter.address
     );
+};
+
+const getControllerMock = async (setup) => {
+    const ControllerMockFactory = await ethers.getContractFactory(
+        "ControllerMock",
+        setup.roles.root
+    );
+
+    return await ControllerMockFactory.deploy();
 };
 
 const rewardFactory = async (setup) => {
@@ -125,6 +163,6 @@ module.exports = {
     getTokens,
     balDepositor,
     rewardFactory,
-    baseRewardPool,
+    getBaseRewardPool,
     controller,
 };
