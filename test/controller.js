@@ -167,7 +167,7 @@ describe("Contract: Controller", async () => {
                     (await setup.controller.poolLength()).toNumber()
                 ).to.equal(1);
                 expect(
-                    (await setup.controller.poolInfo.lptoken())
+                    (await setup.controller.poolInfo[0].lptoken)
                 ).to.equal(1);
                 // expect(
                 //     await tokenFactory.token()

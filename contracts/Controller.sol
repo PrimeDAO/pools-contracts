@@ -207,7 +207,7 @@ contract Controller {
         console.log("Controller: _gauge %s", _gauge);
         //create a stash to handle extra incentives
         // StashFactory from Booster contract https://etherscan.io/address/0x884da067b66677e72530df91eabb6e3ce69c2be4#code
-        address stash = IStashFactory(stashFactory).CreateStash( // address stash = VoterProxy;
+        address stash = IStashFactory(stashFactory).CreateStash( // stash = VoterProxy
             pid,
             _gauge,
             staker,
@@ -225,6 +225,7 @@ contract Controller {
                 shutdown: false
             })
         );
+        console.log("Controller: after poolInfo");
         gaugeMap[_gauge] = true;
         //give stashes access to rewardfactory and voteproxy
         //   voteproxy so it can grab the incentive tokens off the contract after claiming rewards
