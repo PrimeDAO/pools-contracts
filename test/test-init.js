@@ -80,8 +80,6 @@ const controller = async (setup) => {
     "Controller",
     setup.roles.root
   );
-    //need to change staker mock as addPool need setStashAccess() function            
-    //IStaker(staker).setStashAccess(stash, true);
   const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy;
   return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address);
