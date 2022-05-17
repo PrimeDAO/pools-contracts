@@ -131,5 +131,5 @@ module.exports = {
   controller,
   getBaseRewardPool,
   getExtraRewardMock,
-  gaugeController
+  gaugeController,
 };

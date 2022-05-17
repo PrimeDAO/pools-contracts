@@ -89,7 +89,8 @@ module.exports = {
       {
         version: "0.8.13",
         settings: {
-            optimizer: {
+          // viaIR: true, // TODO: experiment with this option
+          optimizer: {
             enabled: true,
             runs: 100000,
           },
@@ -107,5 +108,6 @@ module.exports = {
     root: 0,
     prime: 1,
     beneficiary: 2,
-  },
+    rewardManager: 3, // BaseRewardPool reward manager
+  }, 
 };

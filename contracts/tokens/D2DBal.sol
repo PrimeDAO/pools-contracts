@@ -5,17 +5,17 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract D2DToken is ERC20, Ownable {
+contract D2DBal is ERC20, Ownable {
     uint8 private immutable _decimals;
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    uint256 public constant initialSupply = 20000000000000000000000;
+    uint256 public constant INITIAL_SUPPLY = 100_000 ether;
 
-    constructor(uint8 decimals_) ERC20("D2D Token", "D2DBAL") {
-        _mint(msg.sender, initialSupply);
+    constructor(uint8 decimals_) ERC20("D2DBal", "D2DBAL") {
+        _mint(msg.sender, INITIAL_SUPPLY);
         _decimals = decimals_;
-        _transferOwnership(_msgSender()); // as D2DToken is Ownable
+        _transferOwnership(_msgSender()); // as D2DBal is Ownable
     }
 
     function mint(uint256 amount) public onlyOwner {
