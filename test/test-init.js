@@ -1,7 +1,3 @@
-// const { parseEther } = ethers.utils;
-
-// const PROXY_CREATION = "ProxyCreation";
-
 const initialize = async (accounts) => {
   const setup = {};
   setup.roles = {
@@ -10,7 +6,7 @@ const initialize = async (accounts) => {
     staker: accounts[2],
     reward_manager: accounts[3],
     authorizer_adaptor: accounts[4],
-    operator: accounts[5],
+    operator: accounts[5]    
   };
 
   return setup;
@@ -142,6 +138,18 @@ const stashFactory = async (setup) => {
   const rewardFactory = setup.rewardFactory;
   const proxyFactory =  setup.VoterProxy; //must be .proxyFactory;
   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+};
+
+const rewardFactory = async (setup) => {
+  const RewardFactoryFactory = await ethers.getContractFactory(
+    "RewardFactory",
+    setup.roles.root
+  );
+
+  const bal = setup.tokens.BAL;
+  const operator = setup.roles.operator;
+
+  return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
 module.exports = {
