@@ -23,8 +23,6 @@ contract TokenFactory {
 
         D2DBAL dtoken = new D2DBAL();
         token = address(dtoken);
-        console.log(address(dtoken));
-        // console.log(dtoken);
 
         return address(dtoken);
     }

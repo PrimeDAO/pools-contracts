@@ -180,7 +180,11 @@ describe("Contract: Controller", async () => {
                 ).to.equal(1);
 
                 //TODO: add more expects for added data
-                console.log("lptoken %s ", (await setup.controller.poolInfo[0]));
+                console.log("lptoken %s ", lptoken.address);
+                console.log("tokenFactory %s ", (await tokenFactory.address));
+
+                console.log("tokenFactory token %s ", (await tokenFactory.token()));
+
                 console.log("token %s ", await setup.controller.token);
             });
             it("Calls earmarkRewards with existing pool number", async () => {

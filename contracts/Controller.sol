@@ -231,7 +231,7 @@ contract Controller {
             IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy; staker from Booster 0x989aeb4d175e16225e39e87d0d97a3360524ad80 address
             IRewardFactory(rewardFactory).setAccess(stash, true);
         }
-        console.log(true);
+        
         return true;
     }
 

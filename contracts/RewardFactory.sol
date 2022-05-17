@@ -87,8 +87,6 @@ contract RewardFactory {
         external
         returns (address)
     {
-        console.log("ms cr %s", msg.sender);
-        console.log("o cr %s",operator);
         require(msg.sender == operator, "!auth");
 
         //operator = booster(deposit) contract so that new bal can be added and distributed
