@@ -185,5 +185,4 @@ contract ExtraRewardStashV3 {
         }
         return true;
     }
-
 }
