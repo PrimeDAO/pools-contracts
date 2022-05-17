@@ -161,7 +161,7 @@ contract ExtraRewardStashV3 {
         require(msg.sender == operator, "!operator");
 
         uint256 tCount = tokenList.length;
-        for (uint i = 0; i < tCount; i++) {
+        for (uint256 i = 0; i < tCount; i++) {
             TokenInfo storage t = tokenInfo[tokenList[i]];
             address token = t.token;
             if (token == address(0)) continue;
