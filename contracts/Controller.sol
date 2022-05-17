@@ -464,7 +464,7 @@ contract Controller {
                 //only subtract after address condition check
                 uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
                 balBal = balBal - _platform;
-                IERC20(bal).transfer(treasury, _platform); //platform fees are sent to the treasury.
+                IERC20(bal).transfer(treasury, _platform);
             }
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
