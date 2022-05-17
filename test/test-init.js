@@ -1,3 +1,5 @@
+const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
+
 const initialize = async (accounts) => {
   const setup = {};
   setup.roles = {
@@ -95,6 +97,11 @@ const rewardFactory = async (setup) => {
   return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
+const getMintrMock = async (setup) => {
+  const MintrMock = await ethers.getContractFactory("MintrMock");
+  return await MintrMock.deploy(setup.tokens.BAL.address, ZERO_ADDRESS);
+}
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -103,4 +110,5 @@ module.exports = {
   rewardFactory,
   baseRewardPool,
   controller,
+  getMintrMock,
 };

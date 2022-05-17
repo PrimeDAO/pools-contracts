@@ -294,3 +294,13 @@ interface IVestedEscrow {
         external
         returns (bool);
 }
+
+interface GaugeController {
+    function gauge_types(address _addr) external returns (int128);
+}
+
+interface LiquidityGauge {
+    function integrate_fraction(address _address) external returns (uint256);
+
+    function user_checkpoint(address _address) external returns (bool);
+}
