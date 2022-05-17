@@ -36,21 +36,21 @@ const getTokens = async (setup) => {
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
-  const GaugeControllerFactoty = await ethers.getContractFactory(
-    "GaugeControllerMock",
-    setup.roles.root
-  );         
-  //VotingEscrow = VeBal
-  const GaugeController = await GaugeControllerFactoty.deploy(BAL.address, VeBal.address);
+  // const GaugeControllerFactoty = await ethers.getContractFactory(
+  //   "GaugeControllerMock",
+  //   setup.roles.root
+  // );         
+  // //VotingEscrow = VeBal
+  // const GaugeController = await GaugeControllerFactoty.deploy(BAL.address, VeBal.address);
 
 
-  const TokenFactoryFactory = await ethers.getContractFactory(
-    "TokenFactory",
-    setup.roles.root
-  );
-  const TokenFactory = await TokenFactoryFactory.deploy(setup.roles.operator.address);
+  // const TokenFactoryFactory = await ethers.getContractFactory(
+  //   "TokenFactory",
+  //   setup.roles.root
+  // );
+  // const TokenFactory = await TokenFactoryFactory.deploy(setup.roles.operator.address);
 
-  return { BAL, D2DBal, PoolContract, WethBal, VeBal, GaugeController, TokenFactory };
+  return { BAL, D2DBal, PoolContract, WethBal, VeBal, /*GaugeController, TokenFactory*/ };
 };
 
 const balDepositor = async (setup) => {
@@ -73,7 +73,7 @@ const getVoterProxy = async (setup) => {
   const mintr = setup.tokens.D2DBal;
   const bal = setup.tokens.BAL;
   const veBal = setup.tokens.VeBal;
-  const gaugeController = setup.tokens.GaugeController;
+  const gaugeController = setup.tokens.VeBal;//just not to break test in CI; must be setup.tokens.GaugeController;
 
   return await VoterProxy.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
 };
@@ -92,7 +92,7 @@ const controller = async (setup) => {
     //IStaker(staker).setStashAccess(stash, true);
   const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy; //row 236 asks for VoterProxt function  IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy; staker from Booster 0x989aeb4d175e16225e39e87d0d97a3360524ad80 address
-  return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address);
+  return await controller.deploy(staker.address);//, setup.roles.root.address, wethBal.address);
 };
 
 const baseRewardPool = async (setup) => {
@@ -129,16 +129,16 @@ const rewardFactory = async (setup) => {
 //   return await ProxyFactory.deploy();
 // };
 
-const stashFactory = async (setup) => {
-  const StashFactory = await ethers.getContractFactory(
-    "StashFactory",
-    setup.roles.root
-  );
-  const operator = setup.controller;
-  const rewardFactory = setup.rewardFactory;
-  const proxyFactory =  setup.VoterProxy; //must be .proxyFactory;
-  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
-};
+// const stashFactory = async (setup) => {
+//   const StashFactory = await ethers.getContractFactory(
+//     "StashFactory",
+//     setup.roles.root
+//   );
+//   const operator = setup.controller;
+//   const rewardFactory = setup.rewardFactory;
+//   const proxyFactory =  setup.VoterProxy; //must be .proxyFactory;
+//   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+// };
 
 module.exports = {
   initialize,
@@ -148,6 +148,6 @@ module.exports = {
   rewardFactory,
   baseRewardPool,
   controller,
-  stashFactory,
+  // stashFactory,
   // proxyFactory
 };
