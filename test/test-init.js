@@ -1,4 +1,5 @@
 const { ethers } = require('hardhat')
+const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 
 const initialize = async (accounts) => {
   const setup = {};
@@ -85,6 +86,7 @@ const rewardFactory = async (setup) => {
   return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
+
 const getBaseRewardPool = async (setup) => {
   const BaseRewardPoolFactory = await ethers.getContractFactory(
     'BaseRewardPoolInTest', 
@@ -114,6 +116,11 @@ const getExtraRewardMock = async () => {
   return await ExtraRewardMockFactory.deploy()
 }
 
+const getMintrMock = async (setup) => {
+  const MintrMock = await ethers.getContractFactory("MintrMock");
+  return await MintrMock.deploy(setup.tokens.BAL.address, ZERO_ADDRESS);
+}
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -123,4 +130,5 @@ module.exports = {
   controller,
   getBaseRewardPool,
   getExtraRewardMock,
+  getMintrMock,
 };
