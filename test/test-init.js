@@ -95,6 +95,14 @@ const rewardFactory = async (setup) => {
   return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
+const proxyFactory = async (setup) => {
+  const ProxyFactory = await ethers.getContractFactory(
+    "ProxyFactory",
+    setup.roles.root
+  );
+  return await ProxyFactory.deploy();
+};
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -103,4 +111,5 @@ module.exports = {
   rewardFactory,
   baseRewardPool,
   controller,
+  proxyFactory,
 };
