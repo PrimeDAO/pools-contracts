@@ -94,5 +94,5 @@ jobs:
       - name: Tests the project
         run: codecov
     env:
-      CODECOV_TOKEN: '9095761f-e37d-44f6-97b2-b123131a342f'
+      CODECOV_TOKEN: 'a314c4ab-7b53-4628-96a0-e5ce4d809d3d'
 

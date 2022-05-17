@@ -1,11 +1,9 @@
 const deployFunction = async ({ getNamedAccounts, deployments, ethers }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
-  // const safeInstance =
-  //   network.name == "kovan" ? root : await ethers.getContract("VoterProxy");
 
-  let bal = await ethers.getContract("D2DToken");
-  let veBal = await deploy("veBalMock", {
+  let bal = await ethers.getContract("D2DBal");
+  let veBal = await deploy("VeBalMock", {
     from: root,
     args: [
       bal.address,
