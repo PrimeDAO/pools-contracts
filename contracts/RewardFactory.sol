@@ -97,7 +97,6 @@ contract RewardFactory {
             operator,
             address(this)
         );
-
         return address(rewardPool);
     }
 

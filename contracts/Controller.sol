@@ -9,9 +9,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract Controller {
     using Address for address;
 
-    // address public constant bal =
-        // address(0xba100000625a3754423978a60c9317c58a424e3D);
-    address public immutable bal;//wethBal;
+    address public immutable bal;
     address public constant registry =
         address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
@@ -201,7 +199,6 @@ contract Controller {
             token
         );
         //create a stash to handle extra incentives
-        // StashFactory from Booster contract https://etherscan.io/address/0x884da067b66677e72530df91eabb6e3ce69c2be4#code
         address stash = IStashFactory(stashFactory).CreateStash( // stash = VoterProxy
             pid,
             _gauge,
@@ -226,10 +223,9 @@ contract Controller {
         //   reward factory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
         if (stash != address(0)) {
             poolInfo[pid].stash = stash;
-            IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy; staker from Booster 0x989aeb4d175e16225e39e87d0d97a3360524ad80 address
+            IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy
             IRewardFactory(rewardFactory).setAccess(stash, true);
-        }
-        
+        }        
         return true;
     }
 
@@ -489,11 +485,9 @@ contract Controller {
         IStaker(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
-
         //earmarkRewards should send rewards to lockRewards
         IERC20(feeToken).transfer(lockRewards, _balance);
         IRewards(lockRewards).queueNewRewards(_balance);
-
         return true;
     }
 
