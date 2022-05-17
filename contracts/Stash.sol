@@ -16,7 +16,7 @@ contract ExtraRewardStashV3 {
     using Address for address;
 
     address public constant bal =
-            address(0xba100000625a3754423978a60c9317c58a424e3D);//0xD533a949740bb3306d119CC777fa900bA034cd52);
+        address(0xba100000625a3754423978a60c9317c58a424e3D);//0xD533a949740bb3306d119CC777fa900bA034cd52);
     uint256 private constant maxRewards = 8;
 
     uint256 public pid;
@@ -41,8 +41,7 @@ contract ExtraRewardStashV3 {
     //address to call for reward pulls
     address public rewardHook;
 
-    constructor() public {
-    }
+    constructor() public {}
 
     function initialize(
         uint256 _pid,
@@ -76,29 +75,27 @@ contract ExtraRewardStashV3 {
         checkForNewRewardTokens();
 
         //make sure we're redirected
-        if(!hasRedirected){
+        if (!hasRedirected) {
             IDeposit(operator).setGaugeRedirect(pid);
             hasRedirected = true;
         }
 
-        if(hasCurveRewards){
+        if (hasCurveRewards) {
             //claim rewards on gauge for staker
             //using reward_receiver so all rewards will be moved to this stash
             IDeposit(operator).claimRewards(pid,gauge);
         }
 
         //hook for reward pulls
-        if(rewardHook != address(0)){
-            try IRewardHook(rewardHook).onRewardClaim(){
-            }catch{}
+        if (rewardHook != address(0)) {
+            try IRewardHook(rewardHook).onRewardClaim() {} catch {}
         }
         return true;
     }
-   
 
     //check if gauge rewards have changed
     function checkForNewRewardTokens() internal {
-        for(uint256 i = 0; i < maxRewards; i++){
+        for (uint256 i = 0; i < maxRewards; i++) {
             address token = ICurveGauge(gauge).reward_tokens(i);
             if (token == address(0)) {
                 break;
@@ -112,36 +109,37 @@ contract ExtraRewardStashV3 {
 
     //register an extra reward token to be handled
     // (any new incentive that is not directly on curve gauges)
-    function setExtraReward(address _token) external{
+    function setExtraReward(address _token) external {
         //owner of booster can set extra rewards
         require(IDeposit(operator).owner() == msg.sender, "!owner");
         setToken(_token);
     }
 
-    function setRewardHook(address _hook) external{
+    function setRewardHook(address _hook) external {
         //owner of booster can set reward hook
         require(IDeposit(operator).owner() == msg.sender, "!owner");
         rewardHook = _hook;
     }
 
-
     //replace a token on token list
     function setToken(address _token) internal {
         TokenInfo storage t = tokenInfo[_token];
 
-        if(t.token == address(0)){
+        if (t.token == address(0)) {
             //set token address
             t.token = _token;
 
             //check if bal
-            if(_token != bal){
+            if (_token != bal) {
                 //create new reward contract (for NON-bal tokens only)
-                (,,,address mainRewardContract,,) = IDeposit(operator).poolInfo(pid);
+                ( , , , address mainRewardContract, , ) = IDeposit(operator)
+                    .poolInfo(pid);
                 address rewardContract = IRewardFactory(rewardFactory).CreateTokenRewards(
                     _token,
                     mainRewardContract,
-                    address(this));
-                
+                    address(this)
+                );
+
                 t.rewardAddress = rewardContract;
             }
             //add token to list of known rewards
@@ -150,7 +148,7 @@ contract ExtraRewardStashV3 {
     }
 
     //pull assigned tokens from staker to stash
-    function stashRewards() external pure returns(bool){
+    function stashRewards() external pure returns (bool) {
 
         //after depositing/withdrawing, extra incentive tokens are claimed
         //but from v3 this is default to off, and this stash is the reward receiver too.
@@ -159,28 +157,28 @@ contract ExtraRewardStashV3 {
     }
 
     //send all extra rewards to their reward contracts
-    function processStash() external returns(bool){
+    function processStash() external returns (bool) {
         require(msg.sender == operator, "!operator");
 
         uint256 tCount = tokenList.length;
-        for(uint i=0; i < tCount; i++){
+        for (uint i=0; i < tCount; i++) {
             TokenInfo storage t = tokenInfo[tokenList[i]];
             address token = t.token;
-            if(token == address(0)) continue;
-            
+            if (token == address(0)) continue;
+
             uint256 amount = IERC20(token).balanceOf(address(this));
             if (amount > 0) {
                 historicalRewards[token] = historicalRewards[token] + amount;
-                if(token == bal){
+                if (token == bal) {
                     //if bal, send back to booster to distribute
                     IERC20(token).transfer(operator, amount);
                     continue;
                 }
-            	//add to reward contract
-            	address rewards = t.rewardAddress;
-            	if(rewards == address(0)) continue;
-            	IERC20(token).transfer(rewards, amount);
-            	IRewards(rewards).queueNewRewards(amount);
+                //add to reward contract
+                address rewards = t.rewardAddress;
+                if (rewards == address(0)) continue;
+                IERC20(token).transfer(rewards, amount);
+                IRewards(rewards).queueNewRewards(amount);
             }
         }
         return true;
