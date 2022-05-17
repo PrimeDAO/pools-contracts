@@ -5,7 +5,6 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
 
 contract Controller {
     using Address for address;
@@ -192,19 +191,15 @@ contract Controller {
 
         //the next pool's pid
         uint256 pid = poolInfo.length;
-        console.log("Controller: _lptoken %s", _lptoken);
         //create a tokenized deposit
         address token = ITokenFactory(tokenFactory).CreateDepositToken(
             _lptoken
         );
-        console.log("Controller: token %s", token);
         //create a reward contract for bal rewards
         address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(
             pid,
             token
         );
-        console.log("Controller: newRewardPool %s", newRewardPool);
-        console.log("Controller: _gauge %s", _gauge);
         //create a stash to handle extra incentives
         // StashFactory from Booster contract https://etherscan.io/address/0x884da067b66677e72530df91eabb6e3ce69c2be4#code
         address stash = IStashFactory(stashFactory).CreateStash( // stash = VoterProxy
@@ -225,7 +220,6 @@ contract Controller {
                 shutdown: false
             })
         );
-        console.log("Controller: after poolInfo");
         gaugeMap[_gauge] = true;
         //give stashes access to rewardfactory and voteproxy
         //   voteproxy so it can grab the incentive tokens off the contract after claiming rewards

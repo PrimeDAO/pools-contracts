@@ -7,7 +7,6 @@ import "./VirtualBalanceRewardPool.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "hardhat/console.sol";
 
 contract RewardFactory {
     using Address for address;
@@ -88,7 +87,6 @@ contract RewardFactory {
         returns (address)
     {
         require(msg.sender == operator, "!auth");
-        console.log("IRewardFactory: _depositToken %s", _depositToken);
 
         //operator = booster(deposit) contract so that new bal can be added and distributed
         //reward manager = this factory so that extra incentive tokens(ex. snx) can be linked to the main managed reward pool
@@ -99,7 +97,6 @@ contract RewardFactory {
             operator,
             address(this)
         );
-        console.log("Controller: rewardPool.stakingToken %s", address(rewardPool.stakingToken()));
 
         return address(rewardPool);
     }

@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 /// @title Base Reward Pool contract
 /// @dev Rewards contract for Prime Pools is based on the convex contract

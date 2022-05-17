@@ -6,7 +6,6 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./DepositToken.sol";
-import "hardhat/console.sol";
 
 contract TokenFactory {
     // using Address for address;
@@ -23,7 +22,6 @@ contract TokenFactory {
 
         DepositToken dtoken = new DepositToken(operator,_lptoken);
         token = address(dtoken);
-console.log("TokenFactory: token %s",token);
         return address(dtoken);
     }
         //Create a stash contract for the given gauge.

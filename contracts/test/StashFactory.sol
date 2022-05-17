@@ -6,8 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../utils/Interfaces.sol";
 
-import "hardhat/console.sol";
-
 contract StashFactory {
     // using Address for address;
 
@@ -41,8 +39,6 @@ contract StashFactory {
     //function calls are different depending on the version of curve gauges so determine which stash type is needed
     function CreateStash(uint256 _pid, address _gauge, address _staker, uint256 _stashVersion) external returns(address){
         require(msg.sender == operator, "!authorized");
-console.log("StashFactory: _stashVersion %s", _stashVersion);
-console.log("StashFactory: v1Implementation %s", v1Implementation);
 
         if(_stashVersion == uint256(3) && IsV3(_gauge)){
             //v3
@@ -54,7 +50,6 @@ console.log("StashFactory: v1Implementation %s", v1Implementation);
             //v1
             require(v1Implementation!=address(0),"0 impl");
             address stash = IProxyFactory(proxyFactory).clone(v1Implementation);
-console.log("StashFactory: elif v1  stash %s", stash);
             IStash(stash).initialize(_pid,operator,_staker,_gauge,rewardFactory);
             return stash;
         }else if(_stashVersion == uint256(2) && !IsV3(_gauge) && IsV2(_gauge)){
@@ -72,7 +67,6 @@ console.log("StashFactory: elif v1  stash %s", stash);
     }
 
     function IsV1(address _gauge) private returns(bool){ //TODO: fix; here it breaks
-console.log("StashFactory: IsV1 _gauge %s", _gauge);
         bytes memory data = abi.encode(rewarded_token);
         (bool success,) = _gauge.call(data);
         return success;
