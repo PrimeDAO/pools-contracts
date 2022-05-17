@@ -455,7 +455,7 @@ contract Controller {
         userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
 
         uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
-        IStaker(staker).increaseTime(lockTime); //voterProxy(staker) 
+        IStaker(staker).increaseTime(lockTime); //voterProxy(staker)
 
         emit Deposited(msg.sender, _pid, _amount);
         return true;
