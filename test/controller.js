@@ -166,17 +166,13 @@ describe("Contract: Controller", async () => {
                 expect(
                     (await setup.controller.poolLength()).toNumber()
                 ).to.equal(1);
+                const poolInfo = await setup.controller.poolInfo(0);
                 expect(
-                    (await setup.controller.poolInfo[0].lptoken)
-                ).to.equal(1);
-                // expect(
-                //     await tokenFactory.token()
-                // ).to.equal(gauge.address);
-                //TODO: add more expects for added data
-                // console.log("lptoken %s ", lptoken.address);
-                console.log("\nbaseRewardPool %s ", (await setup.baseRewardPool.stakingToken()));
-
-                console.log("tokenFactory token %s ", (await tokenFactory.token()));
+                    (poolInfo.lptoken).toString()
+                ).to.equal(lptoken.address.toString());
+                expect(
+                    (poolInfo.gauge).toString()
+                ).to.equal(gauge.address.toString());
             });
             it("Calls earmarkRewards with existing pool number", async () => {
                 pid = 0;
