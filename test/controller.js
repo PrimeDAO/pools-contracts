@@ -38,9 +38,11 @@ describe("Contract: Controller", async () => {
   let lptoken;
   let gauge;
   let stashVersion;
+  let balBal;
 
   //constants
   const zero_address = "0x0000000000000000000000000000000000000000";
+  const FEE_DENOMINATOR = 10000;
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
@@ -56,15 +58,13 @@ describe("Contract: Controller", async () => {
 
       platformFee = 500;
       profitFee = 100;
-      //TODO: fill () with arguments
+    // TODO: for tests:
     //   await setup.controller.setOwner();
     //   await setup.controller.setPoolManager();
-    //   await setup.controller.setFactories();
     //   await setup.controller.setArbitrator();
     //   await setup.controller.setVoteDelegate();
     //   await setup.controller.setRewardContracts();
     //   await setup.controller.setFeeInfo();
-    // //   await setup.controller.setFees(); - test below
     //   await setup.controller.setTreasury();
 
     });
@@ -91,7 +91,6 @@ describe("Contract: Controller", async () => {
             it("Should fail if total >MaxFees", async () => {
                 platformFee = 1000;
                 profitFee = 1001;
-                //MaxFees = 2000;
                 await expectRevert(
                     setup.controller
                         .connect(root)
@@ -151,8 +150,8 @@ describe("Contract: Controller", async () => {
             });
             it("Sets factories", async () => {
                 rewardFactory = setup.rewardFactory;
-                stashFactory = setup.stashFactory; //stash to handle extra incentives
-                tokenFactory = setup.tokens.TokenFactory; //create a tokenized deposit //booster tokenFactory https://etherscan.io/address/0x3c995e43e6ddd551e226f4c5544c77bfed147ab9                
+                stashFactory = setup.stashFactory;
+                tokenFactory = setup.tokens.TokenFactory;
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
             it("Sets VoterProxy as StashFactory implementation ", async () => {
@@ -160,7 +159,7 @@ describe("Contract: Controller", async () => {
             });
             it("Adds pool", async () => {
                 lptoken = setup.tokens.PoolContract;
-                gauge = setup.tokens.GaugeController;// gauge controller Mock //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
+                gauge = setup.tokens.GaugeController;
                 stashVersion = 1;
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
                 expect(
@@ -174,10 +173,34 @@ describe("Contract: Controller", async () => {
                     (poolInfo.gauge).toString()
                 ).to.equal(gauge.address.toString());
             });
+            it("Sets RewardContracts", async () => {
+                rewards = setup.rewardFactory;
+                stakerRewards = setup.stashFactory;
+                expect(await setup.controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
+            });
             it("Calls earmarkRewards with existing pool number", async () => {
                 pid = 0;
                 await setup.controller.connect(root).earmarkRewards(pid);
             });
+            it("Checks feeManager balance", async () => {
+                const feeManager = root.address;
+                let balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                if (balBal.toNumber() > 0) {
+                    let profitFees = await setup.controller.profitFees();
+                    const profit = (balBal * profitFees) / FEE_DENOMINATOR;
+                    balBal = balBal - profit;
+                    let amount_expected = await setup.tokens.WethBal.balanceOf(feeManager).toNumber() - balBal;
+                    expect(
+                        (await setup.tokens.WethBal.balanceOf(feeManager)).toString()
+                    ).to.equal(amount_expected.toString());
+                } else {
+                    let amount_expected = "20000000000000000000000";
+                    expect(
+                        (await setup.tokens.WethBal.balanceOf(feeManager)).toString()
+                    ).to.equal(amount_expected); 
+                }
+            });
+            
         });
     });
   });

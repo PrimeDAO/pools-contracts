@@ -4,10 +4,11 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../utils/Interfaces.sol";
 
 contract StashFactory {
-    // using Address for address;
+    using Address for address;
 
     bytes4 private constant rewarded_token = 0x16fa50b1; //rewarded_token()
     bytes4 private constant reward_tokens = 0x54c49fe9; //reward_tokens(uint256)

@@ -225,7 +225,7 @@ contract Controller {
             poolInfo[pid].stash = stash;
             IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy
             IRewardFactory(rewardFactory).setAccess(stash, true);
-        }        
+        }
         return true;
     }
 
