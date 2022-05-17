@@ -17,6 +17,8 @@ const deploy = async () => {
 
   setup.controller = await init.controller(setup);
 
+  setup.baseRewardPool = await init.baseRewardPool(setup);
+
   setup.rewardFactory = await init.rewardFactory(setup);
 
   setup.stashFactory = await init.stashFactory(setup);
@@ -178,14 +180,17 @@ describe("Contract: Controller", async () => {
                 expect(
                     (await setup.controller.poolLength()).toNumber()
                 ).to.equal(1);
-
+                // expect(
+                //     await tokenFactory.token()
+                // ).to.equal(1);
+                // expect(
+                //     await tokenFactory.token()
+                // ).to.equal(gauge.address);
                 //TODO: add more expects for added data
-                console.log("lptoken %s ", lptoken.address);
-                console.log("tokenFactory %s ", (await tokenFactory.address));
+                // console.log("lptoken %s ", lptoken.address);
+                console.log("\nbaseRewardPool %s ", (await setup.baseRewardPool.stakingToken()));
 
                 console.log("tokenFactory token %s ", (await tokenFactory.token()));
-
-                console.log("token %s ", await setup.controller.token);
             });
             it("Calls earmarkRewards with existing pool number", async () => {
                 pid = 1;

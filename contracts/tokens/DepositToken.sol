@@ -14,8 +14,8 @@ contract DepositToken is ERC20 {
     constructor(address _operator, address _lptoken)
         public
         ERC20(
-             string(
-                abi.encodePacked(ERC20(_lptoken).name()," Convex Deposit")
+            string(
+                abi.encodePacked(ERC20(_lptoken).name(),"Convex Deposit")
             ),
             string(abi.encodePacked("cvx", ERC20(_lptoken).symbol()))
         )

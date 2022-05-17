@@ -52,6 +52,7 @@ contract StashFactory {
             //v1
             require(v1Implementation!=address(0),"0 impl");
             address stash = IProxyFactory(proxyFactory).clone(v1Implementation);
+console.log("StashFactory: elif v1  stash %s", stash);
             IStash(stash).initialize(_pid,operator,_staker,_gauge,rewardFactory);
             return stash;
         }else if(_stashVersion == uint256(2) && !IsV3(_gauge) && IsV2(_gauge)){
