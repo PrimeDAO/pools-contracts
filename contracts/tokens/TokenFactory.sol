@@ -1,4 +1,3 @@
-// necessary for setFactories in Controller test
 // SPDX-License-Identifier: MIT
 // solium-disable linebreak-style
 pragma solidity 0.8.13;

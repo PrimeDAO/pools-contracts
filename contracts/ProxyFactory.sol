@@ -1,5 +1,3 @@
-// necessary for addPool in Controller
-//Controller --> StashFactory --> ProxyFactory.clone()
 // SPDX-License-Identifier: MIT
 // solium-disable linebreak-style
 pragma solidity 0.8.13;
