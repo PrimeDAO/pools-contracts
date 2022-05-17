@@ -21,7 +21,7 @@ contract GaugeControllerMock {
     }  
 
     // 7 * 86400 seconds - all future times are rounded by week
-    uint256 constant WEEK = 604800;
+    uint256 constant WEEK = 1 weeks;
     // Cannot change weight votes more often than once in 10 days
     uint256 constant WEIGHT_VOTE_DELAY = 10 * 86400;
     uint256 constant MULTIPLIER = 10 ** 18;
