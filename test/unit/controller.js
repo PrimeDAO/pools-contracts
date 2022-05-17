@@ -1,12 +1,10 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { constants } = require("@openzeppelin/test-helpers");
 const { expectRevert } = require("@openzeppelin/test-helpers");
-// const {
-//   utils: { parseEther, parseUnits },
-//   BigNumber,
-// } = ethers;
 
-const init = require("./test-init.js");
+
+const init = require("../test-init.js");
 
 const deploy = async () => {
   const setup = await init.initialize(await ethers.getSigners());
@@ -30,11 +28,6 @@ const deploy = async () => {
   return setup;
 };
 
-// const getDecimals = async (token) => await token.decimals();
-
-// const getTokenAmount = (tokenDecimal) => (amount) =>
-//     parseUnits(amount, tokenDecimal.toString());
-
 describe("Contract: Controller", async () => {
   let setup;
   let root;
@@ -51,6 +44,30 @@ describe("Contract: Controller", async () => {
 
   //constants
 //   const zero_address = "0x0000000000000000000000000000000000000000";
+// context("» first test", () => {
+//     before("!! setup", async () => {
+//       setup = await deploy();
+//   });
+//   // first deployment test
+//   it("checks if deployed contracts are ZERO_ADDRESS", async () => {
+//     assert(setup.balDepositor.address != constants.ZERO_ADDRESS);
+//     assert(setup.tokens.WethBal.address != constants.ZERO_ADDRESS);
+//     assert(setup.tokens.D2DBal.address != constants.ZERO_ADDRESS);
+//     assert(setup.tokens.VeBal.address != constants.ZERO_ADDRESS);
+//   });
+
+//   it("checks Controller construtor", async () => {
+//     const wethBalAdress = await setup.balDepositor.wethBal();
+//     const staker = await setup.balDepositor.staker();
+//     const minter = await setup.balDepositor.minter();
+//     const escrow =  await setup.balDepositor.escrow();
+
+//     assert(wethBalAdress == setup.tokens.WethBal.address);
+//     assert(staker == setup.roles.staker.address);
+//     assert(minter == setup.tokens.D2DBal.address);
+//     assert(escrow == setup.tokens.VeBal.address);
+//     });
+// });
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
