@@ -1,4 +1,4 @@
-const { deployments } = require('hardhat')
+const { ethers } = require('hardhat')
 
 const initialize = async (accounts) => {
   const setup = {};
@@ -8,7 +8,7 @@ const initialize = async (accounts) => {
     staker: accounts[2],
     reward_manager: accounts[3],
     authorizer_adaptor: accounts[4],
-    operator: accounts[5]    
+    operator: accounts[5]
   };
 
   return setup;
@@ -36,15 +36,17 @@ const getTokens = async (setup) => {
     setup.roles.root
   );
 
+  const Balancer80BAL20WETH = await ERC20Factory.deploy("Balancer80BAL20WETH", "Balancer80BAL20WETH");
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
-
   const D2DBal = await D2DBalFactory.deploy("D2DBal", "D2DBAL");
-
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
-  return { BAL, D2DBal, PoolContract, WethBal, VeBal };
+  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH }
+
+  setup.tokens = tokens
+  return tokens;
 };
 
 const balDepositor = async (setup) => {
@@ -83,46 +85,33 @@ const rewardFactory = async (setup) => {
   return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
-const getBaseRewardPool = async () => {
-  const BaseRewardPoolDeployement = await deployments.get("BaseRewardPool");
-  const BaseRewardPool = await hre.ethers.getContractFactory("BaseRewardPoolInTest");
-  return BaseRewardPool.attach(BaseRewardPoolDeployement.address);
+const getBaseRewardPool = async (setup) => {
+  const BaseRewardPoolFactory = await ethers.getContractFactory(
+    'BaseRewardPoolInTest', 
+    setup.roles.root
+  );
+
+  const controller = await getControllerMock(setup)
+
+  return await BaseRewardPoolFactory.deploy(1, setup.tokens.Balancer80BAL20WETH.address, setup.tokens.BAL.address, controller.address, setup.roles.reward_manager.address);
 }
 
-const getControllerMock = async () => {
-  const ControllerDeployement = await deployments.get("ControllerMock");
-  const ControllerMock = await hre.ethers.getContractFactory("ControllerMock");
-  return ControllerMock.attach(ControllerDeployement.address);
-}
+const getControllerMock = async (setup) => {
+  const ControllerMockFactory = await ethers.getContractFactory(
+    'ControllerMock',
+    setup.roles.root
+  )
 
-const getVeBalMock = async () => {
-  const veBalMockDeployement = await deployments.get("veBalMock");
-  const VeBalMock = await hre.ethers.getContractFactory("veBalMock");
-  return VeBalMock.attach(veBalMockDeployement.address);
-}
-
-const getBalMock = async () => {
-  const BalMockDeployement = await deployments.get("BalMock");
-  const BalMock = await hre.ethers.getContractFactory("ERC20Mock");
-  return BalMock.attach(BalMockDeployement.address);
-}
-
-const getBalancer80BAL20WETHMock = async () => {
-  const Balancer80BAL20WETHMockDeployement = await deployments.get("Balancer80BAL20WETHMock");
-  const Balancer80BAL20WETHMoc = await hre.ethers.getContractFactory("ERC20Mock");
-  return Balancer80BAL20WETHMoc.attach(Balancer80BAL20WETHMockDeployement.address);
-}
-
-const getD2DBalMock = async () => {
-  const D2DBalDeployement = await deployments.get("D2DTokenMock");
-  const D2DBal = await hre.ethers.getContractFactory("D2DBal");
-  return D2DBal.attach(D2DBalDeployement.address);
+  return await ControllerMockFactory.deploy()
 }
 
 const getExtraRewardMock = async () => {
-  const ExtraRewardMockDeployement = await deployments.get("ExtraRewardMock");
-  const ExtraRewardMock = await hre.ethers.getContractFactory("ExtraRewardMock");
-  return ExtraRewardMock.attach(ExtraRewardMockDeployement.address);
+  const ExtraRewardMockFactory = await ethers.getContractFactory(
+    'ExtraRewardMock',
+    setup.roles.root
+  )
+
+  return await ExtraRewardMockFactory.deploy()
 }
 
 module.exports = {
@@ -133,10 +122,5 @@ module.exports = {
   rewardFactory,
   controller,
   getBaseRewardPool,
-  getBalMock,
-  getVeBalMock,
-  getD2DBalMock,
-  getControllerMock,
   getExtraRewardMock,
-  getBalancer80BAL20WETHMock,
 };

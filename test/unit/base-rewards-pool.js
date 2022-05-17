@@ -1,43 +1,47 @@
 const { expect } = require("chai");
 const { BigNumber, constants } = require("ethers");
 const { deployments, ethers } = require("hardhat");
+const init = require("../test-init.js");
 
 const addressOne = '0x0000000000000000000000000000000000000001';
 
-const { getBaseRewardPool, getBalMock, getControllerMock, getExtraRewardMock, getBalancer80BAL20WETHMock } = require("../test-init.js");
-
 describe("BaseRewardPool", function () {
 
-    const setupTests = deployments.createFixture(async ({ deployments, getNamedAccounts }) => {
+    const setupTests = deployments.createFixture(async ({ deployments }) => {
         await deployments.fixture();
-        
-        const { root, rewardManager } = await getNamedAccounts();
         const signers = await ethers.getSigners();
-        
-        const baseRewardPool = await getBaseRewardPool();
 
-        const operator = await getControllerMock();
+        const setup = await init.initialize(await ethers.getSigners());
+        const { BAL, Balancer80BAL20WETH } = await init.getTokens(setup);
+        
+        const baseRewardPool = await init.getBaseRewardPool(setup);
+
+        const operatorFactory = await ethers.getContractFactory('ControllerMock')
+        const operatorAddress = await baseRewardPool.operator()
+        const operator = operatorFactory.attach(operatorAddress)
         await operator.setRewardContracts(baseRewardPool.address)
+
+        // mint BAL to pool so that the pool can give out rewards 
+        await BAL.mint(baseRewardPool.address, ethers.utils.parseEther('10000'))
 
         return {
             baseRewardPool,
             operator,
-            rewardToken: await getBalMock(),
-            stakeToken: await getBalancer80BAL20WETHMock(), 
-            extraRewardMock: await getExtraRewardMock(),
-            root: signers.filter(signer => signer.address === root)[0],
-            rewardManager: signers.filter(signer => signer.address === rewardManager)[0],
+            rewardToken: BAL,
+            stakeToken: Balancer80BAL20WETH, 
+            extraRewardMock: await init.getExtraRewardMock(),
+            root: setup.roles.root,
+            rewardManager: setup.roles.reward_manager,
             anotherUser: signers.pop(),
         }
     });
 
     before('setup', async function() {
-        const { baseRewardPool, rewardToken: balMock, stakeToken, operator, rewardManager } = await setupTests();
+        const { baseRewardPool, rewardToken, stakeToken, rewardManager } = await setupTests();
 
         expect(await baseRewardPool.DURATION()).to.equal(604800) // 7 days
-        expect(await baseRewardPool.rewardToken()).to.equal(balMock.address)
+        expect(await baseRewardPool.rewardToken()).to.equal(rewardToken.address)
         expect(await baseRewardPool.stakingToken()).to.equal(stakeToken.address)
-        expect(await baseRewardPool.operator()).to.equal(operator.address)
         expect(await baseRewardPool.rewardManager()).to.equal(rewardManager.address) 
         expect(await baseRewardPool.periodFinish()).to.equal(0)
         expect(await baseRewardPool.rewardRate()).to.equal(0)
@@ -54,7 +58,7 @@ describe("BaseRewardPool", function () {
     })
 
     context("Extra rewards", async function() {
-        it("Should revert if not called by reward manager", async function () {
+        it("reverts if not called by reward manager", async function () {
             const { baseRewardPool } = await setupTests();
 
             const signers = await ethers.getSigners()
@@ -63,14 +67,14 @@ describe("BaseRewardPool", function () {
             await expect(baseRewardPool.connect(signers[10]).clearExtraRewards()).to.be.revertedWith('Unauthorized()')
         });
 
-        it("Should be able to add rewards", async function () {
+        it("adds rewards", async function () {
             const { baseRewardPool, rewardManager } = await setupTests();
     
             await baseRewardPool.connect(rewardManager).addExtraReward(addressOne)
             expect(await baseRewardPool.extraRewardsLength()).to.equal(1)
         });
 
-        it("Should be able to clear rewards", async function () {
+        it("clears rewards", async function () {
             const { baseRewardPool, rewardManager } = await setupTests();
     
             await baseRewardPool.connect(rewardManager).clearExtraRewards()
@@ -79,13 +83,13 @@ describe("BaseRewardPool", function () {
     });
 
     context('Stake', async function() {
-        it("Should revert on invalid amount able to stake", async function() {
+        it("reverts on invalid amount able to stake", async function() {
             const { baseRewardPool } = await setupTests();
     
             await expect(baseRewardPool.stake(0)).to.be.revertedWith('InvalidAmount()')
         });
 
-        it("Should be able to stake 10000 stake tokens", async function() {
+        it("stakes 10000 stake tokens", async function() {
             const { baseRewardPool, stakeToken, root } = await setupTests();
     
             const amount = BigNumber.from('10000')
@@ -93,7 +97,7 @@ describe("BaseRewardPool", function () {
             await stakeAmount(baseRewardPool, stakeToken, amount, root)
         });
         
-        it("Should be able to stake all stake tokens", async function() {
+        it("stakes all stake tokens", async function() {
             const { baseRewardPool, stakeToken, root } = await setupTests();
             
             const amount = await stakeToken.balanceOf(root.address)
@@ -104,14 +108,14 @@ describe("BaseRewardPool", function () {
             .to.emit(baseRewardPool, 'Staked').withArgs(root.address, amount)
         });
         
-        it("Should revert on invalid stake amount for somebody else", async function() {
+        it("reverts on invalid stake amount for somebody else", async function() {
             const { baseRewardPool, root, anotherUser } = await setupTests();
 
             await expect(baseRewardPool.connect(root).stakeFor(anotherUser.address, 0))
                 .to.be.revertedWith('InvalidAmount()')
         });
 
-        it("Should be able to stake 10000 stake tokens for somebody else", async function() {
+        it("stakes 10000 stake tokens for somebody else", async function() {
             const { baseRewardPool, stakeToken, root, anotherUser } = await setupTests();
     
             const amount = BigNumber.from('10000')
@@ -121,18 +125,16 @@ describe("BaseRewardPool", function () {
             await expect(baseRewardPool.connect(root).stakeFor(anotherUser.address, amount))
                 .to.emit(baseRewardPool, 'Staked').withArgs(anotherUser.address, amount)
         });
-
-        // TODO: test stake with stakeToExraReward enabled
     });
 
     context('Unstake', async function() {
-        it("Should revert on invalid unstake amount", async function() {
+        it("reverts on invalid unstake amount", async function() {
             const { baseRewardPool } = await setupTests();
     
             await expect(baseRewardPool.withdraw(0, true)).to.be.revertedWith('InvalidAmount()')
         });
 
-        it("Should be able to unstake 10000 stake tokens", async function() {
+        it("unstakes 10000 stake tokens", async function() {
             const { baseRewardPool, stakeToken, root } = await setupTests();
 
             const amount = BigNumber.from('10000')
@@ -143,7 +145,7 @@ describe("BaseRewardPool", function () {
                 .to.emit(baseRewardPool, 'Withdrawn').withArgs(root.address, amount)
         });
 
-        it("Should be able to unstake all stake tokens", async function() {
+        it("unstakes all stake tokens", async function() {
             const { baseRewardPool, stakeToken, root } = await setupTests();
 
             const amount = await stakeToken.balanceOf(root.address)
@@ -154,7 +156,7 @@ describe("BaseRewardPool", function () {
                 .to.emit(baseRewardPool, 'Withdrawn').withArgs(root.address, amount)
         });
 
-        it("Should be able to withdraw and unwrap", async function() {
+        it("withdraws and unwraps", async function() {
             // NOTE: stakeAmount is not being returned to staker
             // because controller is a mock and does nothing
 
@@ -171,7 +173,7 @@ describe("BaseRewardPool", function () {
                 .to.emit(baseRewardPool, 'Withdrawn').withArgs(root.address, amount)
         });
 
-        it("Should be able to withdraw all and unwrap", async function() {
+        it("withdraws all and unwraps", async function() {
             // NOTE: stakeAmount is not being returned to staker
             // because controller is a mock and does nothing
 
@@ -190,7 +192,7 @@ describe("BaseRewardPool", function () {
         });
     });
 
-    it("Should be able to change ratio by queueing new rewards multiple times", async function() {
+    it("changes ratio by queueing new rewards multiple times", async function() {
         const { baseRewardPool, operator } = await setupTests();
 
         // 604800 is the minimum number of reward amount
@@ -215,7 +217,7 @@ describe("BaseRewardPool", function () {
             .to.emit(baseRewardPool, 'RewardAdded').withArgs(BigNumber.from('1209590'))
     });
 
-    it("Should be able to change ratio by queueing new rewards multiple times queuedRation > NEW_REWARD_RATIO", async function() {
+    it("changes ratio by queueing new rewards multiple times queuedRation > NEW_REWARD_RATIO", async function() {
         const { baseRewardPool, operator } = await setupTests();
         
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
@@ -236,7 +238,7 @@ describe("BaseRewardPool", function () {
         expect(await baseRewardPool.queuedRewards()).to.equal(BigNumber.from('60480000'))
     });
 
-    it("Should be able to queue and get reward", async function() {
+    it("queues and gets the reward", async function() {
         const { baseRewardPool, stakeToken, root, operator, extraRewardMock, rewardManager } = await setupTests();
 
         // add extra rewards mock
@@ -267,7 +269,7 @@ describe("BaseRewardPool", function () {
             .to.emit(baseRewardPool, 'RewardPaid').withArgs(root.address, expectedResult)
     })
 
-    it("Should be able to donate reward token", async function() {
+    it("donates reward token", async function() {
         const { baseRewardPool, rewardToken, root } = await setupTests();
 
         await rewardToken.connect(root).approve(baseRewardPool.address, constants.MaxUint256);
@@ -277,7 +279,7 @@ describe("BaseRewardPool", function () {
         expect(await rewardToken.balanceOf(root.address)).to.equal(0)
     });
 
-    it("Should return correct result for unsafeInc", async function() {
+    it("returns correct result for unsafeInc", async function() {
         const { baseRewardPool } = await setupTests();
 
         await expect(baseRewardPool.unsafeIncExternal(1))
