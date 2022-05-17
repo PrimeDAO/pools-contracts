@@ -1,10 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { expectRevert } = require("@openzeppelin/test-helpers");
-// const {
-//   utils: { parseEther, parseUnits },
-//   BigNumber,
-// } = ethers;
 
 const init = require("./test-init.js");
 
@@ -30,20 +26,9 @@ const deploy = async () => {
   return setup;
 };
 
-// const getDecimals = async (token) => await token.decimals();
-
-// const getTokenAmount = (tokenDecimal) => (amount) =>
-//     parseUnits(amount, tokenDecimal.toString());
-
 describe("Contract: Controller", async () => {
   let setup;
   let root;
-//   let admin;
-//   let buyer1;
-//   let buyer2;
-//   let buyer3;
-//   let staker;
-
   let platformFee;
   let profitFee;
   let pid;
@@ -55,12 +40,11 @@ describe("Contract: Controller", async () => {
   let stashVersion;
 
   //constants
-//   const zero_address = "0x0000000000000000000000000000000000000000";
+  const zero_address = "0x0000000000000000000000000000000000000000";
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
       setup = await deploy();
-
 
       // // Roles
       root = setup.roles.root;
@@ -86,16 +70,18 @@ describe("Contract: Controller", async () => {
     });
 
     context("» Testing changed functions", () => {
-        context("» setFeeInfo testing", () => {
-            // it("Checks feeToken", async () => {
-            //     expect((await setup.controller.feeToken()).toString()).to.equal(zero_address);
-            //     await setup.controller
-            //             .connect(root)
-            //             .setFeeInfo(); //crashed with "Error: Transaction reverted: function returned an unexpected amount of data"
-            //             //reason of error - not this issue; it should be solved in "Change Curve interactions with Balancer interactions" issue
-            //     expectRevert((await setup.controller.feeToken()).toString()).to.equal(zero_address);
-            // });
-        });
+        // context("» setFeeInfo testing", () => {
+        //     it("Checks feeToken", async () => {
+        //         expect((await setup.controller.feeToken()).toString()).to.equal(zero_address);
+        //         await setup.controller
+        //                 .connect(root)
+        //                 .setFeeInfo(); //crashed with "Error: Transaction reverted: function returned an unexpected amount of data"
+        //                 //reason of error - not this issue; it should be solved in "Change Curve interactions with Balancer interactions" issue
+        //         console.log("feeToken %s ", (await setup.controller.feeToken()));
+
+        //         expectRevert((await setup.controller.feeToken()).toString()).to.equal(zero_address);
+        //     });
+        // });
         context("» setFees testing", () => {
             it("Sets correct fees", async () => {
                 await setup.controller
@@ -163,23 +149,19 @@ describe("Contract: Controller", async () => {
             it("Sets VoterProxy operator ", async () => {
                 expect(await setup.VoterProxy.connect(root).setOperator(setup.controller.address));
             });
-            it("Sets factories", async () => { //not this issue; now it is
+            it("Sets factories", async () => {
                 rewardFactory = setup.rewardFactory;
                 stashFactory = setup.stashFactory; //stash to handle extra incentives
                 tokenFactory = setup.tokens.TokenFactory; //create a tokenized deposit //booster tokenFactory https://etherscan.io/address/0x3c995e43e6ddd551e226f4c5544c77bfed147ab9                
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-                // Error: VM Exception while processing transaction: reverted with reason string '!auth'
-                // at RewardFactory.CreateBalRewards 
             });
             it("Sets VoterProxy as StashFactory implementation ", async () => {
                 expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
             });
-            it("Adds pool", async () => { //not this issue; now it is
-                //lp token is unwithdrawable --> PoolToken
-                lptoken = setup.tokens.PoolContract; //address; 
-                //reward contract is going to be BAL
+            it("Adds pool", async () => {
+                lptoken = setup.tokens.PoolContract;
                 gauge = setup.tokens.GaugeController;// gauge controller Mock //https://dev.balancer.fi/resources/vebal-and-gauges/gauges
-                stashVersion = 1; //uint256
+                stashVersion = 1;
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
                 expect(
                     (await setup.controller.poolLength()).toNumber()
@@ -197,11 +179,8 @@ describe("Contract: Controller", async () => {
                 console.log("tokenFactory token %s ", (await tokenFactory.token()));
             });
             it("Calls earmarkRewards with existing pool number", async () => {
-                pid = 1;
+                pid = 0;
                 await setup.controller.connect(root).earmarkRewards(pid);
-
-                expect(
-                ).to.equal(true);
             });
         });
     });

@@ -1,7 +1,3 @@
-// const { parseEther } = ethers.utils;
-
-// const PROXY_CREATION = "ProxyCreation";
-
 const initialize = async (accounts) => {
   const setup = {};
   setup.roles = {
@@ -44,7 +40,6 @@ const getTokens = async (setup) => {
     "GaugeControllerMock",
     setup.roles.root
   );         
-  //VotingEscrow = VeBal
   const GaugeController = await GaugeControllerFactoty.deploy(BAL.address, VeBal.address);
 
 
@@ -72,8 +67,6 @@ const balDepositor = async (setup) => {
 
 const getVoterProxy = async (setup) => {
   const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
-  // const parameters = args ? args : [];
-  // return await VoterProxy.deploy(...parameters);
   const mintr = setup.tokens.D2DBal;
   const bal = setup.tokens.BAL;
   const veBal = setup.tokens.VeBal;
@@ -87,15 +80,10 @@ const controller = async (setup) => {
     "Controller",
     setup.roles.root
   );
-
-  // const ERC20Mock_Factory =  await ethers.getContractFactory("ERC20Mock", setup.roles.root);  //BAL 
-  // const ERC20Mock = await ERC20Mock_Factory.deploy("ERC20Mock", "ERC20Mock");
-
-  // const staker = ERC20Mock;//await ethers.getContract("ERC20Mock");//await ethers.getContract("ERC20Mock");
-    //need to change staker mock as in addPool needed setStashAccess() function            
+    //need to change staker mock as addPool need setStashAccess() function            
     //IStaker(staker).setStashAccess(stash, true);
   const wethBal = setup.tokens.WethBal;
-  const staker = setup.VoterProxy; //row 236 asks for VoterProxt function  IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy; staker from Booster 0x989aeb4d175e16225e39e87d0d97a3360524ad80 address
+  const staker = setup.VoterProxy;
   return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address);
 };
 
@@ -104,7 +92,7 @@ const baseRewardPool = async (setup) => {
     "BaseRewardPool",
     setup.roles.root
   );
-  const pid = 1; // pool id
+  const pid = 1;
   const stakingToken = setup.tokens.D2DBal;
   const rewardToken = setup.tokens.BAL;
   const operator = setup.controller;
@@ -120,7 +108,7 @@ const rewardFactory = async (setup) => {
   );
 
   const bal = setup.tokens.BAL;
-  const operator = setup.controller;//roles.operator;
+  const operator = setup.controller;
 
   return await RewardFactory.deploy(operator.address, bal.address);
 };
@@ -140,7 +128,7 @@ const stashFactory = async (setup) => {
   );
   const operator = setup.controller;
   const rewardFactory = setup.rewardFactory;
-  const proxyFactory =  setup.proxyFactory;//VoterProxy;
+  const proxyFactory =  setup.proxyFactory;
   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
 };
 
