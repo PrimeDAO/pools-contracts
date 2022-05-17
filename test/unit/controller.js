@@ -45,9 +45,9 @@ describe("Contract: Controller", async () => {
   let rewardFactory;
   let stashFactory;
   let tokenFactory;
-  let lptoken;
-  let gauge;
-  let stashVersion;
+//   let lptoken;
+//   let gauge;
+//   let stashVersion;
 
   //constants
 //   const zero_address = "0x0000000000000000000000000000000000000000";
