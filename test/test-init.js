@@ -109,7 +109,6 @@ const rewardFactory = async (setup) => {
     "RewardFactory",
     setup.roles.root
   );
-
   const bal = setup.tokens.BAL;
   const operator = setup.controller;
 
@@ -172,10 +171,9 @@ module.exports = {
   rewardFactory,
   baseRewardPool,
   controller,
-  stashFactory,
   proxyFactory,
+  stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
-
 };
 
