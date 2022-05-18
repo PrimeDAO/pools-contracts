@@ -130,8 +130,8 @@ const stashFactory = async (setup) => {
   );
   const operator = setup.controller;
   const rewardFactory = setup.rewardFactory;
-  const proxyFactory =  setup.proxyFactory;
-  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+  const proxyFactoryFactory =  setup.proxyFactory;
+  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactoryFactory.address);
 };
 
 const getBaseRewardPool = async (setup) => {
