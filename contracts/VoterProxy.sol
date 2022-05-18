@@ -247,17 +247,20 @@ contract VoterProxy is Ownable {
     /// @dev Input arrays must have same length
     /// @param _gauges The gauges to vote for
     /// @param _weights The weights for a gauge in basis points (units of 0.01%). Minimal is 0.01%. Ignored if 0
-    function voteMultipleGauges(address[] calldata _gauges, uint256[] calldata _weights) 
-        external
-        returns (bool)
-    {
+    function voteMultipleGauges(
+        address[] calldata _gauges,
+        uint256[] calldata _weights
+    ) external returns (bool) {
         require(_gauges.length == _weights.length, "bad input");
         if (msg.sender != operator) {
             revert Unauthorized();
         }
 
-        for (uint i = 0; i < _gauges.length; i++) {
-            IVoting(gaugeController).vote_for_gauge_weights(_gauges[i], _weights[i]);
+        for (uint256 i = 0; i < _gauges.length; i++) {
+            IVoting(gaugeController).vote_for_gauge_weights(
+                _gauges[i],
+                _weights[i]
+            );
         }
         return true;
     }

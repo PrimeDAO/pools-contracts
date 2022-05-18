@@ -3,6 +3,7 @@ const { deployments, ethers } = require("hardhat");
 const init = require("../test-init.js");
 
 describe("VoterProxy", function () {
+    /* eslint-disable */ // TODO: remove this
     const setupTests = deployments.createFixture(async ({ deployments }) => {
         await deployments.fixture();
 
