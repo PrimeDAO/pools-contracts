@@ -14,12 +14,6 @@ const initialize = async (accounts) => {
   return setup;
 };
 
-const getVoterProxy = async (setup) => {
-  const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
-  const parameters = args ? args : [];
-  return await VoterProxy.deploy(...parameters);
-};
-
 const getTokens = async (setup) => {
   const ERC20Factory =  await ethers.getContractFactory(
     "ERC20Mock",
@@ -93,6 +87,14 @@ const proxyFactory = async (setup) => {
   return await ProxyFactory.deploy();
 }
 
+const getMintrMock = async (setup) => {
+  const MintrMock = await ethers.getContractFactory("MintrMock");
+
+  const controllerMock = await getControllerMock(setup)
+
+  return await MintrMock.deploy(setup.tokens.BAL.address, controllerMock.address);
+}
+
 const stashFactory = async (setup) => {
   const StashFactory = await ethers.getContractFactory(
     "StashFactory",
@@ -114,6 +116,17 @@ const getBaseRewardPool = async (setup) => {
 
   return await BaseRewardPoolFactory.deploy(1, setup.tokens.Balancer80BAL20WETH.address, setup.tokens.BAL.address, controller.address, setup.roles.reward_manager.address);
 }
+
+const getVoterProxy = async (setup) => {
+  const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
+
+  const mintr = await getMintrMock(setup);
+
+  // TODO: Fix this
+  const gaugeControllerMock = ZERO_ADDRESS;
+
+  return await VoterProxy.deploy(mintr.address, setup.tokens.BAL.address, setup.tokens.VeBal.address, gaugeControllerMock);
+};
 
 const getControllerMock = async (setup) => {
   const ControllerMockFactory = await ethers.getContractFactory(
