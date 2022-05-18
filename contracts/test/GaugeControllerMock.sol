@@ -72,16 +72,15 @@ contract GaugeControllerMock {
     uint256[1000000000] public time_type_weight; // type_id -> last scheduled time (next week)
 
 
-    //__init__
+    /**
+    @notice Contract constructor
+    @param _token `ERC20CRV` contract address
+    @param _voting_escrow `VotingEscrow` contract address
+    */
     constructor(
         address _token,
         address _voting_escrow
     ) public {
-        /**
-        @notice Contract constructor
-        @param _token `ERC20CRV` contract address
-        @param _voting_escrow `VotingEscrow` contract address
-        */
         require(_token != ZERO_ADDRESS, "GaugeControllerMock: _token == ZERO_ADDRESS");
         require(_voting_escrow != ZERO_ADDRESS, "GaugeControllerMock: _voting_escrow == ZERO_ADDRESS");
 
@@ -91,43 +90,43 @@ contract GaugeControllerMock {
         time_total = block.timestamp / WEEK * WEEK;
     }
 
+    /**
+    @notice Transfer ownership of GaugeController to `addr`
+    @param addr Address to have ownership transferred to
+    */
     function commit_transfer_ownership(address addr) external {
-        /**
-        @notice Transfer ownership of GaugeController to `addr`
-        @param addr Address to have ownership transferred to
-        */
         require(msg.sender == admin, "GaugeControllerMock: admin only"); //dev: admin only
         future_admin = addr;
         emit CommitOwnership(addr);
     }
+    /**
+    @notice Apply pending ownership transfer
+    */
     function apply_transfer_ownership() external {
-        /**
-        @notice Apply pending ownership transfer
-        */
         require(msg.sender == admin, "GaugeControllerMock: admin only"); //dev: admin only
         address _admin = future_admin;
         require(_admin != ZERO_ADDRESS, "GaugeControllerMock: _admin != ZERO_ADDRESS"); //dev: admin only
         admin = _admin;
         emit ApplyOwnership(_admin);
     }
+    /**
+    @notice Get gauge type for address
+    @param _addr Gauge address
+    @return Gauge type id
+    */
     function gauge_types(address _addr) external view returns (uint256) {
-        /**
-        @notice Get gauge type for address
-        @param _addr Gauge address
-        @return Gauge type id
-        */
         uint256 gauge_type = gauge_types_[_addr];
         require(gauge_type != 0, "GaugeControllerMock: gauge_type != 0");
 
         return gauge_type - 1;
     }
-    function _get_type_weight(uint256 gauge_type) internal returns (uint256) {
-        /**
-        @notice Fill historic type weights week-over-week for missed checkins
+    /**
+    @notice Fill historic type weights week-over-week for missed checkins
                 and return the type weight for the future week
-        @param gauge_type Gauge type id
-        @return Type weight
-        */
+    @param gauge_type Gauge type id
+    @return Type weight
+    */
+    function _get_type_weight(uint256 gauge_type) internal returns (uint256) {
         uint256 t = time_type_weight[gauge_type];
         if (t > 0) {
             uint256 w = points_type_weight[gauge_type][t];
@@ -146,13 +145,13 @@ contract GaugeControllerMock {
             return 0;
         }
     }
-    function _get_sum(uint256 gauge_type) internal returns (uint256) {
-        /**
-        @notice Fill sum of gauge weights for the same type week-over-week for
+    /**
+    @notice Fill sum of gauge weights for the same type week-over-week for
                 missed checkins and return the sum for the future week
-        @param gauge_type Gauge type id
-        @return Sum of weights
-        */
+    @param gauge_type Gauge type id
+    @return Sum of weights
+    */
+    function _get_sum(uint256 gauge_type) internal returns (uint256) {
         uint256 t = time_sum[gauge_type];
         if (t > 0) {
             Point memory pt = points_sum[gauge_type][t];
@@ -180,12 +179,12 @@ contract GaugeControllerMock {
             return 0;
         }
     }
-    function _get_total() internal returns (uint256) {
-        /**
-        @notice Fill historic total weights week-over-week for missed checkins
+    /**
+    @notice Fill historic total weights week-over-week for missed checkins
                 and return the total for the future week
-        @return Total weight
-        */
+    @return Total weight
+    */
+    function _get_total() internal returns (uint256) {
         uint256 t = time_total;
         uint256 _n_gauge_types = n_gauge_types;
 
@@ -226,13 +225,13 @@ contract GaugeControllerMock {
         }
         return pt;
     }
-    function _get_weight(address gauge_addr) internal returns (uint256) {
-        /**
-        @notice Fill historic gauge weights week-over-week for missed checkins
+    /**
+    @notice Fill historic gauge weights week-over-week for missed checkins
                 and return the total for the future week
-        @param gauge_addr Address of the gauge
-        @return Gauge weight
-        */
+    @param gauge_addr Address of the gauge
+    @return Gauge weight
+    */
+    function _get_weight(address gauge_addr) internal returns (uint256) {
         uint256 t = time_weight[gauge_addr];
 
         if (t > 0) {
@@ -265,13 +264,13 @@ contract GaugeControllerMock {
 
     // in original code uint256 weight = 0 by default
     // but Solidity does not support default parameters
-    function add_gauge(address addr, uint256 gauge_type, uint256 weight) external {
         /**
-        @notice Add gauge `addr` of type `gauge_type` with weight `weight`
-        @param addr Gauge address
-        @param gauge_type Gauge type
-        @param weight Gauge weight
-        */
+    @notice Add gauge `addr` of type `gauge_type` with weight `weight`
+    @param addr Gauge address
+    @param gauge_type Gauge type
+    @param weight Gauge weight
+    */
+    function add_gauge(address addr, uint256 gauge_type, uint256 weight) external {
         require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
         require((gauge_type >= 0) && (gauge_type < n_gauge_types), "GaugeControllerMock: (gauge_type >= 0) && (gauge_type < n_gauge_types)");
         require(gauge_types_[addr] == 0, "GaugeControllerMock: gauge_types_[addr] == 0"); //dev: cannot add the same gauge twice
@@ -303,29 +302,29 @@ contract GaugeControllerMock {
 
         emit NewGauge(addr, gauge_type, weight);
     }
+    /**
+    @notice Checkpoint to fill data common for all gauges
+    */
     function checkpoint() external {
-        /**
-        @notice Checkpoint to fill data common for all gauges
-        */
         _get_total();
     }
+    /**
+    @notice Checkpoint to fill data for both a specific gauge and common for all gauges
+    @param addr Gauge address
+    */
     function checkpoint_gauge(address addr) external {
-        /**
-        @notice Checkpoint to fill data for both a specific gauge and common for all gauges
-        @param addr Gauge address
-        */
         _get_weight(addr);
         _get_total();
     }
-    function _gauge_relative_weight(address addr, uint256 time) internal view returns (uint256) {
-        /**
-        @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
+    /**
+    @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
             (e.g. 1.0 == 1e18). Inflation which will be received by it is
             inflation_rate * relative_weight / 1e18
-        @param addr Gauge address
-        @param time Relative weight at the specified timestamp in the past or present
-        @return Value of relative weight normalized to 1e18
-        */
+    @param addr Gauge address
+    @param time Relative weight at the specified timestamp in the past or present
+    @return Value of relative weight normalized to 1e18
+    */
+    function _gauge_relative_weight(address addr, uint256 time) internal view returns (uint256) {
         uint256 t = time / WEEK * WEEK;
         uint256 _total_weight = points_total[t];
 
@@ -340,38 +339,38 @@ contract GaugeControllerMock {
     }
 
     //in original code uint256 time = block.timestamp by default
-    function gauge_relative_weight(address addr, uint256 time) external view returns (uint256) {
-        /**
-        @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
+    /**
+    @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
                 (e.g. 1.0 == 1e18). Inflation which will be received by it is
                 inflation_rate * relative_weight / 1e18
-        @param addr Gauge address
-        @param time Relative weight at the specified timestamp in the past or present
-        @return Value of relative weight normalized to 1e18
-        */
+    @param addr Gauge address
+    @param time Relative weight at the specified timestamp in the past or present
+    @return Value of relative weight normalized to 1e18
+    */
+    function gauge_relative_weight(address addr, uint256 time) external view returns (uint256) {
         return _gauge_relative_weight(addr, time);
     }
 
     //in original code uint256 time = block.timestamp by default
-    function gauge_relative_weight_write(address addr, uint256 time) external returns (uint256) {
-        /**
-        @notice Get gauge weight normalized to 1e18 and also fill all the unfilled
+    /**
+    @notice Get gauge weight normalized to 1e18 and also fill all the unfilled
                 values for type and gauge records
-        @dev Any address can call, however nothing is recorded if the values are filled already
-        @param addr Gauge address
-        @param time Relative weight at the specified timestamp in the past or present
-        @return Value of relative weight normalized to 1e18
-        */
+    @dev Any address can call, however nothing is recorded if the values are filled already
+    @param addr Gauge address
+    @param time Relative weight at the specified timestamp in the past or present
+    @return Value of relative weight normalized to 1e18
+    */
+    function gauge_relative_weight_write(address addr, uint256 time) external returns (uint256) {
         _get_weight(addr);
         _get_total();  // Also calculates get_sum
         return _gauge_relative_weight(addr, time);
     }
+    /**
+    @notice Change type weight
+    @param type_id Type id
+    @param weight New type weight
+    */
     function _change_type_weight(uint256 type_id, uint256 weight) internal {
-        /**
-         @notice Change type weight
-        @param type_id Type id
-        @param weight New type weight
-        */
         uint256 old_weight = _get_type_weight(type_id);
         uint256 old_sum = _get_sum(type_id);
         uint256 _total_weight = _get_total();
@@ -385,12 +384,12 @@ contract GaugeControllerMock {
 
         emit NewTypeWeight(type_id, next_time, weight, _total_weight);
     }
+    /**
+    @notice Add gauge type with name `_name` and weight `weight`
+    @param _name Name of gauge type
+    @param weight Weight of gauge type
+    */
     function add_type(string memory _name, uint256 weight) external {
-        /**
-        @notice Add gauge type with name `_name` and weight `weight`
-        @param _name Name of gauge type
-        @param weight Weight of gauge type
-        */
         require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
         uint256 type_id = n_gauge_types;
         gauge_type_names[type_id] = _name;
@@ -400,12 +399,12 @@ contract GaugeControllerMock {
             emit AddType(_name, type_id);
         }
     }
+    /**
+    @notice Change gauge type `type_id` weight to `weight`
+    @param type_id Gauge type id
+    @param weight New Gauge weight
+    */
     function change_type_weight(uint256 type_id, uint256 weight) external {
-        /**
-        @notice Change gauge type `type_id` weight to `weight`
-        @param type_id Gauge type id
-        @param weight New Gauge weight
-        */
         require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
         _change_type_weight(type_id, weight);
     }
@@ -432,12 +431,12 @@ contract GaugeControllerMock {
 
         emit NewGaugeWeight(addr, block.timestamp, weight, _total_weight);
     }
+    /**
+    @notice Change weight of gauge `addr` to `weight`
+    @param addr `GaugeController` contract address
+    @param weight New Gauge weight
+    */
     function change_gauge_weight(address addr, uint256 weight) external {
-        /**
-        @notice Change weight of gauge `addr` to `weight`
-        @param addr `GaugeController` contract address
-        @param weight New Gauge weight
-        */
         require(msg.sender == admin, "GaugeControllerMock: msg.sender == admin,");
         _change_gauge_weight(addr, weight);
     }
@@ -454,12 +453,12 @@ contract GaugeControllerMock {
     uint256 private gauge_type;
     uint256 private old_dt;
 
+    /**
+    @notice Allocate voting power for changing pool weights
+    @param _gauge_addr Gauge which `msg.sender` votes for
+    @param _user_weight Weight for a gauge in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
+    */
     function vote_for_gauge_weights(address _gauge_addr, uint256 _user_weight) external {
-        /**
-        @notice Allocate voting power for changing pool weights
-        @param _gauge_addr Gauge which `msg.sender` votes for
-        @param _user_weight Weight for a gauge in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
-        */
         escrow = voting_escrow;
         slope = uint256(VotingEscrow(escrow).get_last_user_slope(msg.sender));
          lock_end = VotingEscrow(escrow).locked__end(msg.sender);
@@ -528,36 +527,35 @@ contract GaugeControllerMock {
         emit VoteForGauge(block.timestamp, msg.sender, _gauge_addr, _user_weight);
 
     }
-
+    /**
+    @notice Get current gauge weight
+    @param addr Gauge address
+    @return Gauge weight
+    */
     function get_gauge_weight(address addr) external view returns (uint256) {
-        /**
-        @notice Get current gauge weight
-        @param addr Gauge address
-        @return Gauge weight
-        */
         return points_weight[addr][time_weight[addr]].bias;
     }
+    /**
+    @notice Get current type weight
+    @param type_id Type id
+    @return Type weight
+    */
     function get_type_weight(uint256 type_id) external view returns (uint256) {
-        /**
-        @notice Get current type weight
-        @param type_id Type id
-        @return Type weight
-        */
         return points_type_weight[type_id][time_type_weight[type_id]];
     }
+    /**
+    @notice Get current total (type-weighted) weight
+    @return Total weight
+    */
     function get_total_weight() external view returns (uint256) {
-        /**
-        @notice Get current total (type-weighted) weight
-        @return Total weight
-        */
         return points_total[time_total];
     }
+    /**
+    @notice Get sum of gauge weights per type
+    @param type_id Type id
+    @return Sum of gauge weights
+    */
     function get_weights_sum_per_type(uint256 type_id) external view returns (uint256) {
-        /**
-        @notice Get sum of gauge weights per type
-        @param type_id Type id
-        @return Sum of gauge weights
-        */
         return points_sum[type_id][time_sum[type_id]].bias;
     }
 }
