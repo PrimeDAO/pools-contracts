@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { expectRevert } = require("@openzeppelin/test-helpers");
+const { time, expectRevert } = require("@openzeppelin/test-helpers");
 const init = require("../test-init.js");
 
 const deploy = async () => {
@@ -19,6 +19,8 @@ const deploy = async () => {
   setup.proxyFactory = await init.proxyFactory(setup);
 
   setup.stashFactory = await init.stashFactory(setup);
+
+  setup.tokenFactory = await init.tokenFactory(setup);
 
   setup.data = {};
 
@@ -45,11 +47,12 @@ describe("Contract: Controller", async () => {
   //constants
   const zero_address = "0x0000000000000000000000000000000000000000";
   const FEE_DENOMINATOR = 10000;
+  const lockTime = time.duration.days(365);
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
       setup = await deploy();
-      
+
       // // Roles
       root = setup.roles.root;
       staker = setup.roles.staker;
@@ -146,7 +149,7 @@ describe("Contract: Controller", async () => {
             it("Sets factories", async () => {
                 rewardFactory = setup.rewardFactory;
                 stashFactory = setup.stashFactory;
-                tokenFactory = setup.tokens.TokenFactory;
+                tokenFactory = setup.tokenFactory;
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
             it("Sets VoterProxy as StashFactory implementation ", async () => {
@@ -321,6 +324,52 @@ describe("Contract: Controller", async () => {
 
             });
         });
+        context("» deposit testing", () => {
+            it("It deposit lp tokens; stake = true", async () => {
+              let amount = 20000000;
+              await setup.tokens.WethBal.transfer(staker.address, amount);
+              const stake = true;
+
+              console.log("operator eee%s", operator.address);
+              expect(await setup.controller.connect(operator).deposit(pid, amount, stake));
+              
+              let timelock = (await time.latest()) + lockTime;
+              // console.log(timelock);
+
+              expect(
+                (await setup.controller.userLockTime(staker.address)).toString()
+              ).to.equal(timelock.toString());
+
+            });
+            it("It deposit lp tokens; stake = true; unauthorized", async () => {
+              let amount = 20000000;
+              await setup.tokens.WethBal.transfer(staker.address, amount);
+              const stake = true;
+
+              await expectRevert(
+                setup.controller
+                  .connect(staker)
+                  .deposit(pid, amount, stake),
+                "!authorized"
+              );
+
+              // let timelock = (await time.latest()) + lockTime;
+              // console.log(timelock);
+              // expect(
+              //   (await setup.controller.userLockTime(staker.address)).toString()
+              // ).to.equal(timelock.toString());
+
+            });
+
+            it("It deposit lp tokens; stake = false", async () => {
+              let amount = 20000000;
+              await setup.tokens.WethBal.transfer(staker.address, amount);
+              const stake = false;
+              expect(await setup.controller.connect(staker).deposit(pid, amount, stake));
+
+
+            });
+      });
     });
   });
 });

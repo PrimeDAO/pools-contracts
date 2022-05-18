@@ -44,14 +44,7 @@ const getTokens = async (setup) => {
   );         
   const GaugeController = await GaugeControllerFactory.deploy(BAL.address, VeBal.address);
 
-
-  const TokenFactoryFactory = await ethers.getContractFactory(
-    "TokenFactory",
-    setup.roles.root
-  );
-  const TokenFactory = await TokenFactoryFactory.deploy(setup.roles.operator.address);
-
-  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH, GaugeController, TokenFactory };
+  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH, GaugeController };
 
   setup.tokens = tokens
   return tokens;
@@ -84,9 +77,19 @@ const controller = async (setup) => {
   const controller = await ethers.getContractFactory(
     "Controller",
     setup.roles.root
+  );
   const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy;
   return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address);
+};
+
+const tokenFactory = async (setup) => {
+  const tokenFactory = await ethers.getContractFactory(
+    "TokenFactory",
+    setup.roles.root
+  );
+  const operator = setup.controller; //setup.roles.operator;
+  return await tokenFactory.deploy(operator.address);
 };
 
 const baseRewardPool = async (setup) => {
@@ -129,8 +132,8 @@ const stashFactory = async (setup) => {
   );
   const operator = setup.controller;
   const rewardFactory = setup.rewardFactory;
-  const proxyFactoryFactory =  setup.proxyFactory;
-  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactoryFactory.address);
+  const proxyFactory =  setup.proxyFactory;
+  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
 };
 
 const getBaseRewardPool = async (setup) => {
@@ -174,4 +177,5 @@ module.exports = {
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
+  tokenFactory
 };
