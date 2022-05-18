@@ -100,7 +100,6 @@ const balDepositor = async (setup) => {
     const wethBal = setup.tokens.WethBal;
     const minter = setup.tokens.D2DBal;
     const staker = await getVoterProxy(setup);
-    const escrow = setup.tokens.VeBal;
 
     return await balDepositor.deploy(
         wethBal.address,

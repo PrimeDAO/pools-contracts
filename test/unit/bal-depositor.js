@@ -1,6 +1,6 @@
 const { assert, expect } = require("chai");
 const { ethers } = require("hardhat");
-const { BigNumber, constants } = require("ethers");
+const { constants } = require("ethers");
 
 const init = require("../test-init.js");
 
@@ -24,15 +24,12 @@ describe("Contract: BalDepositor", async () => {
     let root;
     let staker;
     let buyer1;
-    let buyer2;
     let wethBalAdress;
     let minter;
     let balDepositorContractAddress;
-    let bal80BAL20WETH;
     let wethBalContract;
-    let rewardContract;
-    let veBalContract;
     let voterProxyContract;
+    let Bal80BAL20WETH;
     let depositAmount = 20;
     let _lock = true;
     let incentiveInRange = 15;
@@ -45,10 +42,8 @@ describe("Contract: BalDepositor", async () => {
             buyer1 = setup.roles.buyer1;
             buyer2 = setup.roles.buyer2;
             balDepositorContractAddress = await setup.balDepositor.address;
+            Bal80BAL20WETH = await setup.tokens.Balancer80BAL20WETH;
             wethBalContract = await setup.tokens.WethBal;
-            bal80BAL20WETH = await setup.tokens.Balancer80BAL20WETH;
-            veBalContract = await setup.tokens.VeBal;
-            rewardContract = await setup.baseRewardPool.address;
         });
         // first deployment test
         it("checks if deployed contracts are ZERO_ADDRESS", async () => {
@@ -130,7 +125,9 @@ describe("Contract: BalDepositor", async () => {
                 balDepositorContractAddress,
                 constants.MaxUint256
             );
-
+            await wethBalContract
+                .connect(root)
+                .increaseAllowance(setup.baseRewardPool.address, 1000);
             await setup.balDepositor
                 .connect(root)
                 .deposit(depositAmount, _lock, setup.baseRewardPool.address);
