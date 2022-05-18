@@ -303,6 +303,7 @@ interface LiquidityGauge {
     function integrate_fraction(address _address) external returns (uint256);
 
     function user_checkpoint(address _address) external returns (bool);
+}
 
 interface IProxyFactory {
     function clone(address _target) external returns (address);
