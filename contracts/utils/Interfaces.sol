@@ -99,7 +99,7 @@ interface IStaker {
 
     function release() external;
 
-    function claimCrv(address) external returns (uint256);
+    function claimBal(address) external returns (uint256);
 
     function claimRewards(address) external;
 
@@ -293,4 +293,12 @@ interface IVestedEscrow {
     function fund(address[] calldata _recipient, uint256[] calldata _amount)
         external
         returns (bool);
+}
+
+interface IProxyFactory {
+    function clone(address _target) external returns (address);
+}
+
+interface IRewardHook {
+    function onRewardClaim() external;
 }
