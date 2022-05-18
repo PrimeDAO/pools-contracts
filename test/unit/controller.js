@@ -60,15 +60,6 @@ describe("Contract: Controller", async () => {
 
       platformFee = 500;
       profitFee = 100;
-    // TODO: for tests:
-    //   await setup.controller.setOwner();
-    //   await setup.controller.setPoolManager();
-    //   await setup.controller.setArbitrator();
-    //   await setup.controller.setVoteDelegate();
-    //   await setup.controller.setRewardContracts();
-    //   await setup.controller.setFeeInfo();
-    //   await setup.controller.setTreasury();
-
     });
 
     context("» Testing changed functions", () => {
@@ -79,7 +70,6 @@ describe("Contract: Controller", async () => {
         //                 .connect(root)
         //                 .setFeeInfo(); //crashed with "Error: Transaction reverted: function returned an unexpected amount of data"
         //                 //reason of error - not this issue; it should be solved in "Change Curve interactions with Balancer interactions" issue
-        //         console.log("feeToken %s ", (await setup.controller.feeToken()));
 
         //         expectRevert((await setup.controller.feeToken()).toString()).to.equal(zero_address);
         //     });
@@ -251,10 +241,6 @@ describe("Contract: Controller", async () => {
 
                 let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber() + platform;
                 let feeManager_amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
-               
-                console.log(balBal);
-                console.log(treasury_amount_expected);
-                console.log(platformFees.toString());
 
                 await setup.controller.connect(root).earmarkRewards(pid);
 
@@ -267,9 +253,6 @@ describe("Contract: Controller", async () => {
                 expect(
                     (await setup.tokens.WethBal.balanceOf(setup.controller.address)).toString()
                 ).to.equal("0");
-                // expect(
-                //     (await setup.tokens.WethBal.balanceOf(setup.baseRewardPool.address)).toString()
-                // ).to.equal(rewardContract_amount_expected.toString());
             });
             it("Sets non-passing fees", async () => {
                 await setup.controller
