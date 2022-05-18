@@ -91,6 +91,14 @@ const getMintrMock = async (setup) => {
   return await MintrMock.deploy(setup.tokens.BAL.address, ZERO_ADDRESS);
 }
 
+const proxyFactory = async (setup) => {
+  const ProxyFactory = await ethers.getContractFactory(
+    "ProxyFactory",
+    setup.roles.root
+  );
+  return await ProxyFactory.deploy();
+}
+
 const stashFactory = async (setup) => {
   const StashFactory = await ethers.getContractFactory(
     "StashFactory",
@@ -131,6 +139,7 @@ const getExtraRewardMock = async () => {
   return await ExtraRewardMockFactory.deploy()
 }
 
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -139,8 +148,8 @@ module.exports = {
   rewardFactory,
   controller,
   getMintrMock,
+  proxyFactory,
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
-
 };
