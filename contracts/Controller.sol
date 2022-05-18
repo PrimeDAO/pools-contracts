@@ -67,7 +67,7 @@ contract Controller {
     constructor(address _staker, address _feeManager, address _wethBal) public {
         isShutdown = false;
         bal = _wethBal;
-        staker = _staker; //VoterProxy
+        staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
         feeManager = _feeManager;
@@ -199,7 +199,7 @@ contract Controller {
             token
         );
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).CreateStash( // stash = VoterProxy
+        address stash = IStashFactory(stashFactory).CreateStash(
             pid,
             _gauge,
             staker,
@@ -223,7 +223,7 @@ contract Controller {
         //   reward factory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
         if (stash != address(0)) {
             poolInfo[pid].stash = stash;
-            IStaker(staker).setStashAccess(stash, true); //staker here if VoterProxy
+            IStaker(staker).setStashAccess(stash, true);
             IRewardFactory(rewardFactory).setAccess(stash, true);
         }
         return true;
