@@ -24,14 +24,12 @@ const getTokens = async (setup) => {
   );
 
   const D2DBalFactory = await ethers.getContractFactory(
-    "D2DBAL",
+    "ERC20Mock",
     setup.roles.root
   );
 
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
-
-  const D2DBal = await D2DBalFactory.deploy();
-
+  const D2DBal = await D2DBalFactory.deploy("D2DBal", "D2DBAL");
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
