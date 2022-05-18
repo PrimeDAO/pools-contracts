@@ -70,6 +70,14 @@ describe("Contract: Controller", async () => {
             });
         });
         context("» setFees testing", () => {
+            it("Should fail if caller if not feeManager", async () => {
+                await expectRevert(
+                    setup.controller
+                        .connect(staker)
+                        .setFees(platformFee, profitFee),
+                    "!auth"
+                );      
+            });
             it("Sets correct fees", async () => {
                 await setup.controller
                         .connect(root)
