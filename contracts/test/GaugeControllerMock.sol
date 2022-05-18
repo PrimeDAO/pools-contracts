@@ -98,6 +98,7 @@ contract GaugeControllerMock {
         future_admin = addr;
         emit CommitOwnership(addr);
     }
+
     /**
     @notice Apply pending ownership transfer
     */
@@ -108,6 +109,7 @@ contract GaugeControllerMock {
         admin = _admin;
         emit ApplyOwnership(_admin);
     }
+
     /**
     @notice Get gauge type for address
     @param _addr Gauge address
@@ -119,6 +121,7 @@ contract GaugeControllerMock {
 
         return gauge_type - 1;
     }
+
     /**
     @notice Fill historic type weights week-over-week for missed checkins
                 and return the type weight for the future week
@@ -144,6 +147,7 @@ contract GaugeControllerMock {
             return 0;
         }
     }
+
     /**
     @notice Fill sum of gauge weights for the same type week-over-week for
                 missed checkins and return the sum for the future week
@@ -178,6 +182,7 @@ contract GaugeControllerMock {
             return 0;
         }
     }
+
     /**
     @notice Fill historic total weights week-over-week for missed checkins
                 and return the total for the future week
@@ -224,6 +229,7 @@ contract GaugeControllerMock {
         }
         return pt;
     }
+
     /**
     @notice Fill historic gauge weights week-over-week for missed checkins
                 and return the total for the future week
@@ -301,12 +307,14 @@ contract GaugeControllerMock {
 
         emit NewGauge(addr, gauge_type, weight);
     }
+
     /**
     @notice Checkpoint to fill data common for all gauges
     */
     function checkpoint() external {
         _get_total();
     }
+
     /**
     @notice Checkpoint to fill data for both a specific gauge and common for all gauges
     @param addr Gauge address
@@ -315,6 +323,7 @@ contract GaugeControllerMock {
         _get_weight(addr);
         _get_total();
     }
+
     /**
     @notice Get Gauge relative weight (not more than 1.0) normalized to 1e18
             (e.g. 1.0 == 1e18). Inflation which will be received by it is
@@ -364,6 +373,7 @@ contract GaugeControllerMock {
         _get_total();  // Also calculates get_sum
         return _gauge_relative_weight(addr, time);
     }
+
     /**
     @notice Change type weight
     @param type_id Type id
@@ -383,6 +393,7 @@ contract GaugeControllerMock {
 
         emit NewTypeWeight(type_id, next_time, weight, _total_weight);
     }
+
     /**
     @notice Add gauge type with name `_name` and weight `weight`
     @param _name Name of gauge type
@@ -398,6 +409,7 @@ contract GaugeControllerMock {
             emit AddType(_name, type_id);
         }
     }
+
     /**
     @notice Change gauge type `type_id` weight to `weight`
     @param type_id Gauge type id
@@ -430,6 +442,7 @@ contract GaugeControllerMock {
 
         emit NewGaugeWeight(addr, block.timestamp, weight, _total_weight);
     }
+    
     /**
     @notice Change weight of gauge `addr` to `weight`
     @param addr `GaugeController` contract address
@@ -526,6 +539,7 @@ contract GaugeControllerMock {
         emit VoteForGauge(block.timestamp, msg.sender, _gauge_addr, _user_weight);
 
     }
+
     /**
     @notice Get current gauge weight
     @param addr Gauge address
@@ -534,6 +548,7 @@ contract GaugeControllerMock {
     function get_gauge_weight(address addr) external view returns (uint256) {
         return points_weight[addr][time_weight[addr]].bias;
     }
+
     /**
     @notice Get current type weight
     @param type_id Type id
@@ -542,6 +557,7 @@ contract GaugeControllerMock {
     function get_type_weight(uint256 type_id) external view returns (uint256) {
         return points_type_weight[type_id][time_type_weight[type_id]];
     }
+
     /**
     @notice Get current total (type-weighted) weight
     @return Total weight
@@ -549,6 +565,7 @@ contract GaugeControllerMock {
     function get_total_weight() external view returns (uint256) {
         return points_total[time_total];
     }
+    
     /**
     @notice Get sum of gauge weights per type
     @param type_id Type id
