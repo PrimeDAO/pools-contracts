@@ -191,14 +191,14 @@ describe("Contract: Controller", async () => {
                 ).to.equal(reward_manager.address.toString());
             });            
             it("Add balance to feeManager", async () => { 
-                feeManager = reward_manager.address;               
+                feeManager = reward_manager;               
                 balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
 
                 let amount = 20000000;
-                await setup.tokens.WethBal.transfer(feeManager, amount);
+                await setup.tokens.WethBal.transfer(feeManager.address, amount);
 
                 expect(
-                    (await setup.tokens.WethBal.balanceOf(feeManager)).toString()
+                    (await setup.tokens.WethBal.balanceOf(feeManager.address)).toString()
                 ).to.equal(amount.toString()); 
             });
             it("Add bal to Controller address", async () => {           
@@ -213,17 +213,15 @@ describe("Contract: Controller", async () => {
                 let profitFees = await setup.controller.profitFees();
                 const profit = (balBal * profitFees) / FEE_DENOMINATOR;
                 balBal = balBal - profit; //balForTransfer if no treasury
-                let feeManagerBalance = (await setup.tokens.WethBal.balanceOf(feeManager)).toString();
-                let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager)).toNumber() + profit;
+                let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
                 const poolInfo = await setup.controller.poolInfo(0);
                 balRewards = (poolInfo.balRewards).toString();
 
-                pid = 0;
                 await setup.controller.connect(root).earmarkRewards(pid);
 
                 expect(
-                    (await setup.tokens.WethBal.balanceOf(feeManager)).toString()
+                    (await setup.tokens.WethBal.balanceOf(feeManager.address)).toString()
                 ).to.equal(amount_expected.toString());
                 expect(
                     (await setup.tokens.WethBal.balanceOf(setup.controller.address)).toString()
@@ -233,8 +231,8 @@ describe("Contract: Controller", async () => {
                 ).to.equal(balBal.toString());
             });
             it("Set treasury", async () => {
-                treasury = admin.address;
-                expect(await setup.controller.connect(reward_manager).setTreasury(treasury));
+                treasury = admin;
+                expect(await setup.controller.connect(feeManager).setTreasury(treasury.address));
                 expect(
                     (await setup.controller.treasury()).toString()
                 ).to.equal(admin.address.toString());
@@ -248,18 +246,16 @@ describe("Contract: Controller", async () => {
                 const platform = (balBal * platformFees) / FEE_DENOMINATOR;
                 rewardContract_amount_expected = balBal - platform;
 
-                let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury)).toNumber() + platform;
-                let feeManager_amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager)).toNumber() + profit;
+                let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber() + platform;
+                let feeManager_amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
-
-                pid = 0;
                 await setup.controller.connect(root).earmarkRewards(pid);
 
                 expect(
-                    (await setup.tokens.WethBal.balanceOf(feeManager)).toString()
+                    (await setup.tokens.WethBal.balanceOf(feeManager.address)).toString()
                 ).to.equal(feeManager_amount_expected.toString());
                 expect(
-                    (await setup.tokens.WethBal.balanceOf(treasury)).toString()
+                    (await setup.tokens.WethBal.balanceOf(treasury.address)).toString()
                 ).to.equal(treasury_amount_expected.toString());
                 expect(
                     (await setup.tokens.WethBal.balanceOf(setup.controller.address)).toString()
@@ -268,34 +264,42 @@ describe("Contract: Controller", async () => {
                     (await setup.tokens.WethBal.balanceOf(setup.baseRewardPool.address)).toString()
                 ).to.equal(rewardContract_amount_expected.toString());
             });
-            // it("Checks feeManager balance after added to controller bal", async () => {
-            //     console.log("balBal %s", (await setup.tokens.WethBal.balanceOf(setup.controller.address)).toString());                
-
-            //     balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
-            //     console.log(balBal.toString());
-            //     // if (balBal.toNumber() > 0) { //goes this way
-            //     let profitFees = await setup.controller.profitFees();
-            //     const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-            //     console.log("profit = ", profit.toString());
-            //     balBal = balBal - profit;
-            //     let feeManagerBalance = (await setup.tokens.WethBal.balanceOf(feeManager)).toString();
-
-            //     console.log("feeManagerBalance %s", feeManagerBalance.toString());
-            //     console.log("balBal %s",balBal.toString());
-
-            //     let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager)).toNumber() - balBal;
-
-            //     expect(
-            //         (await setup.tokens.WethBal.balanceOf(feeManager)).toString()
-            //     ).to.equal(amount_expected.toString());
-                
-            //     console.log("feeManagerBalance %s", (await setup.tokens.WethBal.balanceOf(setup.controller.address)).toString());                
-            // });
-            it("Calls earmarkRewards with existing pool number", async () => {
-                pid = 0;
-                await setup.controller.connect(root).earmarkRewards(pid);
+            it("Sets fees", async () => {
+                await setup.controller
+                        .connect(feeManager)
+                        .setFees("0", profitFee);            
             });
-            
+            it("Calls earmarkRewardsc check treasury when platformFees = 0", async () => {
+                balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                let profitFees = await setup.controller.profitFees();
+                const profit = (balBal * profitFees) / FEE_DENOMINATOR;
+                balBal = balBal - profit;
+                let platformFees = await setup.controller.platformFees();
+                const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+                rewardContract_amount_expected = balBal - platform;
+
+                let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber() + platform;
+
+                await setup.controller.connect(root).earmarkRewards(pid);
+
+                //expect 0 when platformFees = 0
+                expect(
+                    (await setup.tokens.WethBal.balanceOf(treasury.address)).toString()
+                ).to.equal(treasury_amount_expected.toString());
+            });            
+            it("Sets correct fees back", async () => {
+                await setup.controller
+                        .connect(feeManager)
+                        .setFees(platformFee, profitFee);            
+            });            
+        });
+        context("» earmarkFees testing", () => {
+            it("Calls earmarkFees", async () => {
+                await setup.controller.earmarkFees(); 
+                // error at: IStaker(staker).claimFees(feeDistro, feeToken);
+                // at VoterProxy.claimFees (contracts/VoterProxy.sol:217)
+                // to fix need to solve issue "Change Curve interactions with Balancer interactions #38"
+            });
         });
     });
   });
