@@ -63,17 +63,12 @@ describe("Contract: Controller", async () => {
     });
 
     context("» Testing changed functions", () => {
-        // context("» setFeeInfo testing", () => {
-        //     it("Checks feeToken", async () => {
-        //         expect((await setup.controller.feeToken()).toString()).to.equal(zero_address);
-        //         await setup.controller
-        //                 .connect(root)
-        //                 .setFeeInfo(); //crashed with "Error: Transaction reverted: function returned an unexpected amount of data"
-        //                 //reason of error - not this issue; it should be solved in "Change Curve interactions with Balancer interactions" issue
+        context("» setFeeInfo testing", () => {
+            it("Checks feeToken", async () => {
+                expect((await setup.controller.feeToken()).toString()).to.equal(zero_address);
 
-        //         expectRevert((await setup.controller.feeToken()).toString()).to.equal(zero_address);
-        //     });
-        // });
+            });
+        });
         context("» setFees testing", () => {
             it("Sets correct fees", async () => {
                 await setup.controller
@@ -315,10 +310,7 @@ describe("Contract: Controller", async () => {
         });
         context("» earmarkFees testing", () => {
             it("Calls earmarkFees", async () => {
-                await setup.controller.earmarkFees(); 
-                // error at: IStaker(staker).claimFees(feeDistro, feeToken);
-                // at VoterProxy.claimFees (contracts/VoterProxy.sol:217)
-                // to fix need to solve issue "Change Curve interactions with Balancer interactions #38"
+
             });
         });
     });
