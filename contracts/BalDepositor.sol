@@ -55,7 +55,7 @@ contract BalDepositor {
         }
     }
 
-    /// @notice Locks initial balance of Weth/Bal in Voter Proxy
+    /// @notice Locks initial Weth/Bal balance in veBal contract via voterProxy contract
     function initialLock() external {
         require(msg.sender == feeManager, "!auth");
 
@@ -101,6 +101,7 @@ contract BalDepositor {
     }
 
     /// @notice Locks tokens in vBal contract and mints reward tokens to sender
+    /// @dev Needed in order to lockFunds on behalf of someone else
     function lockBalancer() external {
         _lockBalancer();
 
