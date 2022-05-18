@@ -10,7 +10,7 @@ contract BalDepositor {
     using Address for address;
 
     address public immutable wethBal;
-    address public immutable escrow;
+
     uint256 private constant MAXTIME = 4 * 364 * 86400;
     uint256 private constant WEEK = 7 * 86400;
 
@@ -26,14 +26,12 @@ contract BalDepositor {
     constructor(
         address _wethBal,
         address _staker,
-        address _minter,
-        address _escrow
+        address _minter
     ) public {
         wethBal = _wethBal;
         staker = _staker;
         minter = _minter;
         feeManager = msg.sender;
-        escrow = _escrow;
     }
 
     function setFeeManager(address _feeManager) external {
@@ -52,7 +50,7 @@ contract BalDepositor {
     function initialLock() external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 vBal = IERC20(escrow).balanceOf(staker);
+        uint256 vBal = IERC20(wethBal).balanceOf(staker);
         if (vBal == 0) {
             uint256 unlockAt = block.timestamp + MAXTIME;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
@@ -128,23 +126,12 @@ contract BalDepositor {
             //add to a pool for lock caller
             incentiveBal = incentiveBal + callIncentive;
         }
-
-        bool depositOnly = _stakeAddress == address(0);
-        if (depositOnly) {
-            //mint for msg.sender
-            ITokenMinter(minter).mint(msg.sender, _amount);
-        } else {
             //mint here
             ITokenMinter(minter).mint(address(this), _amount);
             //stake for msg.sender
             IERC20(minter).approve(_stakeAddress, 0);
             IERC20(minter).approve(_stakeAddress, _amount);
             IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
-        }
-    }
-
-    function deposit(uint256 _amount, bool _lock) external {
-        deposit(_amount, _lock, address(0));
     }
 
     function depositAll(bool _lock, address _stakeAddress) external {

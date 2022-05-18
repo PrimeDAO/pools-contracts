@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import "../BaseRewardPool.sol";
 
+
 /// @dev Contract used in tests
 ///      so that we can test internal/private functions
 contract BaseRewardPoolInTest is BaseRewardPool {
