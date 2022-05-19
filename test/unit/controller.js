@@ -390,24 +390,17 @@ describe("Contract: Controller", async () => {
             it("It withdraw Unlocked VeBal", async () => {
               time.increase(lockTime);
               
-              console.log("before is %s", (await setup.tokens.VeBal.balanceOf(treasury.address)).toNumber());
+              console.log("before is %s", (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toNumber());
 
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
 
-              let treasury_amount_expected = (await setup.tokens.VeBal.balanceOf(treasury.address)).add(twentyMillion);
+              let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address)).add(twentyMillion);
               
               console.log("expected is %s", treasury_amount_expected.toNumber());
-              console.log(treasury.address);
-              console.log("weth %s",setup.tokens.WethBal.address);
-              console.log("ve %s",setup.tokens.VeBal.address);
-              console.log("bal %s",setup.tokens.BAL.address);
-
-
+                          
               expect(
-                (await setup.tokens.WethBal.balanceOf(treasury.address)).toString()
+                (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toString()
               ).to.equal(treasury_amount_expected.toString());
-
-
             });
         });
         context("» restake testing", () => {

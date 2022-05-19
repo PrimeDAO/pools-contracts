@@ -5,7 +5,6 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
 
 contract Controller {
     using Address for address;
@@ -209,7 +208,6 @@ contract Controller {
             staker,
             _stashVersion
         );
-        console.log("stash is %s", stash);
 
         //add the new pool
         poolInfo.push(
@@ -389,38 +387,28 @@ contract Controller {
     }
 
     //withdraw veBal, which was unlocked after a year of usage
-    //upd of issue: Add withdraw function, which withdraws tokens from the veBal address, and redirects them to the treasury contract
-    // function withdrawUnlockedVeBal(uint256 _pid, uint256 _amount)
-    //     public
-    //     returns (bool)
-    // {
-    //     PoolInfo storage pool = poolInfo[_pid];
-    //     address lptoken = pool.lptoken;
-    //     address gauge = pool.gauge;
+    function withdrawUnlockedVeBal(uint256 _pid, uint256 _amount)
+        public
+        returns (bool)
+    {
+        PoolInfo storage pool = poolInfo[_pid];
+        address lptoken = pool.lptoken;
+        address gauge = pool.gauge;
 
-    //     //check lock
-    //     require(
-    //         block.timestamp > userLockTime[msg.sender],
-    //         "Controller: userLockTime is not reached yet"
-    //     );
-        
-    //     console.log("execute 1");
-    //     console.log(treasury);
-    //     console.log("lp %s" ,lptoken);
+        //check lock
+        require(
+            block.timestamp > userLockTime[msg.sender],
+            "Controller: userLockTime is not reached yet"
+        );
 
-    //     //pull from gauge if not shutdown
-    //     // if shutdown tokens will be in this contract
-    //     if (!pool.shutdown) {
-    //         IStaker(staker).withdrawVeBal(treasury, gauge, _amount);
-    //     }
+        //pull from gauge if not shutdown
+        // if shutdown tokens will be in this contract
+        if (!pool.shutdown) {
+            IStaker(staker).withdrawVeBal(treasury, gauge, _amount);
+        }
 
-    //     // IERC20(lptoken).transfer(_to, _amount);
-    //     // _withdraw(_pid, _amount, msg.sender, treasury); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
-    //     return true;
-    // }
-    //withdraw lp tokens
-    function withdrawUnlockedVeBal(uint256 _pid, uint256 _amount) public returns (bool) {
-        _withdraw(_pid, _amount, msg.sender, treasury);
+        // IERC20(lptoken).transfer(_to, _amount);
+        // _withdraw(_pid, _amount, msg.sender, treasury); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
         return true;
     }
 
@@ -440,7 +428,6 @@ contract Controller {
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;
-        console.log("stash is %s", stash);
         if (stash != address(0)) {
             IStash(stash).stashRewards();
         }

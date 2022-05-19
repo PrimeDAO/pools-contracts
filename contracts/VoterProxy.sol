@@ -5,8 +5,7 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
-
+ 
 contract VoterProxy {
     using Address for address;
 
@@ -135,8 +134,6 @@ contract VoterProxy {
         internal
         returns (uint256)
     {
-        console.log(_gauge);
-        console.log("amo %s",_amount);
         ICurveGauge(_gauge).withdraw(_amount);
         return _amount;
     }
@@ -206,8 +203,7 @@ contract VoterProxy {
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
-        uint256 _balance = IERC20(veBal).balanceOf(address(this));
-        console.log("_balance %s", _balance);
+        uint256 _balance = IBalVoteEscrow(veBal).NbalanceOf(address(this));
         if (_balance < _amount) {
             _amount = _withdrawSome(_gauge, _amount - _balance);
             _amount = _amount + _balance;

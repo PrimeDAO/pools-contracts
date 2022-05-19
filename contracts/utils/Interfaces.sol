@@ -27,6 +27,8 @@ interface IBalVoteEscrow {
     function withdraw() external;
 
     function smart_wallet_checker() external view returns (address);
+
+    function NbalanceOf(address) external view returns (uint256);
 }
 
 interface IWalletChecker {
