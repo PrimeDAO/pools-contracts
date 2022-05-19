@@ -390,7 +390,7 @@ describe("Contract: Controller", async () => {
             it("It withdraw Unlocked VeBal", async () => {
               time.increase(lockTime);
               
-              console.log("before is %s", (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber());
+              console.log("before is %s", (await setup.tokens.VeBal.balanceOf(treasury.address)).toNumber());
 
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
 

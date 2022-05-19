@@ -191,6 +191,14 @@ contract VoterProxy {
     //     // IERC20(_token).transfer(msg.sender, _amount);
     //     // return true;
     // }
+    // function withdrawVeBal(
+    //     address _to, //treasury
+    //     uint256 _amount
+    // ) external returns (bool) {
+    //     require(msg.sender == operator, "!auth");
+    //     address(veBal).transfer(_to, _amount);
+    //     return true;
+    // }
     // Withdraw partial funds
     function withdrawVeBal(
         address _to, //treasury
@@ -199,6 +207,7 @@ contract VoterProxy {
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
         uint256 _balance = IERC20(veBal).balanceOf(address(this));
+        console.log("_balance %s", _balance);
         if (_balance < _amount) {
             _amount = _withdrawSome(_gauge, _amount - _balance);
             _amount = _amount + _balance;

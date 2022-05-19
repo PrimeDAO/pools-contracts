@@ -81,6 +81,12 @@ interface IRegistry {
 interface IStaker {
     function deposit(address, address) external;
 
+    function withdrawVeBal(  
+        address,      
+        address,
+        uint256
+    ) external returns (bool);
+
     function withdraw(address) external;
 
     function withdraw(
