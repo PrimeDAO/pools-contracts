@@ -93,7 +93,7 @@ describe("Contract: BalDepositor", async () => {
         });
     });
     context("» deposit testing", () => {
-        it("fails if deposit amount is too small", async () => {
+        it("fails if the deposit amount is too small", async () => {
             await expect(
                 setup.balDepositor.deposit(
                     insufficentDepositAmount,
