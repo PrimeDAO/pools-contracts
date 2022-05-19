@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "hardhat/console.sol";
-
 import "../utils/Interfaces.sol";
 
 /// @title Stash Factory
@@ -57,7 +55,6 @@ contract StashFactory {
             _gauge,
             rewardFactory
         );
-        console.log("newly created stash:", stash);
         return stash;
     }
 }
