@@ -395,9 +395,9 @@ describe("Contract: Controller", async () => {
             });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
               await expectRevert(
-                setup.VoterProxy
+                setup.controller
                     .connect(staker)
-                    .increaseAmount(pid, twentyMillion),
+                    .withdrawUnlockedVeBal(pid, twentyMillion),
                 "Controller: userLockTime is not reached yet"
               );
             });
