@@ -23,9 +23,7 @@ interface SmartWalletChecker {
     function check(address addr) external returns (bool);//nonpayable
 }   
 
-// contract BalMock is ERC20, ReentrancyGuard, SmartWalletChecker, BALERC20 {
 contract VeBalMock is ERC20, ReentrancyGuard {
-// contract BalMock is BAL_ERC20, SmartWalletChecker{//}, ReentrancyGuard {
 
     struct Point{
         int128 bias;
@@ -116,38 +114,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     }
 
 
-    // function token() external view returns (address){
-    //     return TOKEN;
-    // }
-    // function name() public view virtual returns (string memory){
-    //     return NAME;
-    // }
-    // function symbol() public view virtual returns (string memory){
-    //     return SYMBOL;
-    // }
     function decimals_() public view virtual returns (uint256){
         return DECIMALS;
     }
     function admin() external view returns (address){
         return AUTHORIZER_ADAPTOR;
     }
-
-    // function transfer(address to, uint256 amount) public virtual override returns (bool) {
-    //     address owner = _msgSender();
-    //     _transfer(owner, to, amount);
-    //     return true;
-    // }
-    // function transferFrom(
-    //     address from,
-    //     address to,
-    //     uint256 amount
-    // ) public virtual override returns (bool) {
-    //     address spender = _msgSender();
-    //     _spendAllowance(from, spender, amount);
-    //     _transfer(from, to, amount);
-    //     return true;
-    // }
-
 
     function commit_smart_wallet_checker(address addr) external {}
     function apply_smart_wallet_checker() external {}
@@ -178,34 +150,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         */
         return locked[_addr].end;
     }
-
-// FROM ERC20
-    // event Transfer(address indexed from, address indexed to, uint256 value);
-
-    // function _beforeTokenTransfer(
-    //     address from,
-    //     address to,
-    //     uint256 amount
-    // ) internal virtual {}
-
-    // function _afterTokenTransfer(
-    //     address from,
-    //     address to,
-    //     uint256 amount
-    // ) internal virtual {}
-
-    // function _mint(address account, uint256 amount) internal virtual {
-    //     require(account != address(0), "ERC20: mint to the zero address");
-
-    //     _beforeTokenTransfer(address(0), account, amount);
-
-    //     _totalSupply += amount;
-    //     supply[account] += amount;
-    //     emit Transfer(address(0), account, amount);
-
-    //     _afterTokenTransfer(address(0), account, amount);
-    // }
-// FROM ERC20 END
 
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {}
     function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, int128 type_) internal {}

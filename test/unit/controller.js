@@ -159,7 +159,7 @@ describe("Contract: Controller", async () => {
             it("Sets VoterProxy as StashFactory implementation ", async () => {
                 expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
             });
-            it("Adds pool", async () => {
+            it("Adds pool", async () => { //now, because of gauge, stash is also = 0
                 lptoken = setup.tokens.PoolContract;
                 gauge = setup.tokens.GaugeController; //TODO: set gauge address, not gauge controller <-- need withdraw() (ICurveGauge(_gauge).withdraw(_amount);)
                 stashVersion = 1;
@@ -175,6 +175,23 @@ describe("Contract: Controller", async () => {
                 expect(
                     (poolInfo.gauge).toString()
                 ).to.equal(gauge.address.toString());
+            });
+            it("Adds pool with stash = address(0)", async () => {
+              lptoken = setup.tokens.PoolContract;
+              gauge = setup.tokens.GaugeController;
+              stashVersion = 0;
+
+              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
+              expect(
+                  (await setup.controller.poolLength()).toNumber()
+              ).to.equal(2);
+              const poolInfo = await setup.controller.poolInfo(1);
+              expect(
+                  (poolInfo.lptoken).toString()
+              ).to.equal(lptoken.address.toString());
+              expect(
+                  (poolInfo.gauge).toString()
+              ).to.equal(gauge.address.toString());
             });
             it("Sets RewardContracts", async () => {
                 rewards = setup.rewardFactory;
@@ -360,6 +377,7 @@ describe("Contract: Controller", async () => {
 
             });
         });        
+
         context("» withdrawUnlockedVeBal testing", () => {
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
               await expectRevert(
@@ -376,7 +394,7 @@ describe("Contract: Controller", async () => {
 
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
 
-              let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).add(twentyMillion);
+              let treasury_amount_expected = (await setup.tokens.VeBal.balanceOf(treasury.address)).add(twentyMillion);
               
               console.log("expected is %s", treasury_amount_expected.toNumber());
               console.log(treasury.address);
@@ -389,12 +407,7 @@ describe("Contract: Controller", async () => {
                 (await setup.tokens.WethBal.balanceOf(treasury.address)).toString()
               ).to.equal(treasury_amount_expected.toString());
 
-              //error with gauge; which is passing in addPool()
-              // ICurveGauge(_gauge).withdraw(_amount);
 
-              // if (!pool.shutdown) {
-              //   IStaker(staker).withdraw(lptoken, gauge, _amount);
-              // }
             });
         });
         context("» restake testing", () => {
@@ -417,16 +430,12 @@ describe("Contract: Controller", async () => {
                     .restake(pid),
                 "Controller: can't restake. userLockTime is not reached yet"
               );
-            });
-            it("It redeposit tokens", async () => {
+            });            
+            it("It redeposit tokens when stash = address(0)", async () => {
               time.increase(lockTime);
+              const pidStashZero = 1;
 
-              // make stash = 0 and check
-              // address stash = pool.stash;
-              // if (stash != address(0)) {
-              //     IStash(stash).stashRewards();
-              // }
-              expect(await setup.controller.connect(staker).restake(pid));
+              expect(await setup.controller.connect(staker).restake(pidStashZero));
               let timelock = ((await time.latest()).add(lockTime)).toNumber();
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
