@@ -126,12 +126,12 @@ contract BalDepositor {
             //add to a pool for lock caller
             incentiveBal = incentiveBal + callIncentive;
         }
-            //mint here
-            ITokenMinter(minter).mint(address(this), _amount);
-            //stake for msg.sender
-            IERC20(minter).approve(_stakeAddress, 0);
-            IERC20(minter).approve(_stakeAddress, _amount);
-            IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
+        //mint here
+        ITokenMinter(minter).mint(address(this), _amount);
+        //stake for msg.sender
+        IERC20(minter).approve(_stakeAddress, 0);
+        IERC20(minter).approve(_stakeAddress, _amount);
+        IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
     }
 
     function depositAll(bool _lock, address _stakeAddress) external {
