@@ -29,7 +29,6 @@ describe("Contract: BalDepositor", async () => {
     let balDepositorContractAddress;
     let wethBalContract;
     let voterProxyContract;
-    let Bal80BAL20WETH;
     let depositAmount = 20;
     let _lock = true;
     let incentiveInRange = 15;
@@ -42,7 +41,6 @@ describe("Contract: BalDepositor", async () => {
             buyer1 = setup.roles.buyer1;
             buyer2 = setup.roles.buyer2;
             balDepositorContractAddress = await setup.balDepositor.address;
-            Bal80BAL20WETH = await setup.tokens.Balancer80BAL20WETH;
             wethBalContract = await setup.tokens.WethBal;
         });
         // first deployment test
