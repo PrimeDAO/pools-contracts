@@ -75,7 +75,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     Point[100000000000000000000000000000] public point_history; //epoch -> unsigned point
     mapping(address => Point[1000000000]) private user_point_history; //user -> Point[user_epoch]
     mapping(address => uint256) public user_point_epoch;
-    mapping(uint256 => int128) public slope_changes; //time -> signed slope change
+    mapping(uint256 => uint256) public slope_changes; //time -> signed slope change
 
     // Checker for whitelisted (smart contract) wallets which are allowed to deposit
     // The goal is to prevent tokenizing the escrow
@@ -228,7 +228,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
 
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {}
     
-    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, int128 type_) internal {
+    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, uint256 _type) internal {
         LockedBalance memory _locked = locked_balance;
         uint256 supply_before = supply;
 
@@ -250,7 +250,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         if (_value != 0) {
             require(ERC20(TOKEN).transferFrom(_addr, address(this), _value));
         }
-        emit Deposit(_addr, _value, _locked.end, type, block.timestamp);
+        emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supply_before, supply_before + _value);
     }
     
