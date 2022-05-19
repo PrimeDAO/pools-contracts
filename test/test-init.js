@@ -138,7 +138,7 @@ const gaugeController = async (setup) => {
     "GaugeControllerMock",
     setup.roles.root
   );         
-  return await GaugeControllerFactoty.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
+  return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
 }; 
 
 module.exports = {
