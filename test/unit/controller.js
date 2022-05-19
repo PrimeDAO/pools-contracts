@@ -387,17 +387,30 @@ describe("Contract: Controller", async () => {
                 "Controller: userLockTime is not reached yet"
               );
             });
+            it("Sets VoterProxy depositor", async () => {
+              expect(await setup.VoterProxy.connect(root).setDepositor(root.address));
+            });
+            it("It increaseAmount veBal", async () => {
+              expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));
+            });            
+            it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
+              await expectRevert(
+                setup.VoterProxy
+                    .connect(staker)
+                    .increaseAmount(pid, twentyMillion),
+                "Controller: userLockTime is not reached yet"
+              );
+            });
+
             it("It withdraw Unlocked VeBal", async () => {
               time.increase(lockTime);
+              console.log("controller before is %s", (await setup.tokens.VeBal.NbalanceOf(setup.controller.address)).toNumber());
+              console.log("treasury before is %s", (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toNumber());
+              let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address)).add(twentyMillion);
+              console.log("expected is %s", treasury_amount_expected.toNumber());
               
-              console.log("before is %s", (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toNumber());
-
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
 
-              let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address)).add(twentyMillion);
-              
-              console.log("expected is %s", treasury_amount_expected.toNumber());
-                          
               expect(
                 (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toString()
               ).to.equal(treasury_amount_expected.toString());
