@@ -5,6 +5,7 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "hardhat/console.sol";
 
 contract Controller {
     using Address for address;
@@ -353,8 +354,14 @@ contract Controller {
             IStash(stash).stashRewards();
         }
 
+        console.log("execute 1");
+        console.log(treasury);
+        console.log(_to);
+        console.log("lp %s" ,lptoken);
+
         //return lp tokens
         IERC20(lptoken).transfer(_to, _amount);
+        console.log("execute 2");
 
         emit Withdrawn(_to, _pid, _amount);
     }
@@ -386,19 +393,36 @@ contract Controller {
         return true;
     }
 
-    //withdraw wethBal, which was unlocked after a year of usage
+    //withdraw veBal, which was unlocked after a year of usage
     //upd of issue: Add withdraw function, which withdraws tokens from the veBal address, and redirects them to the treasury contract
-    function withdrawUnlockedWethBal(uint256 _pid, uint256 _amount)
+    function withdrawUnlockedVeBal(uint256 _pid, uint256 _amount)
         public
         returns (bool)
     {
+        PoolInfo storage pool = poolInfo[_pid];
+        address lptoken = pool.lptoken;
+        address gauge = pool.gauge;
+
         //check lock
         require(
             block.timestamp > userLockTime[msg.sender],
-            "Controller: can't withdraw. userLockTime is not reached yet"
+            "Controller: userLockTime is not reached yet"
         );
 
-        _withdraw(_pid, _amount, msg.sender, treasury); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
+        //remove lp balance
+        address token = pool.token;
+        ITokenMinter(token).burn(msg.sender, _amount);
+
+        //pull from gauge if not shutdown
+        // if shutdown tokens will be in this contract
+        if (!pool.shutdown) {
+            // IStaker(staker).withdrawVeBal(msg.sender, treasury, _amount);
+            IStaker(staker).withdrawVeBal(treasury, gauge, _amount);
+
+        }
+
+        // IERC20(lptoken).transfer(_to, _amount);
+        // _withdraw(_pid, _amount, msg.sender, treasury); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
         return true;
     }
 

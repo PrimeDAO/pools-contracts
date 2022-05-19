@@ -22,6 +22,8 @@ const deploy = async () => {
 
   setup.tokenFactory = await init.tokenFactory(setup);
 
+  setup.extraRewardFactory = await init.getExtraRewardMock(setup);
+
   setup.data = {};
 
   return setup;
@@ -48,6 +50,8 @@ describe("Contract: Controller", async () => {
   const zero_address = "0x0000000000000000000000000000000000000000";
   const FEE_DENOMINATOR = 10000;
   const lockTime = time.duration.days(365);
+  const twentyMillion = 20000000;
+  const thirtyMillion = 30000000;
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
@@ -157,8 +161,9 @@ describe("Contract: Controller", async () => {
             });
             it("Adds pool", async () => {
                 lptoken = setup.tokens.PoolContract;
-                gauge = setup.tokens.GaugeController;
+                gauge = setup.tokens.GaugeController; //TODO: set gauge address, not gauge controller <-- need withdraw() (ICurveGauge(_gauge).withdraw(_amount);)
                 stashVersion = 1;
+
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
                 expect(
                     (await setup.controller.poolLength()).toNumber()
@@ -190,19 +195,17 @@ describe("Contract: Controller", async () => {
                 feeManager = reward_manager;               
                 balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
 
-                let amount = 20000000;
-                await setup.tokens.WethBal.transfer(feeManager.address, amount);
+                await setup.tokens.WethBal.transfer(feeManager.address, twentyMillion);
 
                 expect(
                     (await setup.tokens.WethBal.balanceOf(feeManager.address)).toString()
-                ).to.equal(amount.toString()); 
+                ).to.equal(twentyMillion.toString()); 
             });
             it("Add bal to Controller address", async () => {           
-                let amount = 30000000;     
-                expect(await setup.tokens.WethBal.transfer(setup.controller.address, amount));
+                expect(await setup.tokens.WethBal.transfer(setup.controller.address, thirtyMillion));
                 expect(
                     (await setup.tokens.WethBal.balanceOf(setup.controller.address)).toString()
-                ).to.equal(amount.toString()); 
+                ).to.equal(thirtyMillion.toString()); 
             });
             it("Calls earmarkRewards with existing pool number with non-empty balance", async () => {
                 balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
@@ -234,8 +237,7 @@ describe("Contract: Controller", async () => {
                 ).to.equal(admin.address.toString());
             });
             it("Calls earmarkRewards with existing pool number with non-empty balance and treasury", async () => {
-                let amount = 30000000;     
-                await setup.tokens.WethBal.transfer(setup.controller.address, amount);
+                await setup.tokens.WethBal.transfer(setup.controller.address, thirtyMillion);
 
                 balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
@@ -325,51 +327,133 @@ describe("Contract: Controller", async () => {
             });
         });
         context("» deposit testing", () => {
-            it("It deposit lp tokens; stake = true", async () => {
-              let amount = 20000000;
-              await setup.tokens.WethBal.transfer(staker.address, amount);
+            it("It deposit lp tokens from operator stake = true", async () => {
+              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
               const stake = true;
 
-              console.log("operator eee%s", operator.address);
-              expect(await setup.controller.connect(operator).deposit(pid, amount, stake));
-              
-              let timelock = (await time.latest()) + lockTime;
-              // console.log(timelock);
+              expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
+
+              let timelock = ((await time.latest()).add(lockTime)).toNumber();
 
               expect(
-                (await setup.controller.userLockTime(staker.address)).toString()
-              ).to.equal(timelock.toString());
+                (await setup.controller.userLockTime(operator.address)).toNumber()
+              ).to.equal(timelock);
+            });
+            it("It deposit lp tokens stake = true", async () => {
+              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+              const stake = true;
+
+              expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
+              let timelock = ((await time.latest()).add(lockTime)).toNumber();
+
+              expect(
+                (await setup.controller.userLockTime(staker.address)).toNumber()
+              ).to.equal(timelock);
+            });
+
+            it("It deposit lp tokens stake = false", async () => {
+              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+              const stake = false;
+              expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
+
+
 
             });
-            it("It deposit lp tokens; stake = true; unauthorized", async () => {
-              let amount = 20000000;
-              await setup.tokens.WethBal.transfer(staker.address, amount);
-              const stake = true;
+        });        
+        context("» withdrawUnlockedVeBal testing", () => {
+            it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
+              await expectRevert(
+                setup.controller
+                    .connect(staker)
+                    .withdrawUnlockedVeBal(pid, twentyMillion),
+                "Controller: userLockTime is not reached yet"
+              );
+            });
+            it("It withdraw Unlocked VeBal", async () => {
+              time.increase(lockTime);
+              
+              console.log("before is %s", (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber());
+
+              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
+
+              let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).add(twentyMillion);
+              
+              console.log("expected is %s", treasury_amount_expected.toNumber());
+              console.log(treasury.address);
+              console.log("weth %s",setup.tokens.WethBal.address);
+              console.log("ve %s",setup.tokens.VeBal.address);
+              console.log("bal %s",setup.tokens.BAL.address);
+
+
+              expect(
+                (await setup.tokens.WethBal.balanceOf(treasury.address)).toString()
+              ).to.equal(treasury_amount_expected.toString());
+
+              //error with gauge; which is passing in addPool()
+              // ICurveGauge(_gauge).withdraw(_amount);
+
+              // if (!pool.shutdown) {
+              //   IStaker(staker).withdraw(lptoken, gauge, _amount);
+              // }
+            });
+        });
+        context("» restake testing", () => {
+            it("Sets VoterProxy depositor", async () => {
+              expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
+            });
+            it("It redeposit tokens", async () => {
+              time.increase(lockTime);
+
+              expect(await setup.controller.connect(staker).restake(pid));
+              let timelock = ((await time.latest()).add(lockTime)).toNumber();
+              expect(
+                (await setup.controller.userLockTime(staker.address)).toNumber()
+              ).to.equal(timelock);
+            });
+            it("It fails redeposit tokens until userLockTime is not reached", async () => {
+              await expectRevert(
+                setup.controller
+                    .connect(staker)
+                    .restake(pid),
+                "Controller: can't restake. userLockTime is not reached yet"
+              );
+            });
+            it("It redeposit tokens", async () => {
+              time.increase(lockTime);
+
+              // make stash = 0 and check
+              // address stash = pool.stash;
+              // if (stash != address(0)) {
+              //     IStash(stash).stashRewards();
+              // }
+              expect(await setup.controller.connect(staker).restake(pid));
+              let timelock = ((await time.latest()).add(lockTime)).toNumber();
+              expect(
+                (await setup.controller.userLockTime(staker.address)).toNumber()
+              ).to.equal(timelock);
+            });
+            it("It fails redeposit tokens when pool is closed", async () => {
+              expect(await setup.controller.connect(root).shutdownPool(pid));
 
               await expectRevert(
                 setup.controller
-                  .connect(staker)
-                  .deposit(pid, amount, stake),
-                "!authorized"
+                    .connect(staker)
+                    .restake(pid),
+                "pool is closed"
               );
+            });
+            it("It fails redeposit tokens when shutdownSystem", async () => {
+              expect(await setup.controller.connect(root).shutdownSystem());
 
-              // let timelock = (await time.latest()) + lockTime;
-              // console.log(timelock);
-              // expect(
-              //   (await setup.controller.userLockTime(staker.address)).toString()
-              // ).to.equal(timelock.toString());
-
+              await expectRevert(
+                setup.controller
+                    .connect(staker)
+                    .restake(pid),
+                "shutdown"
+              );
             });
 
-            it("It deposit lp tokens; stake = false", async () => {
-              let amount = 20000000;
-              await setup.tokens.WethBal.transfer(staker.address, amount);
-              const stake = false;
-              expect(await setup.controller.connect(staker).deposit(pid, amount, stake));
-
-
-            });
-      });
+        });
     });
   });
 });

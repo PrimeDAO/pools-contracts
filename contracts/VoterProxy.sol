@@ -5,6 +5,7 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "hardhat/console.sol";
 
 contract VoterProxy {
     using Address for address;
@@ -134,6 +135,8 @@ contract VoterProxy {
         internal
         returns (uint256)
     {
+        console.log(_gauge);
+        console.log("amo %s",_amount);
         ICurveGauge(_gauge).withdraw(_amount);
         return _amount;
     }
@@ -168,6 +171,42 @@ contract VoterProxy {
         IBalVoteEscrow(veBal).withdraw();
         return true;
     }
+////////// Chore: add restake/withdraw functions to Controller contract #37 
+    // function withdrawVeBal(  
+    //     address _from,      
+    //     address _to,
+    //     uint256 _amount
+    // ) external returns (bool) {
+    //     require(msg.sender == operator, "!auth");
+        
+    //     IERC20(veBal).transferFrom(_from, _to, _amount);
+    //     return true;
+
+    //     //         require(msg.sender == operator, "!auth");
+    //     // uint256 _balance = IERC20(_token).balanceOf(address(this));
+    //     // if (_balance < _amount) {
+    //     //     _amount = _withdrawSome(_gauge, _amount - _balance);
+    //     //     _amount = _amount + _balance;
+    //     // }
+    //     // IERC20(_token).transfer(msg.sender, _amount);
+    //     // return true;
+    // }
+    // Withdraw partial funds
+    function withdrawVeBal(
+        address _to, //treasury
+        address _gauge,
+        uint256 _amount
+    ) public returns (bool) {
+        require(msg.sender == operator, "!auth");
+        uint256 _balance = IERC20(veBal).balanceOf(address(this));
+        if (_balance < _amount) {
+            _amount = _withdrawSome(_gauge, _amount - _balance);
+            _amount = _amount + _balance;
+        }
+        IERC20(veBal).transfer(_to, _amount);
+        return true;
+    }
+
 
     function vote(
         uint256 _voteId,
