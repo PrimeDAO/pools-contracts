@@ -4,11 +4,11 @@
 // solium-disable linebreak-style
 pragma solidity 0.8.13;
 
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface BAL_ERC20 { //was just ERC20 in their Vyper contract
-    function decimals() external view returns (uint256);
+    function decimals_() external view returns (uint256);
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);
     function transfer(address to, uint256 amount) external returns (bool); //nonpayable
@@ -23,13 +23,11 @@ interface SmartWalletChecker {
     function check(address addr) external returns (bool);//nonpayable
 }   
 
-// contract BalMock is ERC20, ReentrancyGuard, SmartWalletChecker, BALERC20 {
-contract VeBalMock is ReentrancyGuard {
-// contract BalMock is BAL_ERC20, SmartWalletChecker{//}, ReentrancyGuard {
+contract VeBalMock is ERC20, ReentrancyGuard {
 
     struct Point{
-        int128 bias;
-        int128 slope; // - dweight / dt
+        uint256 bias;
+        uint256 slope; // - dweight / dt
         uint256 ts;
         uint256 blk; // block
     }
@@ -38,18 +36,18 @@ contract VeBalMock is ReentrancyGuard {
     // What we can do is to extrapolate ***At functions
 
     struct LockedBalance{
-        int128 amount; 
+        uint256 amount; 
         uint256 end;
     }  
 
     address constant ZERO_ADDRESS = address(0x0000000000000000000000000000000000000000);
 
-    int128 constant DEPOSIT_FOR_TYPE = 0;
-    int128 constant CREATE_LOCK_TYPE = 1;
-    int128 constant INCREASE_LOCK_AMOUNT = 2;
-    int128 constant INCREASE_UNLOCK_TIME = 3;
+    uint256 constant DEPOSIT_FOR_TYPE = 0;
+    uint256 constant CREATE_LOCK_TYPE = 1;
+    uint256 constant INCREASE_LOCK_AMOUNT = 2;
+    uint256 constant INCREASE_UNLOCK_TIME = 3;
 
-    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, int128 type_, uint256 ts); //if just type without _ --> was highlited as error
+    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint256 type_, uint256 ts); //if just type without _ --> was highlited as error
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
 
@@ -66,8 +64,8 @@ contract VeBalMock is ReentrancyGuard {
     string public SYMBOL; //immutable SYMBOL; 
     uint256 immutable DECIMALS;
 
-    // uint256 public supply;
-    mapping(address => uint256) supply;
+    uint256 public supply;
+    // mapping(address => uint256) supply;
     uint256 private _totalSupply;
 
     mapping(address => LockedBalance) public locked;
@@ -91,7 +89,7 @@ contract VeBalMock is ReentrancyGuard {
         string memory _name,
         string memory  _symbol,
         address _authorizer_adaptor
-    ) //ERC20(_name, _symbol)
+    ) ERC20(_name, _symbol)
     public {
         /**
         @notice Contract constructor
@@ -107,14 +105,13 @@ contract VeBalMock is ReentrancyGuard {
         point_history[0].blk = block.number;
         point_history[0].ts = block.timestamp;
 
-        uint256 _decimals = BAL_ERC20(token_addr).decimals();
+        uint256 _decimals = ERC20(token_addr).decimals();
         require(_decimals <= 255, "BalMock: _decimals > 255");
 
         NAME = _name;
         SYMBOL = _symbol;
         DECIMALS = _decimals;
     }
-
 
     function token() external view returns (address){
         return TOKEN;
@@ -128,13 +125,81 @@ contract VeBalMock is ReentrancyGuard {
     function decimals() public view virtual returns (uint256){
         return DECIMALS;
     }
+    // function decimals_() public view virtual returns (uint256){
+    //     return DECIMALS;
+    // }
     function admin() external view returns (address){
         return AUTHORIZER_ADAPTOR;
     }
-    function commit_smart_wallet_checker(address addr) external {}
-    function apply_smart_wallet_checker() external {}
-    function assert_not_contract(address addr) internal {}    
-    function get_last_user_slope(address addr) external view returns (int128){
+
+    function NbalanceOf(address addr) external view returns (uint256){
+        /**
+        @notice Get the current voting power for `msg.sender`
+        @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
+        @param addr User wallet address
+        @param _t Epoch time to return voting power at
+        @return User voting power
+        */
+        // if (t !=0 ) {
+            uint256 _t = block.timestamp;
+        // }
+        uint256 _epoch = 0;
+        if (_t == block.timestamp) {
+            // No need to do binary search, will always live in current epoch
+            _epoch = user_point_epoch[addr];
+        } else {
+            _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
+        }
+        
+        if (_epoch == 0) {
+            return 0;
+        } else {
+            Point memory last_point = user_point_history[addr][_epoch];
+            last_point.bias -= last_point.slope * uint256(_t - last_point.ts);
+            if (last_point.bias < 0) {
+                last_point.bias = 0;
+            }
+            return uint256(last_point.bias);
+        }
+
+        // //some code and actual rerurn is not 1
+        // return 1;
+    }
+
+    // function balanceOf(address addr, uint256 _t) external view returns (uint256){
+    //     /**
+    //     @notice Get the current voting power for `msg.sender`
+    //     @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
+    //     @param addr User wallet address
+    //     @param _t Epoch time to return voting power at
+    //     @return User voting power
+    //     */
+    //     uint256 _t = block.timestamp;
+
+    //     //some code and actual rerurn is not 1
+    //     return 1;
+    // }
+
+    function commit_smart_wallet_checker(address addr) external {
+        require(msg.sender == AUTHORIZER_ADAPTOR);
+        future_smart_wallet_checker = addr;
+    }
+    function apply_smart_wallet_checker() external {
+        require(msg.sender == AUTHORIZER_ADAPTOR);
+        smart_wallet_checker = future_smart_wallet_checker;
+    }
+    function assert_not_contract(address addr) internal {
+        if (addr != tx.origin) {
+            address checker = smart_wallet_checker;
+            if (checker != ZERO_ADDRESS) {
+                if (SmartWalletChecker(checker).check(addr)){
+                    return;
+                }
+            }
+            // raise "Smart contract depositors not allowed";
+        }
+    }    
+    function get_last_user_slope(address addr) external view returns (uint256){
         /**
         @notice Get the most recently recorded rate of voting power decrease for `addr`
         @param addr Address of the user wallet
@@ -161,149 +226,329 @@ contract VeBalMock is ReentrancyGuard {
         return locked[_addr].end;
     }
 
-// FROM ERC20
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {}
-
-    function _afterTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual {}
-
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _beforeTokenTransfer(address(0), account, amount);
-
-        _totalSupply += amount;
-        supply[account] += amount;
-        emit Transfer(address(0), account, amount);
-
-        _afterTokenTransfer(address(0), account, amount);
-    }
-// FROM ERC20 END
-
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {}
-    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, int128 type_) internal {}
-    function checkpoint() external {}
+    
+    function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, int128 type_) internal {
+        LockedBalance memory _locked = locked_balance;
+        uint256 supply_before = supply;
+
+        supply = supply_before + _value;
+        LockedBalance memory old_locked = _locked;
+        // Adding to existing lock, or if a lock is expired - creating a new one
+        _locked.amount += uint256(_value);
+        if (unlock_time != 0) {
+            _locked.end = unlock_time;
+        }
+        locked[_addr] = _locked;
+
+        // Possibilities:
+        // Both old_locked.end could be current or expired (>/< block.timestamp)
+        // value == 0 (extend lock) or value > 0 (add to lock or extend lock)
+        // _locked.end > block.timestamp (always)
+        _checkpoint(_addr, old_locked, _locked);
+
+        if (_value != 0) {
+            require(ERC20(TOKEN).transferFrom(_addr, address(this), _value));
+        }
+        emit Deposit(_addr, _value, _locked.end, type, block.timestamp);
+        emit Supply(supply_before, supply_before + _value);
+    }
+    
+    // function empty(){}
+    // function checkpoint() external {
+    //     _checkpoint(ZERO_ADDRESS, empty(LockedBalance), empty(LockedBalance));
+    // }
+
     function deposit_for(address _addr, uint256 _value) external nonReentrant {
-        _mint(_addr, _value);
+        LockedBalance memory _locked = locked[_addr];
+
+        require(_value > 0);  // dev: need non-zero value
+        require(_locked.amount > 0, "No existing lock found");
+        require(_locked.end > block.timestamp, "Cannot add to expired lock. Withdraw");
+
+        _deposit_for(_addr, _value, 0, locked[_addr], DEPOSIT_FOR_TYPE);
     }
 
-    function create_lock(uint256 tokens) external nonReentrant {
-        _mint(msg.sender, tokens);
-        // BAL_ERC20(TOKEN).transferFrom(msg.sender, tokens);
+    function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant {
+
+        assert_not_contract(msg.sender);
+        uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
+        LockedBalance memory _locked = locked[msg.sender];
+
+        require(_value > 0); // dev: need non-zero value
+        require(_locked.amount == 0, "Withdraw old tokens first");
+        require(unlock_time > block.timestamp, "Can only lock until time in the future");
+        require(unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 1 year max");
+
+        _deposit_for(msg.sender, _value, unlock_time, _locked, CREATE_LOCK_TYPE);
     }
 
-    function increase_amount(uint256) external nonReentrant {}
-    function increase_unlock_time(uint256 _unlock_time) external nonReentrant {}
-    function withdraw() external nonReentrant {}
+    function increase_amount(uint256 _value) external nonReentrant {
+        assert_not_contract(msg.sender);
+        LockedBalance memory _locked = locked[msg.sender];
+
+        require(_value > 0); // dev: need non-zero value
+        require(_locked.amount > 0, "No existing lock found");
+        require(_locked.end > block.timestamp, "Cannot add to expired lock. Withdraw");
+
+        _deposit_for(msg.sender, _value, 0, _locked, INCREASE_LOCK_AMOUNT);
+    }
+    function increase_unlock_time(uint256 _unlock_time) external nonReentrant {
+        assert_not_contract(msg.sender);
+        LockedBalance memory _locked = locked[msg.sender];
+        uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
+
+        require(_locked.end > block.timestamp, "Lock expired");
+        require(_locked.amount > 0, "Nothing is locked");
+        require(unlock_time > _locked.end, "Can only increase lock duration");
+        require(unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 1 year max");
+
+        _deposit_for(msg.sender, 0, unlock_time, _locked, INCREASE_UNLOCK_TIME);
+    }
+
+    function withdraw() external nonReentrant {
+        LockedBalance memory _locked = locked[msg.sender];
+        require(block.timestamp >= _locked.end, "The lock didn't expire");
+        uint256 value = uint256(_locked.amount);
+
+        LockedBalance memory old_locked = _locked;
+        _locked.end = 0;
+        _locked.amount = 0;
+        locked[msg.sender] = _locked;
+        uint256 supply_before = supply;
+        supply = supply_before - value;
+
+        // old_locked can have either expired <= timestamp or zero end
+        // _locked has only 0 end
+        // Both can have >= 0 amount
+        _checkpoint(msg.sender, old_locked, _locked);
+
+        require(ERC20(TOKEN).transfer(msg.sender, value));
+
+        emit Withdraw(msg.sender, value, block.timestamp);
+        emit Supply(supply_before, supply_before - value);
+    }
 
     // The following ERC20/minime-compatible methods are not real balanceOf and supply!
     // They measure the weights for the purpose of voting, so they don't represent
     // real coins.
 
-    function find_block_epoch(uint256 _block, uint256 max_epoch) internal view returns (uint256){
+
         /**
         @notice Binary search to find epoch containing block number
         @param _block Block to find
         @param max_epoch Don't go beyond this epoch
         @return Epoch which contains _block
         */
-
+    function find_block_epoch(uint256 _block, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
         uint256 _max = max_epoch;
-        //some code
-
-        return _min;
+        for (uint256 i = 0; i < 128; i++) { // Will be always enough for 128-bit numbers
+            if (_min >= _max) {
+                break;
+            }
+            uint256 _mid = (_min + _max + 1) / 2;
+            if (point_history[_mid].blk <= _block) {
+                _min = _mid;
+            } else {
+                _max = _mid - 1;
+            }
+        }
+        return _min;        
     }
-    function find_timestamp_epoch(uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
+
         /**
         @notice Binary search to find epoch for timestamp
         @param _timestamp timestamp to find
         @param max_epoch Don't go beyond this epoch
         @return Epoch which contains _timestamp
         */
-
+    function find_timestamp_epoch(uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
         uint256 _max = max_epoch;
-        //some code
-        
+        for (uint256 i = 0; i < 128; i++) { // Will be always enough for 128-bit numbers
+            if (_min >= _max) {
+                break;
+            }
+            uint256 _mid = (_min + _max + 1) / 2;
+            if (point_history[_mid].ts <= _timestamp) {
+                _min = _mid;
+            } else {
+                _max = _mid - 1;
+            }
+        }
         return _min;
     }
-    function find_block_user_epoch(address addr, uint256 _block, uint256 max_epoch) internal view returns (uint256){
-        /**
-        @notice Binary search to find epoch for block number
-        @param _addr User for which to find user epoch for
-        @param _block Block to find
-        @param max_epoch Don't go beyond this epoch
-        @return Epoch which contains _block
-        */
 
+    /**
+    @notice Binary search to find epoch for block number
+    @param _addr User for which to find user epoch for
+    @param _block Block to find
+    @param max_epoch Don't go beyond this epoch
+    @return Epoch which contains _block
+    */
+    function find_block_user_epoch(address _addr, uint256 _block, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
         uint256 _max = max_epoch;
-        //some code
-        
+        for (uint256 i = 0; i < 128; i++) { // Will be always enough for 128-bit numbers
+            if (_min >= _max) {
+                break;
+            }
+            uint256 _mid = (_min + _max + 1) / 2;
+            if (user_point_history[_addr][_mid].blk <= _block) {
+                _min = _mid;
+            } else {
+                _max = _mid - 1;
+            }
+        }
         return _min;
     }
-    function find_timestamp_user_epoch(address addr, uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
-        /**
-        @notice Binary search to find user epoch for timestamp
-        @param _addr User for which to find user epoch for
-        @param _timestamp timestamp to find
-        @param max_epoch Don't go beyond this epoch
-        @return Epoch which contains _timestamp
-        */
 
+    /**
+    @notice Binary search to find user epoch for timestamp
+    @param _addr User for which to find user epoch for
+    @param _timestamp timestamp to find
+    @param max_epoch Don't go beyond this epoch
+    @return Epoch which contains _timestamp
+    */
+    function find_timestamp_user_epoch(address _addr, uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
         uint256 _max = max_epoch;
-        //some code
-        
+        for (uint256 i = 0; i < 128; i++) {  // Will be always enough for 128-bit numbers
+            if (_min >= _max) {
+                break;
+            }
+            uint256 _mid = (_min + _max + 1) / 2;
+            if (user_point_history[_addr][_mid].ts <= _timestamp) {
+                _min = _mid;
+            } else {
+                _max = _mid - 1;
+            }
+        }
         return _min;
     }
+
+    /**
+    @notice Get the current voting power for `msg.sender`
+    @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
+    @param addr User wallet address
+    @param _t Epoch time to return voting power at
+    @return User voting power
+    */
     function balanceOf(address addr, uint256 _t) external view returns (uint256){
-        /**
-        @notice Get the current voting power for `msg.sender`
-        @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
-        @param addr User wallet address
-        @param _t Epoch time to return voting power at
-        @return User voting power
-        */
         uint256 _t = block.timestamp;
+        uint256 _epoch = 0;
+        if (_t == block.timestamp) {
+            // No need to do binary search, will always live in current epoch
+            _epoch = user_point_epoch[addr];
+        } else {
+            _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
+        }
 
-        //some code and actual rerurn is not 1
-        return 1;
+        if (_epoch == 0) {
+            return 0;
+        } else {
+            Point memory last_point = user_point_history[addr][_epoch];
+            last_point.bias -= last_point.slope * uint256(_t - last_point.ts);
+            if (last_point.bias < 0) {
+                last_point.bias = 0;
+            }
+            return uint256(last_point.bias);
+        }
     }
+
     function balanceOfAt(address addr, uint256 _block) external view returns (uint256){
-        //some code and actual rerurn is not 1
-        return 1;
-    }
-    function supply_at(Point memory p, uint256 t) internal view returns (uint256){
-        //some code and actual rerurn is not 1
-        return 1;    
-    }
-    function totalSupply(uint256 t) external view returns (uint256){
-        uint256 t = block.timestamp;
-        //some code and actual rerurn is not 1
-        return 1;    
-    }
-    function totalSupplyAt(uint256 _block) external view returns (uint256){
-        /**
-        @notice Calculate total voting power at some point in the past
-        @param _block Block to calculate the total voting power at
-        @return Total voting power at `_block`
-        */
+        require(_block <= block.number);
 
+        uint256 _user_epoch = find_block_user_epoch(addr, _block, user_point_epoch[addr]);
+        Point memory upoint = user_point_history[addr][_user_epoch];
+
+        uint256 max_epoch = epoch;
+        uint256 _epoch= find_block_epoch(_block, max_epoch);
+        Point memory point_0 = point_history[_epoch];
+        uint256 d_block = 0;
+        uint256 d_t = 0;
+        if (_epoch < max_epoch) {
+            Point memory point_1 = point_history[_epoch + 1];
+            d_block = point_1.blk - point_0.blk;
+            d_t = point_1.ts - point_0.ts;
+        } else {
+            d_block = block.number - point_0.blk;
+            d_t = block.timestamp - point_0.ts;
+        }
+        uint256 block_time = point_0.ts;
+        if (d_block != 0) {
+            block_time += d_t * (_block - point_0.blk) / d_block;
+        }
+        upoint.bias -= upoint.slope * uint256(block_time - upoint.ts);
+        if (upoint.bias >= 0) {
+            return uint256(upoint.bias);
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+    @notice Calculate total voting power at some point in the past
+    @param point The point (bias/slope) to start search from
+    @param t Time to calculate the total voting power at
+    @return Total voting power at that time
+    */
+    function supply_at(Point memory point, uint256 t) internal view returns (uint256){
+        Point memory last_point = point;
+        uint256 t_i = (last_point.ts / WEEK) * WEEK;
+        for (uint256 i = 0; i < 255; i++) {
+            t_i += WEEK;
+            uint256 d_slope = 0;
+            if (t_i > t) {
+                t_i = t;
+            } else {
+                d_slope = slope_changes[t_i];
+            }
+            last_point.bias -= last_point.slope * uint256(t_i - last_point.ts);
+            if (t_i == t) {
+                break;
+            }
+            last_point.slope += d_slope;
+            last_point.ts = t_i;
+        }
+        if (last_point.bias < 0) {
+            last_point.bias = 0;
+        }
+        return uint256(last_point.bias);    
+    }
+
+    /**
+    @notice Calculate total voting power
+    @dev Adheres to the ERC20 `totalSupply` interface for Aragon compatibility
+    @return Total voting power
+    */
+    function totalSupply(uint256 t) external view returns (uint256){
+        uint256 _epoch = 0;
+        if (t == block.timestamp) {
+            // No need to do binary search, will always live in current epoch
+            _epoch = epoch;
+        } else {
+            _epoch = find_timestamp_epoch(t, epoch);
+        }
+        if (_epoch == 0) {
+            return 0;
+        } else {
+            Point memory last_point = point_history[_epoch];
+            return supply_at(last_point, t);
+        }
+    }
+
+    /**
+    @notice Calculate total voting power at some point in the past
+    @param _block Block to calculate the total voting power at
+    @return Total voting power at `_block`
+    */
+    function totalSupplyAt(uint256 _block) external view returns (uint256){
         require(_block <= block.number, "_block > block.number");
         uint256 _epoch = epoch;
         uint256 target_epoch = find_block_epoch(_block, _epoch);
@@ -323,11 +568,7 @@ contract VeBalMock is ReentrancyGuard {
         // Now dt contains info on how far are we beyond point
 
         return supply_at(point, point.ts + dt);
-
-        //some code and actual return is not 1
-        // return 1; 
     }
 
 }
-
 
