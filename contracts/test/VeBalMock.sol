@@ -26,8 +26,8 @@ interface SmartWalletChecker {
 contract VeBalMock is ERC20, ReentrancyGuard {
 
     struct Point{
-        int128 bias;
-        int128 slope; // - dweight / dt
+        uint256 bias;
+        uint256 slope; // - dweight / dt
         uint256 ts;
         uint256 blk; // block
     }
@@ -36,18 +36,18 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // What we can do is to extrapolate ***At functions
 
     struct LockedBalance{
-        int128 amount; 
+        uint256 amount; 
         uint256 end;
     }  
 
     address constant ZERO_ADDRESS = address(0x0000000000000000000000000000000000000000);
 
-    int128 constant DEPOSIT_FOR_TYPE = 0;
-    int128 constant CREATE_LOCK_TYPE = 1;
-    int128 constant INCREASE_LOCK_AMOUNT = 2;
-    int128 constant INCREASE_UNLOCK_TIME = 3;
+    uint256 constant DEPOSIT_FOR_TYPE = 0;
+    uint256 constant CREATE_LOCK_TYPE = 1;
+    uint256 constant INCREASE_LOCK_AMOUNT = 2;
+    uint256 constant INCREASE_UNLOCK_TIME = 3;
 
-    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, int128 type_, uint256 ts); //if just type without _ --> was highlited as error
+    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint256 type_, uint256 ts); //if just type without _ --> was highlited as error
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
 
@@ -121,10 +121,58 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return AUTHORIZER_ADAPTOR;
     }
 
+    function NbalanceOf(address addr) external view returns (uint256){
+        /**
+        @notice Get the current voting power for `msg.sender`
+        @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
+        @param addr User wallet address
+        @param _t Epoch time to return voting power at
+        @return User voting power
+        */
+        // if (t !=0 ) {
+            uint256 _t = block.timestamp;
+        // }
+        uint256 _epoch = 0;
+        if (_t == block.timestamp) {
+            // No need to do binary search, will always live in current epoch
+            _epoch = user_point_epoch[addr];
+        } else {
+            _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
+        }
+        
+        if (_epoch == 0) {
+            return 0;
+        } else {
+            Point memory last_point = user_point_history[addr][_epoch];
+            last_point.bias -= last_point.slope * uint256(_t - last_point.ts);
+            if (last_point.bias < 0) {
+                last_point.bias = 0;
+            }
+            return uint256(last_point.bias);
+        }
+
+        // //some code and actual rerurn is not 1
+        // return 1;
+    }
+
+    // function balanceOf(address addr, uint256 _t) external view returns (uint256){
+    //     /**
+    //     @notice Get the current voting power for `msg.sender`
+    //     @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
+    //     @param addr User wallet address
+    //     @param _t Epoch time to return voting power at
+    //     @return User voting power
+    //     */
+    //     uint256 _t = block.timestamp;
+
+    //     //some code and actual rerurn is not 1
+    //     return 1;
+    // }
+
     function commit_smart_wallet_checker(address addr) external {}
     function apply_smart_wallet_checker() external {}
     function assert_not_contract(address addr) internal {}    
-    function get_last_user_slope(address addr) external view returns (int128){
+    function get_last_user_slope(address addr) external view returns (uint256){
         /**
         @notice Get the most recently recorded rate of voting power decrease for `addr`
         @param addr Address of the user wallet
