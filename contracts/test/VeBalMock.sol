@@ -176,7 +176,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return locked[_addr].end;
     }
 
-    uint256 user_epoch; //here because eror thar stack is too deep
+    uint256 user_epoch; //here because was eror that 'stack is too deep'
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {
         Point memory u_old; //empty(Point);
         Point memory u_new; //empty(Point);
@@ -293,7 +293,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
                 // else: we recorded it already in old_dslope
             }
             // Now handle user history
-            user_epoch = user_point_epoch[addr] + 1; //initialized before function because stack is too deep
+            user_epoch = user_point_epoch[addr] + 1; //initialized before function because 'stack is too deep'
 
             user_point_epoch[addr] = user_epoch;
             u_new.ts = block.timestamp;
