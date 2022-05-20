@@ -44,17 +44,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     address constant ZERO_ADDRESS = address(0x0000000000000000000000000000000000000000);
 
     enum ActionType {DEPOSIT_FOR_TYPE, CREATE_LOCK_TYPE, INCREASE_LOCK_AMOUNT, INCREASE_UNLOCK_TIME}
-    // uint256 constant DEPOSIT_FOR_TYPE = 0;
-    // uint256 constant CREATE_LOCK_TYPE = 1;
-    // uint256 constant INCREASE_LOCK_AMOUNT = 2;
-    // uint256 constant INCREASE_UNLOCK_TIME = 3;
 
-    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts); //if just type without _ --> was highlited as error
+    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts);
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
 
-    uint256 constant WEEK = 7 * 86400; //all future times are rounded by week
-    uint256 constant MAXTIME = 365 * 86400;  // 1 year
+    uint256 constant WEEK = 7 weeks; //all future times are rounded by week
+    uint256 constant MAXTIME = 365 days; // 1 year
     uint256 constant MULTIPLIER = 10 ** 18;
 
 
