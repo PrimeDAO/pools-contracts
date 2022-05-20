@@ -162,34 +162,7 @@ contract VoterProxy {
         IBalVoteEscrow(veBal).increase_unlock_time(_value);
         return true;
     }
-////////// Chore: add restake/withdraw functions to Controller contract #37 
-    // function withdrawVeBal(  
-    //     address _from,      
-    //     address _to,
-    //     uint256 _amount
-    // ) external returns (bool) {
-    //     require(msg.sender == operator, "!auth");
-        
-    //     IERC20(veBal).transferFrom(_from, _to, _amount);
-    //     return true;
 
-    //     //         require(msg.sender == operator, "!auth");
-    //     // uint256 _balance = IERC20(_token).balanceOf(address(this));
-    //     // if (_balance < _amount) {
-    //     //     _amount = _withdrawSome(_gauge, _amount - _balance);
-    //     //     _amount = _amount + _balance;
-    //     // }
-    //     // IERC20(_token).transfer(msg.sender, _amount);
-    //     // return true;
-    // }
-    // function withdrawVeBal(
-    //     address _to, //treasury
-    //     uint256 _amount
-    // ) external returns (bool) {
-    //     require(msg.sender == operator, "!auth");
-    //     address(veBal).transfer(_to, _amount);
-    //     return true;
-    // }
     // Withdraw partial funds
     function withdrawVeBal(
         address _to, //treasury
