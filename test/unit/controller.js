@@ -190,8 +190,17 @@ describe("Contract: Controller", async () => {
                 expect(
                     (poolInfo.gauge).toString()
                 ).to.equal(gauge.address.toString());
+
+                await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
             });
             it("Adds pool with stash != address(0)", async () => {
+              expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
+              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
+              expect(
+                (await setup.controller.poolLength()).toNumber()
+              ).to.equal(3);
+              expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+
               // const alternativeSetup = await deploy();
 
               // await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
@@ -202,29 +211,6 @@ describe("Contract: Controller", async () => {
               // await alternativeSetup.stashFactory.connect(root).setImplementation(alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address);
 
               // await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);              
-              // await alternativeSetup.tokens.WethBal.transfer(staker.address, twentyMillion);
-
-
-              // // expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
-
-              lptoken = setup.tokens.PoolContract;
-              gauge = setup.tokens.GaugeController;
-              stashVersion = 0;
-
-              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
-              expect(
-                  (await setup.controller.poolLength()).toNumber()
-              ).to.equal(2);
-              const poolInfo = await setup.controller.poolInfo(1);
-              expect(
-                  (poolInfo.lptoken).toString()
-              ).to.equal(lptoken.address.toString());
-              expect(
-                  (poolInfo.gauge).toString()
-              ).to.equal(gauge.address.toString());
-
-              // return temporary stashFactoryMock to stashFactory
-              // expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
             it("Sets RewardContracts", async () => {
                 rewards = setup.rewardFactory;
@@ -481,8 +467,9 @@ describe("Contract: Controller", async () => {
         });
         context("» restake testing", () => {       
             it("Sets VoterProxy depositor", async () => {
-              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+                await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
                 const stake = true;
+                pid = 2;
   
                 expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
   
@@ -497,6 +484,7 @@ describe("Contract: Controller", async () => {
             });
             it("It redeposit tokens", async () => {
               time.increase(smallLockTime.add(difference));
+              // const pid = 2;
 
               expect(await setup.controller.connect(staker).restake(pid));
               
@@ -516,7 +504,7 @@ describe("Contract: Controller", async () => {
             });            
             it("It redeposit tokens when stash = address(0)", async () => {
               time.increase(smallLockTime.add(difference));
-              const pidStashZero = 1;
+              const pidStashZero = 0;//1;
 
               expect(await setup.controller.connect(staker).restake(pidStashZero));
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());

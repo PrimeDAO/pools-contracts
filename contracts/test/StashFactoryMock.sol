@@ -54,8 +54,7 @@ contract StashFactoryMock {
         uint256 _stashVersion
     ) external returns (address) {
         require(msg.sender == operator, "!authorized");
-
-        return address(1);
+        return address(this);
     }
 
     function IsV1(address _gauge) private returns (bool) {
@@ -69,6 +68,14 @@ contract StashFactoryMock {
     }
 
     function IsV3(address _gauge) private returns (bool) {
+
+        return true;
+    }
+
+    // from Stash.sol
+    function stashRewards() external pure returns (bool) {
+        //after depositing/withdrawing, extra incentive tokens are claimed
+        //but from v3 this is default to off, and this stash is the reward receiver too.
 
         return true;
     }
