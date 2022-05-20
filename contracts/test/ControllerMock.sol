@@ -11,7 +11,7 @@ contract ControllerMock is IDeposit {
     constructor() {}
 
     function isShutdown() external view returns (bool) {
-        return true;
+        return false;
     }
 
     function balanceOf(address _account) external view returns (uint256) {
