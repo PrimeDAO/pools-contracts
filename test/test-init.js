@@ -146,6 +146,17 @@ const stashFactory = async (setup) => {
   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
 };
 
+const getStashFactoryMock = async (setup) => {
+  const StashFactoryMock = await ethers.getContractFactory(
+    "StashFactoryMock",
+    setup.roles.root
+  );
+  const operator = setup.controller;
+  const rewardFactory = setup.rewardFactory;
+  const proxyFactory =  setup.proxyFactory;
+  return await StashFactoryMock.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+};
+
 const getBaseRewardPool = async (setup) => {
   const BaseRewardPoolFactory = await ethers.getContractFactory(
     'BaseRewardPoolInTest', 
@@ -190,4 +201,5 @@ module.exports = {
   getExtraRewardMock,
   tokenFactory,
   getVoterProxyMock,
+  getStashFactoryMock,
 };

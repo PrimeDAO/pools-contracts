@@ -23,6 +23,8 @@ const deploy = async () => {
 
   setup.stashFactory = await init.stashFactory(setup);
 
+  setup.stashFactoryMock = await init.getStashFactoryMock(setup);
+
   setup.tokenFactory = await init.tokenFactory(setup);
 
   setup.extraRewardFactory = await init.getExtraRewardMock(setup);
@@ -189,7 +191,22 @@ describe("Contract: Controller", async () => {
                     (poolInfo.gauge).toString()
                 ).to.equal(gauge.address.toString());
             });
-            it("Adds pool with stash = address(0)", async () => {
+            it("Adds pool with stash != address(0)", async () => {
+              // const alternativeSetup = await deploy();
+
+              // await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
+              // const rewardFactory = alternativeSetup.rewardFactory;
+              // const stashFactory = alternativeSetup.stashFactoryMock;
+              // const tokenFactory = alternativeSetup.tokenFactory;
+              // await alternativeSetup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
+              // await alternativeSetup.stashFactory.connect(root).setImplementation(alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address);
+
+              // await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);              
+              // await alternativeSetup.tokens.WethBal.transfer(staker.address, twentyMillion);
+
+
+              // // expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
+
               lptoken = setup.tokens.PoolContract;
               gauge = setup.tokens.GaugeController;
               stashVersion = 0;
@@ -205,6 +222,9 @@ describe("Contract: Controller", async () => {
               expect(
                   (poolInfo.gauge).toString()
               ).to.equal(gauge.address.toString());
+
+              // return temporary stashFactoryMock to stashFactory
+              // expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
             it("Sets RewardContracts", async () => {
                 rewards = setup.rewardFactory;
