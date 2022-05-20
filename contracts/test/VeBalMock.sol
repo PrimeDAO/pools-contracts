@@ -5,10 +5,8 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "hardhat/console.sol";
 
 interface BAL_ERC20 { //was just ERC20 in their Vyper contract
     function decimals_() external view returns (uint256);
@@ -196,11 +194,9 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // Kept at zero when they have to
             if (old_locked.end > block.timestamp && old_locked.amount > 0) {
                 u_old.slope = old_locked.amount / MAXTIME;
-                console.log(u_old.slope);
                 u_old.bias = u_old.slope * uint256(old_locked.end - block.timestamp);
             if (new_locked.end > block.timestamp && new_locked.amount > 0) {
                 u_new.slope = new_locked.amount / MAXTIME;
-                console.log(u_new.slope);
                 u_new.bias = u_new.slope * uint256(new_locked.end - block.timestamp);
             }
 
@@ -288,11 +284,8 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             if (old_locked.end > block.timestamp) {
                 // old_dslope was <something> - u_old.slope, so we cancel that
                 old_dslope += u_old.slope;
-                console.log(u_old.slope);
 
                 if (new_locked.end == old_locked.end) {
-                    console.log(old_dslope);
-                    console.log(u_new.slope);
                     old_dslope -= u_new.slope;  // It was a new deposit, not extension
                 }
                 slope_changes[old_locked.end] = old_dslope;

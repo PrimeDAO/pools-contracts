@@ -5,7 +5,6 @@ import "../utils/Interfaces.sol";
 import "../utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
 
 contract VoterProxyMock {
     using Address for address;
