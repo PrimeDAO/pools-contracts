@@ -22,7 +22,7 @@ contract Controller {
     uint256 public platformFees = 1000; //10% //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
-    uint256 public lockTime = 365 days; // 365 * 24 * 60 * 60; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
+    uint256 public lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     mapping(address => uint256) public userLockTime; //lock time for each user individually
 
     address public owner;
@@ -407,14 +407,10 @@ contract Controller {
             IStaker(staker).withdrawVeBal(treasury, gauge, _amount);
         }
 
-        // IERC20(lptoken).transfer(_to, _amount);
-        // _withdraw(_pid, _amount, msg.sender, treasury); //IStaker(staker).withdraw - staker address in _withdraw is veBAL address
         return true;
     }
 
-    //restake veBAL, which was unlocked after a year of usage
-    // function restake(uint256 _pid, uint256 _amount) public returns (bool) {
-    // no need in "uint256 _amount" as we will get it later inside function as current balanceOf(msg.sender)
+    // restake veBAL, which was unlocked after a year of usage
     function restake(uint256 _pid) public returns (bool) {
         require(!isShutdown, "shutdown");
         PoolInfo storage pool = poolInfo[_pid];
@@ -438,7 +434,7 @@ contract Controller {
         userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
 
         uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
-        IStaker(staker).increaseTime(lockTime); //voterProxy(staker)
+        IStaker(staker).increaseTime(lockTime);
 
         emit Deposited(msg.sender, _pid, _amount);
         return true;
