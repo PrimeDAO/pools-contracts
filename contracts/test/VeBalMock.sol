@@ -82,6 +82,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     address public future_smart_wallet_checker;
     address public smart_wallet_checker;
 
+    /**
+    @notice Contract constructor
+    @param token_addr 80/20 BAL-WETH BPT token address
+    @param _name Token name
+    @param _symbol Token symbol
+    @param _authorizer_adaptor `AuthorizerAdaptor` contract address
+    */
     //__init__
     constructor(
         address token_addr,
@@ -90,13 +97,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         address _authorizer_adaptor
     ) ERC20(_name, _symbol)
     public {
-        /**
-        @notice Contract constructor
-        @param token_addr 80/20 BAL-WETH BPT token address
-        @param _name Token name
-        @param _symbol Token symbol
-        @param _authorizer_adaptor `AuthorizerAdaptor` contract address
-        */
         require(_authorizer_adaptor != ZERO_ADDRESS, "BalMock: _authorizer_adaptor == ZERO_ADDRESS");
 
         TOKEN = token_addr;
@@ -152,31 +152,34 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             require(checkExeption == 1, "Smart contract depositors not allowed");
             // raise "Smart contract depositors not allowed";
         }
-    }    
+    } 
+
+    /**
+    @notice Get the most recently recorded rate of voting power decrease for `addr`
+    @param addr Address of the user wallet
+    @return Value of the slope
+    */   
     function get_last_user_slope(address addr) external view returns (uint256){
-        /**
-        @notice Get the most recently recorded rate of voting power decrease for `addr`
-        @param addr Address of the user wallet
-        @return Value of the slope
-        */
         uint256 uepoch = user_point_epoch[addr];
         return user_point_history[addr][uepoch].slope;
     }
-    function user_point_history__ts(address _addr, uint256 _idx) external view returns (uint256){
-        /**
-        @notice Get the timestamp for checkpoint `_idx` for `_addr`
-        @param _addr User wallet address
-        @param _idx User epoch number
-        @return Epoch time of the checkpoint
+
+    /**
+    @notice Get the timestamp for checkpoint `_idx` for `_addr`
+    @param _addr User wallet address
+    @param _idx User epoch number
+    @return Epoch time of the checkpoint
     */
+    function user_point_history__ts(address _addr, uint256 _idx) external view returns (uint256){
         return user_point_history[_addr][_idx].ts;
     }
+
+    /**
+    @notice Get timestamp when `_addr`'s lock finishes
+    @param _addr User wallet
+    @return Epoch time of the lock end
+    */
     function locked__end(address _addr) external view returns (uint256){
-        /**
-        @notice Get timestamp when `_addr`'s lock finishes
-        @param _addr User wallet
-        @return Epoch time of the lock end
-        */
         return locked[_addr].end;
     }
 
@@ -416,12 +419,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // real coins.
 
 
-        /**
-        @notice Binary search to find epoch containing block number
-        @param _block Block to find
-        @param max_epoch Don't go beyond this epoch
-        @return Epoch which contains _block
-        */
+    /**
+    @notice Binary search to find epoch containing block number
+    @param _block Block to find
+    @param max_epoch Don't go beyond this epoch
+    @return Epoch which contains _block
+    */
     function find_block_epoch(uint256 _block, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
@@ -440,12 +443,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return _min;        
     }
 
-        /**
-        @notice Binary search to find epoch for timestamp
-        @param _timestamp timestamp to find
-        @param max_epoch Don't go beyond this epoch
-        @return Epoch which contains _timestamp
-        */
+    /**
+    @notice Binary search to find epoch for timestamp
+    @param _timestamp timestamp to find
+    @param max_epoch Don't go beyond this epoch
+    @return Epoch which contains _timestamp
+    */
     function find_timestamp_epoch(uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
