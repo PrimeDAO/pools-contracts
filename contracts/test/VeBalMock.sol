@@ -116,18 +116,18 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function token() external view returns (address){
         return TOKEN;
     }
-    function name() public view virtual returns (string memory){
+    function name() public view virtual override returns (string memory){
         return NAME;
     }
-    function symbol() public view virtual returns (string memory){
+    function symbol() public view virtual override returns (string memory){
         return SYMBOL;
     }
-    function decimals() public view virtual returns (uint256){
-        return DECIMALS;
-    }
-    // function decimals_() public view virtual returns (uint256){
+    // function decimals() public view virtual override returns (uint256){
     //     return DECIMALS;
     // }
+    function decimals_() public view virtual returns (uint256){
+        return DECIMALS;
+    }
     function admin() external view returns (address){
         return AUTHORIZER_ADAPTOR;
     }
@@ -140,9 +140,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         @param _t Epoch time to return voting power at
         @return User voting power
         */
-        // if (t !=0 ) {
-            uint256 _t = block.timestamp;
-        // }
+        uint256 _t = block.timestamp;
         uint256 _epoch = 0;
         if (_t == block.timestamp) {
             // No need to do binary search, will always live in current epoch
@@ -161,24 +159,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             }
             return uint256(last_point.bias);
         }
-
-        // //some code and actual rerurn is not 1
-        // return 1;
     }
-
-    // function balanceOf(address addr, uint256 _t) external view returns (uint256){
-    //     /**
-    //     @notice Get the current voting power for `msg.sender`
-    //     @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
-    //     @param addr User wallet address
-    //     @param _t Epoch time to return voting power at
-    //     @return User voting power
-    //     */
-    //     uint256 _t = block.timestamp;
-
-    //     //some code and actual rerurn is not 1
-    //     return 1;
-    // }
 
     function commit_smart_wallet_checker(address addr) external {
         require(msg.sender == AUTHORIZER_ADAPTOR);
@@ -190,12 +171,15 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     }
     function assert_not_contract(address addr) internal {
         if (addr != tx.origin) {
+            uint8 checkExeption = 0;
             address checker = smart_wallet_checker;
             if (checker != ZERO_ADDRESS) {
                 if (SmartWalletChecker(checker).check(addr)){
+                    checkExeption = 1;
                     return;
                 }
             }
+            require(checkExeption == 1, "Smart contract depositors not allowed");
             // raise "Smart contract depositors not allowed";
         }
     }    
@@ -226,8 +210,133 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return locked[_addr].end;
     }
 
-    function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {}
+    uint256 user_epoch; //here because eror thar stack is too deep
+    function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {
+        Point memory u_old = Point({bias: 0, slope: 0, ts: 0, blk: 0}); //empty(Point);
+        Point memory u_new = Point({bias: 0, slope: 0, ts: 0, blk: 0}); //empty(Point);
+
+        uint256 old_dslope = 0;
+        uint256 new_dslope = 0;
+        uint256 _epoch= epoch;
+
+        if (addr != ZERO_ADDRESS) {
+            // Calculate slopes and biases
+            // Kept at zero when they have to
+            if (old_locked.end > block.timestamp && old_locked.amount > 0) {
+                u_old.slope = old_locked.amount / MAXTIME;
+                u_old.bias = u_old.slope * uint256(old_locked.end - block.timestamp);
+            if (new_locked.end > block.timestamp && new_locked.amount > 0) {
+                u_new.slope = new_locked.amount / MAXTIME;
+                u_new.bias = u_new.slope * uint256(new_locked.end - block.timestamp);
+            }
+
+            // Read values of scheduled changes in the slope
+            // old_locked.end can be in the past and in the future
+            // new_locked.end can ONLY by in the FUTURE unless everything expired: than zeros
+            old_dslope = slope_changes[old_locked.end];
+            if (new_locked.end != 0) {
+                if (new_locked.end == old_locked.end) {
+                    new_dslope = old_dslope;
+                } else {
+                    new_dslope = slope_changes[new_locked.end];
+                }
+            }
+        }
+        Point memory last_point = Point({bias: 0, slope: 0, ts: block.timestamp, blk: block.number});
+        if (_epoch > 0) {
+            last_point = point_history[_epoch];
+        }
+        uint256 last_checkpoint = last_point.ts;
+        // initial_last_point is used for extrapolation to calculate block number
+        // (approximately, for *At methods) and save them
+        // as we cannot figure that out exactly from inside the contract
+        Point memory initial_last_point = last_point;
+        uint256 block_slope = 0;  // dblock/dt
+        if (block.timestamp > last_point.ts) {
+            block_slope = MULTIPLIER * (block.number - last_point.blk) / (block.timestamp - last_point.ts);
+        }
+        // If last point is already recorded in this block, slope=0
+        // But that's ok b/c we know the block in such case
+
+        // Go over weeks to fill history and calculate what the current point is
+        uint256 t_i = (last_checkpoint / WEEK) * WEEK;
+        for (uint256 i = 0; i < 255; i++) { 
+            // Hopefully it won't happen that this won't get used in 5 years!
+            // If it does, users will be able to withdraw but vote weight will be broken
+            t_i += WEEK;
+            uint256 d_slope = 0;
+            if (t_i > block.timestamp) {
+                t_i = block.timestamp;
+            } else {
+                d_slope = slope_changes[t_i];
+            }
+            last_point.bias -= last_point.slope * uint256(t_i - last_checkpoint);
+            last_point.slope += d_slope;
+            if (last_point.bias < 0) {  // This can happen
+                last_point.bias = 0;
+            }
+            if (last_point.slope < 0) {  // This cannot happen - just in case
+                last_point.slope = 0;
+            }
+            last_checkpoint = t_i;
+            last_point.ts = t_i;
+            last_point.blk = initial_last_point.blk + block_slope * (t_i - initial_last_point.ts) / MULTIPLIER;
+            _epoch += 1;
+            if (t_i == block.timestamp) {
+                last_point.blk = block.number;
+                break;
+            } else {
+                point_history[_epoch] = last_point;
+            }
+        }
+        epoch = _epoch;
+        // Now point_history is filled until t=now
+
+        if (addr != ZERO_ADDRESS) {
+            // If last point was in this block, the slope change has been applied already
+            // But in such case we have 0 slope(s)
+            last_point.slope += (u_new.slope - u_old.slope);
+            last_point.bias += (u_new.bias - u_old.bias);
+            if (last_point.slope < 0) {
+                last_point.slope = 0;
+            }
+            if (last_point.bias < 0) {
+                last_point.bias = 0;
+            }
+        }
+        // Record the changed point into history
+        point_history[_epoch] = last_point;
+
+        if (addr != ZERO_ADDRESS) {
+            // Schedule the slope changes (slope is going down)
+            // We subtract new_user_slope from [new_locked.end]
+            // and add old_user_slope to [old_locked.end]
+            if (old_locked.end > block.timestamp) {
+                // old_dslope was <something> - u_old.slope, so we cancel that
+                old_dslope += u_old.slope;
+                if (new_locked.end == old_locked.end) {
+                    old_dslope -= u_new.slope;  // It was a new deposit, not extension
+                }
+                slope_changes[old_locked.end] = old_dslope;
+            }
+            if (new_locked.end > block.timestamp) {
+                if (new_locked.end > old_locked.end) {
+                    new_dslope -= u_new.slope;  // old slope disappeared at this point
+                    slope_changes[new_locked.end] = new_dslope;
+                }
+                // else: we recorded it already in old_dslope
+            }
+            // Now handle user history
+            user_epoch = user_point_epoch[addr] + 1; //initialized before function because stack is too deep
+
+            user_point_epoch[addr] = user_epoch;
+            u_new.ts = block.timestamp;
+            u_new.blk = block.number;
+            user_point_history[addr][user_epoch] = u_new;
+        }
+    }
     
+    }
     function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, uint256 _type) internal {
         LockedBalance memory _locked = locked_balance;
         uint256 supply_before = supply;
@@ -253,11 +362,11 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         emit Deposit(_addr, _value, _locked.end, _type, block.timestamp);
         emit Supply(supply_before, supply_before + _value);
     }
-    
-    // function empty(){}
-    // function checkpoint() external {
-    //     _checkpoint(ZERO_ADDRESS, empty(LockedBalance), empty(LockedBalance));
-    // }
+
+    function checkpoint() external {
+        LockedBalance memory empty = LockedBalance({amount: 0, end: 0}); //empty(LockedBalance);
+        _checkpoint(ZERO_ADDRESS, empty, empty);//empty(LockedBalance), empty(LockedBalance));
+    }
 
     function deposit_for(address _addr, uint256 _value) external nonReentrant {
         LockedBalance memory _locked = locked[_addr];
@@ -441,6 +550,9 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     */
     function balanceOf(address addr, uint256 _t) external view returns (uint256){
         uint256 _t = block.timestamp;
+        if (_t != 0){
+            _t = _t;
+        }
         uint256 _epoch = 0;
         if (_t == block.timestamp) {
             // No need to do binary search, will always live in current epoch
