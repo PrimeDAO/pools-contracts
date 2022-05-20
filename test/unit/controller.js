@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { time, expectRevert } = require("@openzeppelin/test-helpers");
+const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
 const init = require("../test-init.js");
 
 const deploy = async () => {
@@ -50,8 +50,13 @@ describe("Contract: Controller", async () => {
   const zero_address = "0x0000000000000000000000000000000000000000";
   const FEE_DENOMINATOR = 10000;
   const lockTime = time.duration.days(365);
+  const smallLockTime = time.duration.days(30);
+  const tenMillion = 30000000;
   const twentyMillion = 20000000;
   const thirtyMillion = 30000000;
+  const defaultTimeForBalanceOfVeBal = 0;
+  const difference = new BN(28944000); // 1684568938 - 1655624938
+  const timeDifference = ethers.BigNumber.from(difference.toString());
 
   context("» creator is avatar", () => {
     before("!! setup", async () => {
@@ -350,7 +355,8 @@ describe("Contract: Controller", async () => {
 
               expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
 
-              let timelock = ((await time.latest()).add(lockTime)).toNumber();
+              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
 
               expect(
                 (await setup.controller.userLockTime(operator.address)).toNumber()
@@ -361,8 +367,8 @@ describe("Contract: Controller", async () => {
               const stake = true;
 
               expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
-              let timelock = ((await time.latest()).add(lockTime)).toNumber();
-
+              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
               ).to.equal(timelock);
@@ -390,7 +396,16 @@ describe("Contract: Controller", async () => {
             it("Sets VoterProxy depositor", async () => {
               expect(await setup.VoterProxy.connect(root).setDepositor(root.address));
             });
+            it("It configure settings veBal and VoterProxy", async () => {
+              expect(await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address));
+              expect(await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker());
+              
+              let unlockTime = ((await time.latest()).add(lockTime)).toNumber();
+              expect(await setup.VoterProxy.connect(root).createLock(tenMillion, unlockTime));
+
+            });
             it("It increaseAmount veBal", async () => {
+
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));
             });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
@@ -403,7 +418,7 @@ describe("Contract: Controller", async () => {
             });
 
             it("It withdraw Unlocked VeBal", async () => {
-              time.increase(lockTime);
+              time.increase(smallLockTime.add(difference));
               console.log("controller before is %s", (await setup.tokens.VeBal.NbalanceOf(setup.controller.address)).toNumber());
               console.log("treasury before is %s", (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toNumber());
               let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address)).add(twentyMillion);
@@ -421,10 +436,12 @@ describe("Contract: Controller", async () => {
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
             });
             it("It redeposit tokens", async () => {
-              time.increase(lockTime);
+              time.increase(smallLockTime.add(difference));
 
               expect(await setup.controller.connect(staker).restake(pid));
-              let timelock = ((await time.latest()).add(lockTime)).toNumber();
+              
+              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
               ).to.equal(timelock);
@@ -438,11 +455,11 @@ describe("Contract: Controller", async () => {
               );
             });            
             it("It redeposit tokens when stash = address(0)", async () => {
-              time.increase(lockTime);
+              time.increase(smallLockTime);
               const pidStashZero = 1;
 
               expect(await setup.controller.connect(staker).restake(pidStashZero));
-              let timelock = ((await time.latest()).add(lockTime)).toNumber();
+              let timelock = ((await time.latest()).add(smallLockTime)).toNumber();
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
               ).to.equal(timelock);

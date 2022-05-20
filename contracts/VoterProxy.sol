@@ -5,7 +5,8 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
- 
+import "hardhat/console.sol";
+
 contract VoterProxy {
     using Address for address;
 
@@ -162,12 +163,6 @@ contract VoterProxy {
         IBalVoteEscrow(veBal).increase_unlock_time(_value);
         return true;
     }
-
-    function release() external returns (bool) {
-        require(msg.sender == depositor, "!auth");
-        IBalVoteEscrow(veBal).withdraw();
-        return true;
-    }
 ////////// Chore: add restake/withdraw functions to Controller contract #37 
     // function withdrawVeBal(  
     //     address _from,      
@@ -203,7 +198,8 @@ contract VoterProxy {
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
-        uint256 _balance = IBalVoteEscrow(veBal).NbalanceOf(address(this));
+        uint256 defaultTime = 0;
+        uint256 _balance = IBalVoteEscrow(veBal).NbalanceOf(address(this));//, defaultTime);
         if (_balance < _amount) {
             _amount = _withdrawSome(_gauge, _amount - _balance);
             _amount = _amount + _balance;
