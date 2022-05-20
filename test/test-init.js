@@ -189,5 +189,5 @@ module.exports = {
   getBaseRewardPool,
   getExtraRewardMock,
   tokenFactory,
-  getVoterProxyMock
+  getVoterProxyMock,
 };

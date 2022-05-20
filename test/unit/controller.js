@@ -435,9 +435,44 @@ describe("Contract: Controller", async () => {
                 (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toString()
               ).to.equal(unitTest_treasury_amount_expected.toString());
             });
+
+            it("It withdraw Unlocked VeBal when pool is closed", async () => {
+              const alternativeSetup = await deploy();
+
+              await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
+              const rewardFactory = alternativeSetup.rewardFactory;
+              const stashFactory = alternativeSetup.stashFactory;
+              const tokenFactory = alternativeSetup.tokenFactory;
+              await alternativeSetup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
+              await alternativeSetup.stashFactory.connect(root).setImplementation(alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address);
+
+              await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);              
+              await alternativeSetup.tokens.WethBal.transfer(staker.address, twentyMillion);
+              const stake = false;
+              const pid = 0;
+              
+              expect(await alternativeSetup.controller.connect(staker).deposit(pid, twentyMillion, stake));
+              
+              time.increase(smallLockTime.add(difference));
+
+              expect(await alternativeSetup.controller.connect(root).shutdownPool(pid));
+              expect(await alternativeSetup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
+            });
         });
-        context("» restake testing", () => {
+        context("» restake testing", () => {       
             it("Sets VoterProxy depositor", async () => {
+              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+                const stake = true;
+  
+                expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
+  
+                const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+                const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
+  
+                expect(
+                  (await setup.controller.userLockTime(operator.address)).toNumber()
+                ).to.equal(timelock);
+
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
             });
             it("It redeposit tokens", async () => {
@@ -490,7 +525,6 @@ describe("Contract: Controller", async () => {
                 "shutdown"
               );
             });
-
         });
     });
   });
