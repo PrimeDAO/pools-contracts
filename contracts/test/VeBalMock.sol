@@ -4,6 +4,7 @@
 // solium-disable linebreak-style
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -25,10 +26,11 @@ interface SmartWalletChecker {
 }   
 
 contract VeBalMock is ERC20, ReentrancyGuard {
+    using SafeMath for uint256;
 
     struct Point{
-        uint256 bias;
-        uint256 slope; // - dweight / dt
+        int256 bias;
+        int256 slope; // - dweight / dt
         uint256 ts;
         uint256 blk; // block
     }
@@ -37,7 +39,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // What we can do is to extrapolate ***At functions
 
     struct LockedBalance{
-        uint256 amount; 
+        int256 amount; 
         uint256 end;
     }  
 
@@ -75,7 +77,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     Point[100000000000000000000000000000] public point_history; //epoch -> unsigned point
     mapping(address => Point[1000000000]) private user_point_history; //user -> Point[user_epoch]
     mapping(address => uint256) public user_point_epoch;
-    mapping(uint256 => uint256) public slope_changes; //time -> signed slope change
+    mapping(uint256 => int256) public slope_changes; //time -> signed slope change
 
     // Checker for whitelisted (smart contract) wallets which are allowed to deposit
     // The goal is to prevent tokenizing the escrow
@@ -153,7 +155,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // raise "Smart contract depositors not allowed";
         }
     }    
-    function get_last_user_slope(address addr) external view returns (uint256){
+    function get_last_user_slope(address addr) external view returns (int256){
         /**
         @notice Get the most recently recorded rate of voting power decrease for `addr`
         @param addr Address of the user wallet
@@ -185,19 +187,19 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         Point memory u_old; //empty(Point);
         Point memory u_new; //empty(Point);
 
-        uint256 old_dslope = 0;
-        uint256 new_dslope = 0;
+        int256 old_dslope = 0;
+        int256 new_dslope = 0;
         uint256 _epoch= epoch;
 
         if (addr != ZERO_ADDRESS) {
             // Calculate slopes and biases
             // Kept at zero when they have to
             if (old_locked.end > block.timestamp && old_locked.amount > 0) {
-                u_old.slope = old_locked.amount / MAXTIME;
-                u_old.bias = u_old.slope * uint256(old_locked.end - block.timestamp);
+                u_old.slope = old_locked.amount/ (int256(MAXTIME));
+                u_old.bias = u_old.slope * (int256(old_locked.end - block.timestamp));
             if (new_locked.end > block.timestamp && new_locked.amount > 0) {
-                u_new.slope = new_locked.amount / MAXTIME;
-                u_new.bias = u_new.slope * uint256(new_locked.end - block.timestamp);
+                u_new.slope = new_locked.amount / (int256(MAXTIME));
+                u_new.bias = u_new.slope * (int256(new_locked.end - block.timestamp));
             }
 
             // Read values of scheduled changes in the slope
@@ -234,13 +236,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // Hopefully it won't happen that this won't get used in 5 years!
             // If it does, users will be able to withdraw but vote weight will be broken
             t_i += WEEK;
-            uint256 d_slope = 0;
+            int256 d_slope = 0;
             if (t_i > block.timestamp) {
                 t_i = block.timestamp;
             } else {
                 d_slope = slope_changes[t_i];
             }
-            last_point.bias -= last_point.slope * uint256(t_i - last_checkpoint);
+            last_point.bias -= last_point.slope * (int256(t_i - last_checkpoint));
             last_point.slope += d_slope;
             if (last_point.bias < 0) {  // This can happen
                 last_point.bias = 0;
@@ -315,7 +317,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         supply = supply_before + _value;
         LockedBalance memory old_locked = LockedBalance({amount : _locked.amount, end : _locked.end});//_locked;
         // Adding to existing lock, or if a lock is expired - creating a new one
-        _locked.amount += uint256(_value);
+        _locked.amount += int256(_value);
         if (unlock_time != 0) {
             _locked.end = unlock_time;
         }
@@ -529,7 +531,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             return 0;
         } else {
             Point memory last_point = user_point_history[addr][_epoch];
-            last_point.bias -= last_point.slope * uint256(_t - last_point.ts);
+            last_point.bias -= last_point.slope * (int256(_t - last_point.ts));
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
@@ -561,7 +563,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             return 0;
         } else {
             Point memory last_point = user_point_history[addr][_epoch];
-            last_point.bias -= last_point.slope * uint256(_t - last_point.ts);
+            last_point.bias -= last_point.slope * (int256(_t - last_point.ts));
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
@@ -592,7 +594,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         if (d_block != 0) {
             block_time += d_t * (_block - point_0.blk) / d_block;
         }
-        upoint.bias -= upoint.slope * uint256(block_time - upoint.ts);
+        upoint.bias -= upoint.slope * (int256(block_time - upoint.ts));
         if (upoint.bias >= 0) {
             return uint256(upoint.bias);
         } else {
@@ -611,13 +613,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         uint256 t_i = (last_point.ts / WEEK) * WEEK;
         for (uint i; i < 255; i++) {
             t_i += WEEK;
-            uint256 d_slope = 0;
+            int256 d_slope = 0;
             if (t_i > t) {
                 t_i = t;
             } else {
                 d_slope = slope_changes[t_i];
             }
-            last_point.bias -= last_point.slope * uint256(t_i - last_point.ts);
+            last_point.bias -= last_point.slope * (int256(t_i - last_point.ts));
             if (t_i == t) {
                 break;
             }
