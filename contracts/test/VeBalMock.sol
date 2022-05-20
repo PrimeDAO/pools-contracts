@@ -117,9 +117,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function symbol() public view virtual override returns (string memory){
         return SYMBOL;
     }
-    // function decimals() public view virtual override returns (uint256){
-    //     return DECIMALS;
-    // }
     function decimals_() public view virtual returns (uint256){
         return DECIMALS;
     }
@@ -282,12 +279,8 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // and add old_user_slope to [old_locked.end]
             if (old_locked.end > block.timestamp) {
                 // old_dslope was <something> - u_old.slope, so we cancel that
-                old_dslope += u_old.slope;
-                
-
-                if (new_locked.end == old_locked.end) {
-                    
-                    
+                old_dslope += u_old.slope;               
+                if (new_locked.end == old_locked.end) {                  
                     old_dslope -= u_new.slope;  // It was a new deposit, not extension
                 }
                 slope_changes[old_locked.end] = old_dslope;
