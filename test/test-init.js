@@ -73,13 +73,23 @@ const getVoterProxy = async (setup) => {
   return await VoterProxy.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
 };
 
+const getVoterProxyMock = async (setup) => {
+  const VoterProxyMockFactory = await ethers.getContractFactory("VoterProxyMock", setup.roles.root);
+  const mintr = setup.tokens.D2DBal;
+  const bal = setup.tokens.BAL;
+  const veBal = setup.tokens.VeBal;
+  const gaugeController = setup.tokens.GaugeController;
+
+  return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
+};
+
 const controller = async (setup) => {
   const controller = await ethers.getContractFactory(
     "Controller",
     setup.roles.root
   );
   const wethBal = setup.tokens.WethBal;
-  const staker = setup.VoterProxy;
+  const staker = setup.VoterProxyMockFactory; //setup.VoterProxy;
   return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address);
 };
 
@@ -165,6 +175,7 @@ const getExtraRewardMock = async (setup) => {
   return await ExtraRewardMockFactory.deploy()
 }
 
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -177,5 +188,6 @@ module.exports = {
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
-  tokenFactory
+  tokenFactory,
+  getVoterProxyMock
 };

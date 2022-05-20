@@ -1,5 +1,6 @@
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { deployments, ethers } = require("hardhat");
+const { BigNumber, constants } = require("ethers");
 const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
 const init = require("../test-init.js");
 
@@ -9,6 +10,8 @@ const deploy = async () => {
   setup.tokens = await init.getTokens(setup);
   
   setup.VoterProxy = await init.getVoterProxy(setup);
+
+  setup.VoterProxyMockFactory = await init.getVoterProxyMock(setup);
 
   setup.controller = await init.controller(setup);
 
@@ -56,10 +59,11 @@ describe("Contract: Controller", async () => {
   const thirtyMillion = 30000000;
   const defaultTimeForBalanceOfVeBal = 0;
   const difference = new BN(28944000); // 1684568938 - 1655624938
-  const timeDifference = ethers.BigNumber.from(difference.toString());
+  const timeDifference = BigNumber.from(difference.toString());
 
-  context("» creator is avatar", () => {
-    before("!! setup", async () => {
+  context("» Controller", () => {
+    
+    before("setup", async () => {
       setup = await deploy();
 
       // // Roles
@@ -72,7 +76,11 @@ describe("Contract: Controller", async () => {
 
       platformFee = 500;
       profitFee = 100;
+
+      expect(await setup.controller.poolLength()).to.equal(0)
+
     });
+
 
     context("» Testing changed functions", () => {
         context("» setFeeInfo testing", () => {
@@ -404,10 +412,9 @@ describe("Contract: Controller", async () => {
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, unlockTime));
 
             });
-            it("It increaseAmount veBal", async () => {
-
-              expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));
-            });            
+            // it("It increaseAmount veBal", async () => { //no need in unit test
+            //   expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));            
+            // });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
               await expectRevert(
                 setup.controller
@@ -419,16 +426,14 @@ describe("Contract: Controller", async () => {
 
             it("It withdraw Unlocked VeBal", async () => {
               time.increase(smallLockTime.add(difference));
-              console.log("controller before is %s", (await setup.tokens.VeBal.NbalanceOf(setup.controller.address)).toNumber());
-              console.log("treasury before is %s", (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toNumber());
+
               let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address)).add(twentyMillion);
-              console.log("expected is %s", treasury_amount_expected.toNumber());
-              
+              let unitTest_treasury_amount_expected = 0;
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
 
               expect(
                 (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toString()
-              ).to.equal(treasury_amount_expected.toString());
+              ).to.equal(unitTest_treasury_amount_expected.toString());
             });
         });
         context("» restake testing", () => {
@@ -455,11 +460,12 @@ describe("Contract: Controller", async () => {
               );
             });            
             it("It redeposit tokens when stash = address(0)", async () => {
-              time.increase(smallLockTime);
+              time.increase(smallLockTime.add(difference));
               const pidStashZero = 1;
 
               expect(await setup.controller.connect(staker).restake(pidStashZero));
-              let timelock = ((await time.latest()).add(smallLockTime)).toNumber();
+              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
               ).to.equal(timelock);
