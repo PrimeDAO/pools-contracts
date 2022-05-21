@@ -51,7 +51,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // uint256 constant INCREASE_LOCK_AMOUNT = 2;
     // uint256 constant INCREASE_UNLOCK_TIME = 3;
 
-    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts); //if just type without _ --> was highlited as error
+    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts);
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
 
@@ -152,29 +152,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         }
     }    
     function get_last_user_slope(address addr) external view returns (int256){
-        /**
-        @notice Get the most recently recorded rate of voting power decrease for `addr`
-        @param addr Address of the user wallet
-        @return Value of the slope
-        */
         uint256 uepoch = user_point_epoch[addr];
         return user_point_history[addr][uepoch].slope;
     }
     function user_point_history__ts(address _addr, uint256 _idx) external view returns (uint256){
-        /**
-        @notice Get the timestamp for checkpoint `_idx` for `_addr`
-        @param _addr User wallet address
-        @param _idx User epoch number
-        @return Epoch time of the checkpoint
-    */
         return user_point_history[_addr][_idx].ts;
     }
     function locked__end(address _addr) external view returns (uint256){
-        /**
-        @notice Get timestamp when `_addr`'s lock finishes
-        @param _addr User wallet
-        @return Epoch time of the lock end
-        */
         return locked[_addr].end;
     }
 
@@ -217,7 +201,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         // initial_last_point is used for extrapolation to calculate block number
         // (approximately, for *At methods) and save them
         // as we cannot figure that out exactly from inside the contract
-        Point memory initial_last_point = Point({bias : last_point.bias, slope : last_point.slope, ts : last_point.ts, blk : last_point.blk});//last_point;
+        Point memory initial_last_point = Point({bias : last_point.bias, slope : last_point.slope, ts : last_point.ts, blk : last_point.blk});
         uint256 block_slope = 0;  // dblock/dt
         if (block.timestamp > last_point.ts) {
             block_slope = MULTIPLIER * (block.number - last_point.blk) / (block.timestamp - last_point.ts);
@@ -347,9 +331,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant {
         assert_not_contract(msg.sender);
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
-        LockedBalance memory _locked = locked[msg.sender];  //!!! deposit and etc can't be called from outside IF create_lock was called from VoterProxy:
-                                                            // 1. user can't withdraw by themself without VoterProxy
-                                                            // 2. can't see balance of exact user from the outside (can be saved in VeBalMock)
+        LockedBalance memory _locked = locked[msg.sender]; 
         require(_value > 0); // dev: need non-zero value
         require(_locked.amount == 0, "Withdraw old tokens first");
         require(unlock_time > block.timestamp, "Can only lock until time in the future");
@@ -410,12 +392,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // real coins.
 
 
-        /**
-        @notice Binary search to find epoch containing block number
-        @param _block Block to find
-        @param max_epoch Don't go beyond this epoch
-        @return Epoch which contains _block
-        */
+    /**
+    @notice Binary search to find epoch containing block number
+    @param _block Block to find
+    @param max_epoch Don't go beyond this epoch
+    @return Epoch which contains _block
+    */
     function find_block_epoch(uint256 _block, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
@@ -434,12 +416,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return _min;        
     }
 
-        /**
-        @notice Binary search to find epoch for timestamp
-        @param _timestamp timestamp to find
-        @param max_epoch Don't go beyond this epoch
-        @return Epoch which contains _timestamp
-        */
+    /**
+    @notice Binary search to find epoch for timestamp
+    @param _timestamp timestamp to find
+    @param max_epoch Don't go beyond this epoch
+    @return Epoch which contains _timestamp
+    */
     function find_timestamp_epoch(uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
