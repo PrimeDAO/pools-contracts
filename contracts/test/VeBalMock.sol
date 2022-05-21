@@ -123,9 +123,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function symbol() public view virtual override returns (string memory){
         return SYMBOL;
     }
-    // function decimals() public view virtual override returns (uint256){
-    //     return DECIMALS;
-    // }
     function decimals_() public view virtual returns (uint256){
         return DECIMALS;
     }
@@ -511,9 +508,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return _min;
     }
 
-    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ //need to be, but VoterProxy can't see uint256 _t 
-    // function NbalanceOf(address addr) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
-        // uint256 _t = block.timestamp;
+    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
         if (_t == 0){
             _t =  block.timestamp;
         }
@@ -546,7 +541,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     @return User voting power
     */
     function balanceOf(address addr, uint256 _t) external view returns (uint256){
-        // uint256 _t = block.timestamp;
         if (_t == 0){
             _t = block.timestamp;
         }
