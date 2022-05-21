@@ -30,12 +30,11 @@ const getTokens = async (setup) => {
     setup.roles.root
   );
 
-
   const Balancer80BAL20WETH = await ERC20Factory.deploy("Balancer80BAL20WETH", "Balancer80BAL20WETH");
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
   const D2DBal = await D2DBalFactory.deploy("D2DBal", "D2DBAL");
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
-  const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
+  const WethBal = await D2DBalFactory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
   const GaugeControllerFactory = await ethers.getContractFactory(
@@ -66,7 +65,7 @@ const balDepositor = async (setup) => {
 const getVoterProxy = async (setup) => {
   const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
   const mintr = setup.tokens.D2DBal;
-  const bal = setup.tokens.BAL;
+  const bal = setup.tokens.WethBal;
   const veBal = setup.tokens.VeBal;
   const gaugeController = setup.tokens.GaugeController;
 

@@ -5,7 +5,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract ERC20Mock is ERC20 {
-    uint256 public constant INITIAL_SUPPLY = 100_000 ether;
+    uint256 public constant INITIAL_SUPPLY = 20000000000000000000000;//1_000_000_000_000 ether;
 
     constructor(string memory _name, string memory _symbol)
         ERC20(_name, _symbol)

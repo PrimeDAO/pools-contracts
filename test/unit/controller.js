@@ -55,11 +55,13 @@ describe("Contract: Controller", async () => {
   const zero_address = "0x0000000000000000000000000000000000000000";
   const FEE_DENOMINATOR = 10000;
   const lockTime = time.duration.days(365);
+  const halfAYear = lockTime / 2;
   const smallLockTime = time.duration.days(30);
   const doubleSmallLockTime = time.duration.days(60);
-  const tenMillion = 30000000;
-  const twentyMillion = 20000000;
-  const thirtyMillion = 30000000;
+  const tenMillion = 30000;//000;
+  const twentyMillion = 20000;//000;
+  const thirtyMillion = 30000;//000;
+  const sixtyMillion = 60000;//000;
   const defaultTimeForBalanceOfVeBal = 0;
   const difference = new BN(28944000); // 1684568938 - 1655624938
   const timeDifference = BigNumber.from(difference.toString());
@@ -401,17 +403,22 @@ describe("Contract: Controller", async () => {
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address));
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker());
               
+              expect(await setup.tokens.WethBal.mint(setup.tokens.VeBal.address, thirtyMillion)); // edited so thirtyMillion= 30000;//000;
+              expect(await setup.tokens.WethBal.mint(setup.VoterProxy.address, sixtyMillion));
+
+              console.log("VeBal balance weth %s", (await setup.tokens.WethBal.balanceOf(setup.tokens.VeBal.address)).toNumber());
+              console.log("VoterProxy balance weth %s", (await setup.tokens.WethBal.balanceOf(setup.VoterProxy.address)).toNumber());
+
               let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, unlockTime));
             });
             it("It increaseAmount veBal", async () => {
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
-              expect(await setup.tokens.VeBal.connect(root).deposit_for(setup.VoterProxy.address, tenMillion));
               const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
 console.log("f %s", f.toString());
             });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
-              // time.increase(new BN(31249454));
+              time.increase(new BN(31249454));
 // const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
 // console.log("f after time increase %s", f.toString());
               await expectRevert(
@@ -423,9 +430,10 @@ console.log("f %s", f.toString());
             });
 
             it("It withdraw Unlocked VeBal", async () => {
+              // time.increase(halfAYear);//
               time.increase(smallLockTime.add(difference));
               const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-console.log("f %s", f.toString());
+console.log("f after %s", f.toString());
               let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, tenMillion));
@@ -434,35 +442,38 @@ console.log("f %s", f.toString());
               ).to.equal(unitTest_treasury_amount_expected.toString());
             });
 
-            // it("It withdraw Unlocked VeBal when pool is closed", async () => {
-            //   const alternativeSetup = await deploy();
+            it("It withdraw Unlocked VeBal when pool is closed", async () => {
+              const alternativeSetup = await deploy();
 
-            //   await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
-            //   const rewardFactory = alternativeSetup.rewardFactory;
-            //   const stashFactory = alternativeSetup.stashFactory;
-            //   const tokenFactory = alternativeSetup.tokenFactory;
-            //   await alternativeSetup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
-            //   await alternativeSetup.stashFactory.connect(root).setImplementation(alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address);
-            //   await alternativeSetup.VoterProxy.connect(root).setDepositor(root.address);
+              await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
+              const rewardFactory = alternativeSetup.rewardFactory;
+              const stashFactory = alternativeSetup.stashFactory;
+              const tokenFactory = alternativeSetup.tokenFactory;
+              await alternativeSetup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
+              await alternativeSetup.stashFactory.connect(root).setImplementation(alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address);
+              await alternativeSetup.VoterProxy.connect(root).setDepositor(root.address);
 
-            //   await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);              
-            //   await alternativeSetup.tokens.WethBal.transfer(staker.address, twentyMillion);
+              await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);              
+              await alternativeSetup.tokens.WethBal.transfer(staker.address, twentyMillion);
 
-            //   let unlockTime = ((await time.latest()).add(smallLockTime)).toNumber();
-            //   await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(alternativeSetup.VoterProxy.address);
-            //   await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
+              let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
+              await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(alternativeSetup.VoterProxy.address);
+              await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
+
+              await alternativeSetup.tokens.WethBal.mint(alternativeSetup.tokens.VeBal.address, thirtyMillion); // edited so thirtyMillion= 30000;//000;
+              await alternativeSetup.tokens.WethBal.mint(alternativeSetup.VoterProxy.address, sixtyMillion);
+
+              await alternativeSetup.VoterProxy.connect(root).createLock(tenMillion, unlockTime);              
+              await alternativeSetup.VoterProxy.connect(root).increaseAmount(thirtyMillion);     
+
+              const stake = false;
+              const pid = 0;
               
-            //   await alternativeSetup.VoterProxy.connect(root).createLock(tenMillion, unlockTime);              
-            //   await alternativeSetup.VoterProxy.connect(root).increaseAmount(thirtyMillion);     
+              time.increase(smallLockTime.add(difference));
 
-            //   const stake = false;
-            //   const pid = 0;
-            //   expect(await alternativeSetup.tokens.VeBal.connect(root).deposit_for(alternativeSetup.VoterProxy.address, tenMillion));
-            //   time.increase(smallLockTime.add(difference));
-
-            //   expect(await alternativeSetup.controller.connect(root).shutdownPool(pid));
-            //   expect(await alternativeSetup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
-            // });
+              expect(await alternativeSetup.controller.connect(root).shutdownPool(pid));
+              expect(await alternativeSetup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
+            });
         });
         context("» restake testing", () => {       
             it("Sets VoterProxy depositor", async () => {
