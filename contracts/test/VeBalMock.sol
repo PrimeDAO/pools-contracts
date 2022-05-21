@@ -4,6 +4,7 @@
 // solium-disable linebreak-style
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -25,10 +26,11 @@ interface SmartWalletChecker {
 }   
 
 contract VeBalMock is ERC20, ReentrancyGuard {
+    using SafeMath for uint256;
 
     struct Point{
-        uint256 bias;
-        uint256 slope; // - dweight / dt
+        int256 bias;
+        int256 slope; // - dweight / dt
         uint256 ts;
         uint256 blk; // block
     }
@@ -37,20 +39,24 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // What we can do is to extrapolate ***At functions
 
     struct LockedBalance{
-        uint256 amount; 
+        int256 amount; 
         uint256 end;
     }  
 
     address constant ZERO_ADDRESS = address(0x0000000000000000000000000000000000000000);
 
     enum ActionType {DEPOSIT_FOR_TYPE, CREATE_LOCK_TYPE, INCREASE_LOCK_AMOUNT, INCREASE_UNLOCK_TIME}
+    // uint256 constant DEPOSIT_FOR_TYPE = 0;
+    // uint256 constant CREATE_LOCK_TYPE = 1;
+    // uint256 constant INCREASE_LOCK_AMOUNT = 2;
+    // uint256 constant INCREASE_UNLOCK_TIME = 3;
 
-    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts);
+    event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts); //if just type without _ --> was highlited as error
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
 
-    uint256 constant WEEK = 7 weeks; //all future times are rounded by week
-    uint256 constant MAXTIME = 365 days; // 1 year
+    uint256 constant WEEK = 7 * 86400; //all future times are rounded by week
+    uint256 constant MAXTIME = 365 * 86400;  // 1 year
     uint256 constant MULTIPLIER = 10 ** 18;
 
 
@@ -71,20 +77,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     Point[100000000000000000000000000000] public point_history; //epoch -> unsigned point
     mapping(address => Point[1000000000]) private user_point_history; //user -> Point[user_epoch]
     mapping(address => uint256) public user_point_epoch;
-    mapping(uint256 => uint256) public slope_changes; //time -> signed slope change
+    mapping(uint256 => int256) public slope_changes; //time -> signed slope change
 
     // Checker for whitelisted (smart contract) wallets which are allowed to deposit
     // The goal is to prevent tokenizing the escrow
     address public future_smart_wallet_checker;
     address public smart_wallet_checker;
 
-    /**
-    @notice Contract constructor
-    @param token_addr 80/20 BAL-WETH BPT token address
-    @param _name Token name
-    @param _symbol Token symbol
-    @param _authorizer_adaptor `AuthorizerAdaptor` contract address
-    */
     //__init__
     constructor(
         address token_addr,
@@ -93,6 +92,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         address _authorizer_adaptor
     ) ERC20(_name, _symbol)
     public {
+        /**
+        @notice Contract constructor
+        @param token_addr 80/20 BAL-WETH BPT token address
+        @param _name Token name
+        @param _symbol Token symbol
+        @param _authorizer_adaptor `AuthorizerAdaptor` contract address
+        */
         require(_authorizer_adaptor != ZERO_ADDRESS, "BalMock: _authorizer_adaptor == ZERO_ADDRESS");
 
         TOKEN = token_addr;
@@ -117,6 +123,9 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function symbol() public view virtual override returns (string memory){
         return SYMBOL;
     }
+    // function decimals() public view virtual override returns (uint256){
+    //     return DECIMALS;
+    // }
     function decimals_() public view virtual returns (uint256){
         return DECIMALS;
     }
@@ -132,86 +141,65 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         require(msg.sender == AUTHORIZER_ADAPTOR);
         smart_wallet_checker = future_smart_wallet_checker;
     }
-    /**
-    @notice Sets a list of users who are allowed/denied to deposit
-    @param _users A list of address
-    @param _flag True to allow or false to disallow
-    */
-    function setWhitelist(address [] memory _users, bool _flag) external onlyOwner {
-        for (uint i = 0; i < _users.length; i++) {
-            whitelist[_users[i]] = _flag;
+    
+    function assert_not_contract(address addr) internal {
+        if (addr != tx.origin) {
+            uint8 checkExeption = 0;
+            address checker = smart_wallet_checker;
+            if (checker != ZERO_ADDRESS) {
+                checkExeption = 1;
+                return;
+            }
+            require(checkExeption == 1, "Smart contract depositors not allowed");
+            // raise "Smart contract depositors not allowed";
         }
     }    
-    // SmartWalletChecker & assert_not_contract analog
-    modifier assert_not_contract(address addr) {
-        require(tx.origin == msg.sender || whitelist[addr], "Smart contract depositors not allowed");
-        _;
-    }
-
-    // function assert_not_contract(address addr) internal {
-    //     if (addr != tx.origin) {
-    //         uint8 checkExeption = 0;
-    //         address checker = smart_wallet_checker;
-    //         if (checker != ZERO_ADDRESS) {
-    //             // if (SmartWalletChecker(checker).check(addr)){
-    //                 checkExeption = 1;
-    //                 return;
-    //             // }
-    //         }
-    //         require(checkExeption == 1, "Smart contract depositors not allowed");
-    //         // raise "Smart contract depositors not allowed";
-    //     }
-    // } 
-
-    /**
-    @notice Get the most recently recorded rate of voting power decrease for `addr`
-    @param addr Address of the user wallet
-    @return Value of the slope
-    */   
-    function get_last_user_slope(address addr) external view returns (uint256){
+    function get_last_user_slope(address addr) external view returns (int256){
+        /**
+        @notice Get the most recently recorded rate of voting power decrease for `addr`
+        @param addr Address of the user wallet
+        @return Value of the slope
+        */
         uint256 uepoch = user_point_epoch[addr];
         return user_point_history[addr][uepoch].slope;
     }
-
-    /**
-    @notice Get the timestamp for checkpoint `_idx` for `_addr`
-    @param _addr User wallet address
-    @param _idx User epoch number
-    @return Epoch time of the checkpoint
-    */
     function user_point_history__ts(address _addr, uint256 _idx) external view returns (uint256){
+        /**
+        @notice Get the timestamp for checkpoint `_idx` for `_addr`
+        @param _addr User wallet address
+        @param _idx User epoch number
+        @return Epoch time of the checkpoint
+    */
         return user_point_history[_addr][_idx].ts;
     }
-
-    /**
-    @notice Get timestamp when `_addr`'s lock finishes
-    @param _addr User wallet
-    @return Epoch time of the lock end
-    */
     function locked__end(address _addr) external view returns (uint256){
+        /**
+        @notice Get timestamp when `_addr`'s lock finishes
+        @param _addr User wallet
+        @return Epoch time of the lock end
+        */
         return locked[_addr].end;
     }
 
-    uint256 user_epoch; //here because was eror that 'stack is too deep'
+    uint256 user_epoch; //here because eror thar stack is too deep
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {
         Point memory u_old; //empty(Point);
         Point memory u_new; //empty(Point);
 
-        uint256 old_dslope = 0;
-        uint256 new_dslope = 0;
-        uint256 _epoch= epoch;
+        int256 old_dslope = 0;
+        int256 new_dslope = 0;
+        uint256 _epoch = epoch;
 
         if (addr != ZERO_ADDRESS) {
             // Calculate slopes and biases
             // Kept at zero when they have to
             if (old_locked.end > block.timestamp && old_locked.amount > 0) {
-                u_old.slope = old_locked.amount / MAXTIME;                
-                u_old.bias = u_old.slope * uint256(old_locked.end - block.timestamp);
+                u_old.slope = old_locked.amount/ (int256(MAXTIME));
+                u_old.bias = u_old.slope * (int256(old_locked.end - block.timestamp));
             if (new_locked.end > block.timestamp && new_locked.amount > 0) {
-                u_new.slope = new_locked.amount / MAXTIME;                
-                u_new.bias = u_new.slope * uint256(new_locked.end - block.timestamp);
+                u_new.slope = new_locked.amount / (int256(MAXTIME));
+                u_new.bias = u_new.slope * (int256(new_locked.end - block.timestamp));
             }
-
             // Read values of scheduled changes in the slope
             // old_locked.end can be in the past and in the future
             // new_locked.end can ONLY by in the FUTURE unless everything expired: than zeros
@@ -242,17 +230,17 @@ contract VeBalMock is ERC20, ReentrancyGuard {
 
         // Go over weeks to fill history and calculate what the current point is
         uint256 t_i = (last_checkpoint / WEEK) * WEEK;
-         for (uint i; i < 255; i++) {
+        for (uint i; i < 255; i++) {
             // Hopefully it won't happen that this won't get used in 5 years!
             // If it does, users will be able to withdraw but vote weight will be broken
             t_i += WEEK;
-            uint256 d_slope = 0;
+            int256 d_slope = 0;
             if (t_i > block.timestamp) {
                 t_i = block.timestamp;
             } else {
                 d_slope = slope_changes[t_i];
             }
-            last_point.bias -= last_point.slope * uint256(t_i - last_checkpoint);
+            last_point.bias -= last_point.slope * (int256(t_i - last_checkpoint));
             last_point.slope += d_slope;
             if (last_point.bias < 0) {  // This can happen
                 last_point.bias = 0;
@@ -295,8 +283,9 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // and add old_user_slope to [old_locked.end]
             if (old_locked.end > block.timestamp) {
                 // old_dslope was <something> - u_old.slope, so we cancel that
-                old_dslope += u_old.slope;               
-                if (new_locked.end == old_locked.end) {                  
+                old_dslope += u_old.slope;
+
+                if (new_locked.end == old_locked.end) {
                     old_dslope -= u_new.slope;  // It was a new deposit, not extension
                 }
                 slope_changes[old_locked.end] = old_dslope;
@@ -309,12 +298,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
                 // else: we recorded it already in old_dslope
             }
             // Now handle user history
-            user_epoch = user_point_epoch[addr] + 1; //initialized before function because 'stack is too deep'
-
+            user_epoch = user_point_epoch[addr] + 1; //initialized before function because stack is too deep
             user_point_epoch[addr] = user_epoch;
             u_new.ts = block.timestamp;
             u_new.blk = block.number;
             user_point_history[addr][user_epoch] = u_new;
+
         }
     }
     
@@ -322,11 +311,10 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function _deposit_for(address _addr, uint256 _value, uint256 unlock_time, LockedBalance memory locked_balance, ActionType actionType) internal {
         LockedBalance memory _locked = locked_balance;
         uint256 supply_before = supply;
-
         supply = supply_before + _value;
         LockedBalance memory old_locked = LockedBalance({amount : _locked.amount, end : _locked.end});//_locked;
         // Adding to existing lock, or if a lock is expired - creating a new one
-        _locked.amount += uint256(_value);
+        _locked.amount += int256(_value);
         if (unlock_time != 0) {
             _locked.end = unlock_time;
         }
@@ -352,7 +340,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
 
     function deposit_for(address _addr, uint256 _value) external nonReentrant {
         LockedBalance memory _locked = locked[_addr];
-
         require(_value > 0);  // dev: need non-zero value
         require(_locked.amount > 0, "No existing lock found");
         require(_locked.end > block.timestamp, "Cannot add to expired lock. Withdraw");
@@ -360,10 +347,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         _deposit_for(_addr, _value, 0, _locked, ActionType.DEPOSIT_FOR_TYPE);
     }
 
-    function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant assert_not_contract(msg.sender) {
+    function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant {
+        assert_not_contract(msg.sender);
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
-        LockedBalance memory _locked = locked[msg.sender];
-
+        LockedBalance memory _locked = locked[msg.sender];  //!!! deposit and etc can't be called from outside IF create_lock was called from VoterProxy:
+                                                            // 1. user can't withdraw by themself without VoterProxy
+                                                            // 2. can't see balance of exact user from the outside (can be saved in VeBalMock)
         require(_value > 0); // dev: need non-zero value
         require(_locked.amount == 0, "Withdraw old tokens first");
         require(unlock_time > block.timestamp, "Can only lock until time in the future");
@@ -372,7 +361,8 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         _deposit_for(msg.sender, _value, unlock_time, _locked, ActionType.CREATE_LOCK_TYPE);
     }
 
-    function increase_amount(uint256 _value) external nonReentrant assert_not_contract(msg.sender) {
+    function increase_amount(uint256 _value) external nonReentrant {
+        assert_not_contract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
 
         require(_value > 0); // dev: need non-zero value
@@ -381,7 +371,8 @@ contract VeBalMock is ERC20, ReentrancyGuard {
 
         _deposit_for(msg.sender, _value, 0, _locked, ActionType.INCREASE_LOCK_AMOUNT);
     }
-    function increase_unlock_time(uint256 _unlock_time) external nonReentrant assert_not_contract(msg.sender) {
+    function increase_unlock_time(uint256 _unlock_time) external nonReentrant {
+        assert_not_contract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
 
@@ -395,6 +386,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
 
     function withdraw() external nonReentrant {
         LockedBalance memory _locked = locked[msg.sender];
+
         require(block.timestamp >= _locked.end, "The lock didn't expire");
         uint256 value = uint256(_locked.amount);
 
@@ -421,12 +413,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // real coins.
 
 
-    /**
-    @notice Binary search to find epoch containing block number
-    @param _block Block to find
-    @param max_epoch Don't go beyond this epoch
-    @return Epoch which contains _block
-    */
+        /**
+        @notice Binary search to find epoch containing block number
+        @param _block Block to find
+        @param max_epoch Don't go beyond this epoch
+        @return Epoch which contains _block
+        */
     function find_block_epoch(uint256 _block, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
@@ -445,12 +437,12 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return _min;        
     }
 
-    /**
-    @notice Binary search to find epoch for timestamp
-    @param _timestamp timestamp to find
-    @param max_epoch Don't go beyond this epoch
-    @return Epoch which contains _timestamp
-    */
+        /**
+        @notice Binary search to find epoch for timestamp
+        @param _timestamp timestamp to find
+        @param max_epoch Don't go beyond this epoch
+        @return Epoch which contains _timestamp
+        */
     function find_timestamp_epoch(uint256 _timestamp, uint256 max_epoch) internal view returns (uint256){
         // Binary search
         uint256 _min = 0;
@@ -519,9 +511,11 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return _min;
     }
 
-    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
+    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ //need to be, but VoterProxy can't see uint256 _t 
+    // function NbalanceOf(address addr) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
+        // uint256 _t = block.timestamp;
         if (_t == 0){
-            _t = block.timestamp;
+            _t =  block.timestamp;
         }
         uint256 _epoch = 0;
         if (_t == block.timestamp) {
@@ -535,10 +529,11 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             return 0;
         } else {
             Point memory last_point = user_point_history[addr][_epoch];
-            last_point.bias -= last_point.slope * uint256(_t - last_point.ts);
+            last_point.bias -= last_point.slope * (int256(_t - last_point.ts));
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
+
             return uint256(last_point.bias);
         }
     }
@@ -551,6 +546,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     @return User voting power
     */
     function balanceOf(address addr, uint256 _t) external view returns (uint256){
+        // uint256 _t = block.timestamp;
         if (_t == 0){
             _t = block.timestamp;
         }
@@ -566,15 +562,16 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             return 0;
         } else {
             Point memory last_point = user_point_history[addr][_epoch];
-            last_point.bias -= last_point.slope * uint256(_t - last_point.ts);
+            last_point.bias -= last_point.slope * (int256(_t - last_point.ts));
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
+
             return uint256(last_point.bias);
         }
     }
 
-    function balanceOfAt(address addr, uint256 _block) external view returns (uint256){
+    function balanceOfAt(address addr, uint256 _block) external view returns (uint256) {
         require(_block <= block.number);
 
         uint256 _user_epoch = find_block_user_epoch(addr, _block, user_point_epoch[addr]);
@@ -597,7 +594,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         if (d_block != 0) {
             block_time += d_t * (_block - point_0.blk) / d_block;
         }
-        upoint.bias -= upoint.slope * uint256(block_time - upoint.ts);
+        upoint.bias -= upoint.slope * (int256(block_time - upoint.ts));
         if (upoint.bias >= 0) {
             return uint256(upoint.bias);
         } else {
@@ -616,13 +613,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         uint256 t_i = (last_point.ts / WEEK) * WEEK;
         for (uint i; i < 255; i++) {
             t_i += WEEK;
-            uint256 d_slope = 0;
+            int256 d_slope = 0;
             if (t_i > t) {
                 t_i = t;
             } else {
                 d_slope = slope_changes[t_i];
             }
-            last_point.bias -= last_point.slope * uint256(t_i - last_point.ts);
+            last_point.bias -= last_point.slope * (int256(t_i - last_point.ts));
             if (t_i == t) {
                 break;
             }
