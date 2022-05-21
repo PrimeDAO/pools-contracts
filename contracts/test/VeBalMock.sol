@@ -132,20 +132,36 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         require(msg.sender == AUTHORIZER_ADAPTOR);
         smart_wallet_checker = future_smart_wallet_checker;
     }
-    function assert_not_contract(address addr) internal {
-        if (addr != tx.origin) {
-            uint8 checkExeption = 0;
-            address checker = smart_wallet_checker;
-            if (checker != ZERO_ADDRESS) {
-                // if (SmartWalletChecker(checker).check(addr)){ //TODO: uncomment and fix test part; fix check() function
-                    checkExeption = 1;
-                    return;
-                // }
-            }
-            require(checkExeption == 1, "Smart contract depositors not allowed");
-            // raise "Smart contract depositors not allowed";
+    /**
+    @notice Sets a list of users who are allowed/denied to deposit
+    @param _users A list of address
+    @param _flag True to allow or false to disallow
+    */
+    function setWhitelist(address [] memory _users, bool _flag) external onlyOwner {
+        for (uint i = 0; i < _users.length; i++) {
+            whitelist[_users[i]] = _flag;
         }
-    } 
+    }    
+    // SmartWalletChecker & assert_not_contract analog
+    modifier assert_not_contract(address addr) {
+        require(tx.origin == msg.sender || whitelist[addr], "Smart contract depositors not allowed");
+        _;
+    }
+
+    // function assert_not_contract(address addr) internal {
+    //     if (addr != tx.origin) {
+    //         uint8 checkExeption = 0;
+    //         address checker = smart_wallet_checker;
+    //         if (checker != ZERO_ADDRESS) {
+    //             // if (SmartWalletChecker(checker).check(addr)){
+    //                 checkExeption = 1;
+    //                 return;
+    //             // }
+    //         }
+    //         require(checkExeption == 1, "Smart contract depositors not allowed");
+    //         // raise "Smart contract depositors not allowed";
+    //     }
+    // } 
 
     /**
     @notice Get the most recently recorded rate of voting power decrease for `addr`
@@ -344,8 +360,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         _deposit_for(_addr, _value, 0, _locked, ActionType.DEPOSIT_FOR_TYPE);
     }
 
-    function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant {
-        assert_not_contract(msg.sender);
+    function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant assert_not_contract(msg.sender) {
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
         LockedBalance memory _locked = locked[msg.sender];
 
@@ -357,8 +372,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         _deposit_for(msg.sender, _value, unlock_time, _locked, ActionType.CREATE_LOCK_TYPE);
     }
 
-    function increase_amount(uint256 _value) external nonReentrant {
-        assert_not_contract(msg.sender);
+    function increase_amount(uint256 _value) external nonReentrant assert_not_contract(msg.sender) {
         LockedBalance memory _locked = locked[msg.sender];
 
         require(_value > 0); // dev: need non-zero value
@@ -367,8 +381,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
 
         _deposit_for(msg.sender, _value, 0, _locked, ActionType.INCREASE_LOCK_AMOUNT);
     }
-    function increase_unlock_time(uint256 _unlock_time) external nonReentrant {
-        assert_not_contract(msg.sender);
+    function increase_unlock_time(uint256 _unlock_time) external nonReentrant assert_not_contract(msg.sender) {
         LockedBalance memory _locked = locked[msg.sender];
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
 
