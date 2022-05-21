@@ -208,7 +208,6 @@ contract Controller {
             staker,
             _stashVersion
         );
-
         //add the new pool
         poolInfo.push(
             PoolInfo({
@@ -277,13 +276,13 @@ contract Controller {
         require(pool.shutdown == false, "pool is closed");
 
         //send to proxy to stake
-        address lptoken = pool.lptoken;
+        address lptoken = pool.lptoken; //veBal
         IERC20(lptoken).transferFrom(msg.sender, staker, _amount);
 
         //stake
         address gauge = pool.gauge;
         require(gauge != address(0), "!gauge setting");
-        IStaker(staker).deposit(lptoken, gauge);
+        IStaker(staker).deposit(lptoken, gauge); //VoterProxy
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;
@@ -424,6 +423,7 @@ contract Controller {
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;
+
         if (stash != address(0)) {
             IStash(stash).stashRewards();
         }

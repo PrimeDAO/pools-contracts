@@ -89,7 +89,7 @@ const controller = async (setup) => {
     setup.roles.root
   );
   const wethBal = setup.tokens.WethBal;
-  const staker = setup.VoterProxyMockFactory; //setup.VoterProxy;
+  const staker = setup.VoterProxy;//VoterProxyMockFactory; //setup.VoterProxy;
   return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address);
 };
 

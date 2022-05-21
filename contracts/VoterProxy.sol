@@ -5,7 +5,7 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-
+import "hardhat/console.sol";
 contract VoterProxy {
     using Address for address;
 
@@ -163,6 +163,12 @@ contract VoterProxy {
         return true;
     }
 
+    // function deposit(uint256 _value) external returns (bool) {
+    //     require(msg.sender == depositor, "!auth");
+    //     IBalVoteEscrow(veBal).increase_unlock_time(_value);
+    //     return true;
+    // }
+
     // Withdraw partial funds
     function withdrawVeBal(
         address _to, //treasury
@@ -170,13 +176,23 @@ contract VoterProxy {
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
+
+
+        // IBalVoteEscrow(veBal).increase_unlock_time(_value);
+
         uint256 defaultTime = 0;
-        uint256 _balance = IBalVoteEscrow(veBal).NbalanceOf(address(this));//, defaultTime);
+        address sender = address(this); //not msg.sender; but it contains ALL funds, not from just one user
+        uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);//msg.sender);//address(this));//, defaultTime);
+console.log("\nwithdrawVeBal: _balance %s \n", _balance);
         if (_balance < _amount) {
             _amount = _withdrawSome(_gauge, _amount - _balance);
             _amount = _amount + _balance;
+
+            // IBalVoteEscrow(veBal).withdraw();
+console.log("withdrawVeBal: _amount %s", _amount);
+            IERC20(veBal).transfer(_to, _amount);
         }
-        IERC20(veBal).transfer(_to, _amount);
+console.log("withdrawVeBal: success");
         return true;
     }
 

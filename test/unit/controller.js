@@ -200,17 +200,6 @@ describe("Contract: Controller", async () => {
                 (await setup.controller.poolLength()).toNumber()
               ).to.equal(3);
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-
-              // const alternativeSetup = await deploy();
-
-              // await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
-              // const rewardFactory = alternativeSetup.rewardFactory;
-              // const stashFactory = alternativeSetup.stashFactoryMock;
-              // const tokenFactory = alternativeSetup.tokenFactory;
-              // await alternativeSetup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
-              // await alternativeSetup.stashFactory.connect(root).setImplementation(alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address);
-
-              // await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);              
             });
             it("Sets RewardContracts", async () => {
                 rewards = setup.rewardFactory;
@@ -392,9 +381,6 @@ describe("Contract: Controller", async () => {
               await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
               const stake = false;
               expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
-
-
-
             });
         });        
 
@@ -416,26 +402,32 @@ describe("Contract: Controller", async () => {
               
               let unlockTime = ((await time.latest()).add(lockTime)).toNumber();
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, unlockTime));
-
             });
-            // it("It increaseAmount veBal", async () => { //no need in unit test
-            //   expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));            
-            // });            
+            it("It increaseAmount veBal", async () => {
+              expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
+              expect(await setup.tokens.VeBal.connect(root).deposit_for(setup.VoterProxy.address, tenMillion));
+              const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
+console.log("f %s", f.toString());
+            });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
+              time.increase(new BN(31249454));
+const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
+console.log("f after time increase %s", f.toString());
               await expectRevert(
                 setup.controller
                     .connect(staker)
-                    .withdrawUnlockedVeBal(pid, twentyMillion),
+                    .withdrawUnlockedVeBal(pid, tenMillion),
                 "Controller: userLockTime is not reached yet"
               );
             });
 
             it("It withdraw Unlocked VeBal", async () => {
               time.increase(smallLockTime.add(difference));
-
-              let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address)).add(twentyMillion);
+              const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
+console.log("f %s", f.toString());
+              let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
-              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
+              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, tenMillion));
 
               expect(
                 (await setup.tokens.VeBal.NbalanceOf(treasury.address)).toString()
