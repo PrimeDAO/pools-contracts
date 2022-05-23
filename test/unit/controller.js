@@ -412,7 +412,7 @@ describe("Contract: Controller", async () => {
             });
             it("It increaseAmount veBal", async () => {
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
-              const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
+              let tx = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
             });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
               await expectRevert(
@@ -425,12 +425,11 @@ describe("Contract: Controller", async () => {
 
             it("It withdraw Unlocked VeBal", async () => {
               time.increase(smallLockTime.add(difference));
-              const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-              let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address, 0)).add(twentyMillion);
+              let treasury_amount_expected = (await setup.tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, tenMillion));
               expect(
-                (await setup.tokens.VeBal.NbalanceOf(treasury.address, 0)).toString()
+                (await setup.tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
               ).to.equal(unitTest_treasury_amount_expected.toString());
             });
 
