@@ -468,7 +468,7 @@ console.log("f after %s", f.toString());
 
               const stake = false;
               const pid = 0;
-              
+
               time.increase(smallLockTime.add(difference));
 
               expect(await alternativeSetup.controller.connect(root).shutdownPool(pid));
@@ -476,40 +476,52 @@ console.log("f after %s", f.toString());
             });
         });
         context("» restake testing", () => {       
-            it("Sets VoterProxy depositor", async () => {
-                await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
-                const stake = true;
-                pid = 2;
-  
-                expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
-  
-                const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-                const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-  
-                expect(
-                  (await setup.controller.userLockTime(operator.address)).toNumber()
-                ).to.equal(timelock);
+            // it("Sets VoterProxy depositor", async () => {
+            //     await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+            //     const stake = true;
+            //     pid = 2;
 
-              expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-            });
-            it("It redeposit tokens when Lock expired", async () => {
-              // time.increase(smallLockTime.add(difference));
+            //     // expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
 
-              await expectRevert(
-                setup.controller
-                    .connect(staker)
-                    .restake(pid),
-                "Lock expired"
-              ); 
-            });
+            //     expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
+  
+            //     const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+            //     const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
+  
+            //     expect(
+            //       (await setup.controller.userLockTime(operator.address)).toNumber()
+            //     ).to.equal(timelock);
+
+            // });
+            // it("It fails redeposit tokens when Lock expired", async () => {
+            //   await expectRevert(
+            //     setup.controller
+            //         .connect(root)
+            //         .restake(pid),
+            //     "Lock expired"
+            //   ); 
+            // });
             it("It redeposit tokens", async () => {
               // time.increase(smallLockTime.add(difference));
-              // const pid = 2;
-
-              expect(await setup.controller.connect(staker).restake(pid));
-              
-              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+              // const pid = 2;      
+              expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
+              console.log("saa %s", setup.controller.address);
+              console.log("roo %s", root.address);
+              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(doubleSmallLockTime)).toString());
               const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
+
+              expect(await setup.VoterProxy.connect(root).createLock(tenMillion, BNtimelock));
+              console.log("f");
+              expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
+
+              expect(await setup.controller.connect(root).restake(pid));
+              console.log("ff");
+
+              // const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+              // const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
+              console.log("fff");
+
+
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
               ).to.equal(timelock);
