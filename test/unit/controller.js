@@ -406,8 +406,6 @@ describe("Contract: Controller", async () => {
               expect(await setup.tokens.WethBal.mint(setup.tokens.VeBal.address, thirtyMillion)); // edited so thirtyMillion= 30000;//000;
               expect(await setup.tokens.WethBal.mint(setup.VoterProxy.address, sixtyMillion));
 
-              console.log("VeBal balance weth %s", (await setup.tokens.WethBal.balanceOf(setup.tokens.VeBal.address)).toNumber());
-              console.log("VoterProxy balance weth %s", (await setup.tokens.WethBal.balanceOf(setup.VoterProxy.address)).toNumber());
 
               let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, unlockTime));
@@ -415,12 +413,10 @@ describe("Contract: Controller", async () => {
             it("It increaseAmount veBal", async () => {
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
               const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-console.log("f %s", f.toString());
             });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
               time.increase(new BN(31249454));
 // const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-// console.log("f after time increase %s", f.toString());
               await expectRevert(
                 setup.controller
                     .connect(staker)
@@ -433,7 +429,6 @@ console.log("f %s", f.toString());
               // time.increase(halfAYear);//
               time.increase(smallLockTime.add(difference));
               const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-console.log("f after %s", f.toString());
               let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, tenMillion));
@@ -505,21 +500,16 @@ console.log("f after %s", f.toString());
               // time.increase(smallLockTime.add(difference));
               // const pid = 2;      
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-              console.log("saa %s", setup.controller.address);
-              console.log("roo %s", root.address);
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(doubleSmallLockTime)).toString());
               const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
 
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, BNtimelock));
-              console.log("f");
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
 
               expect(await setup.controller.connect(root).restake(pid));
-              console.log("ff");
 
               // const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
               // const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-              console.log("fff");
 
 
               expect(

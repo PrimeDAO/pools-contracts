@@ -5,7 +5,6 @@ import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "hardhat/console.sol";
 contract VoterProxy {
     using Address for address;
 
@@ -145,8 +144,6 @@ contract VoterProxy {
         require(msg.sender == depositor, "!auth");
         IERC20(bal).approve(veBal, 0);
         IERC20(bal).approve(veBal, _value);
-    console.log("IERC20 of %s", bal);
-    console.log("veBal of %s", veBal);
         IBalVoteEscrow(veBal).create_lock(_value, _unlockTime);
         return true;
     }
@@ -155,15 +152,12 @@ contract VoterProxy {
         require(msg.sender == depositor, "!auth");
         IERC20(bal).approve(veBal, 0);
         IERC20(bal).approve(veBal, _value);
-        uint256 b = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-    console.log("veBal balanceOf(address(this) of %s", b);
-    console.log("veBal _value of %s", _value);
-
         IBalVoteEscrow(veBal).increase_amount(_value);
         return true;
     }
 
     function increaseTime(uint256 _value) external returns (bool) {
+
         require(msg.sender == depositor, "!auth");
         IBalVoteEscrow(veBal).increase_unlock_time(_value);
         return true;
@@ -182,11 +176,8 @@ contract VoterProxy {
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
-        console.log("\nwithdrawVeBal \n");
             IBalVoteEscrow(veBal).withdraw();
             uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);//msg.sender);//address(this));//, defaultTime);
-console.log("\nwithdrawVeBal: _balance %s \n", _balance);
-console.log("nwithdrawVeBal: address(this) %s", address(this));
 
             IERC20(veBal).transfer(_to, _balance);
 
@@ -204,7 +195,6 @@ console.log("nwithdrawVeBal: address(this) %s", address(this));
         uint256 defaultTime = 0;
         address sender = address(this); //not msg.sender; but it contains ALL funds, not from just one user
         uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);//msg.sender);//address(this));//, defaultTime);
-console.log("\nwithdrawVeBal: _balance %s \n", _balance);
         if (_balance < _amount) {
             _amount = _balance;
             IBalVoteEscrow(veBal).withdraw();
