@@ -163,13 +163,6 @@ contract VoterProxy {
         return true;
     }
 
-    // function deposit(uint256 _value) external returns (bool) {
-    //     require(msg.sender == depositor, "!auth");
-    //     IBalVoteEscrow(veBal).increase_unlock_time(_value);
-    //     return true;
-    // }
-
-
     function withdrawVeBal(
         address _to, //treasury
         address _gauge,

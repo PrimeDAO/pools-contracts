@@ -58,10 +58,10 @@ describe("Contract: Controller", async () => {
   const halfAYear = lockTime / 2;
   const smallLockTime = time.duration.days(30);
   const doubleSmallLockTime = time.duration.days(60);
-  const tenMillion = 30000;//000;
-  const twentyMillion = 20000;//000;
-  const thirtyMillion = 30000;//000;
-  const sixtyMillion = 60000;//000;
+  const tenMillion = 30000000;
+  const twentyMillion = 20000000;
+  const thirtyMillion = 30000000;
+  const sixtyMillion = 60000000;
   const defaultTimeForBalanceOfVeBal = 0;
   const difference = new BN(28944000); // 1684568938 - 1655624938
   const timeDifference = BigNumber.from(difference.toString());
@@ -416,7 +416,6 @@ describe("Contract: Controller", async () => {
             });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
               time.increase(new BN(31249454));
-// const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
               await expectRevert(
                 setup.controller
                     .connect(staker)
@@ -426,7 +425,6 @@ describe("Contract: Controller", async () => {
             });
 
             it("It withdraw Unlocked VeBal", async () => {
-              // time.increase(halfAYear);//
               time.increase(smallLockTime.add(difference));
               const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
               let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address, 0)).add(twentyMillion);
@@ -499,10 +497,11 @@ describe("Contract: Controller", async () => {
             it("It redeposit tokens", async () => {
               // time.increase(smallLockTime.add(difference));
               // const pid = 2;      
-              expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
+            //   expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(doubleSmallLockTime)).toString());
               const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
 
+              expect(await setup.VoterProxy.connect(root).setDepositor(root.address));
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, BNtimelock));
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
 
