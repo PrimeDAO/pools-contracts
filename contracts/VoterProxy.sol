@@ -171,34 +171,11 @@ contract VoterProxy {
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
-            IBalVoteEscrow(veBal).withdraw();
-            uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);//msg.sender);//address(this));//, defaultTime);
-
-            IERC20(veBal).transfer(_to, _balance);
-
-        return true;
-    }
-
-    // Withdraw partial funds
-    function withdrawVeBalqqqq(
-        address _to, //treasury
-        address _gauge,
-        uint256 _amount
-    ) public returns (bool) {
-        require(msg.sender == operator, "!auth");
-
-        uint256 defaultTime = 0;
-        address sender = address(this); //not msg.sender; but it contains ALL funds, not from just one user
-        uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);//msg.sender);//address(this));//, defaultTime);
-        if (_balance < _amount) {
-            _amount = _balance;
-            IBalVoteEscrow(veBal).withdraw();
-        }
+        IBalVoteEscrow(veBal).withdraw();
+        uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
         IERC20(veBal).transfer(_to, _balance);
-
         return true;
     }
-
 
     function vote(
         uint256 _voteId,
