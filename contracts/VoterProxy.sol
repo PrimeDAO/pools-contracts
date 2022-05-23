@@ -153,8 +153,6 @@ contract VoterProxy {
         require(msg.sender == depositor, "!auth");
         IERC20(bal).approve(veBal, 0);
         IERC20(bal).approve(veBal, _value);
-        uint256 b = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-
         IBalVoteEscrow(veBal).increase_amount(_value);
         return true;
     }
