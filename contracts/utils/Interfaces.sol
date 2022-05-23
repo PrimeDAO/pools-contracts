@@ -227,9 +227,9 @@ interface ICrvDeposit {
 interface IRewardFactory {
     function setAccess(address, bool) external;
 
-    function CreateBalRewards(uint256, address) external returns (address);
+    function createBalRewards(uint256, address) external returns (address);
 
-    function CreateTokenRewards(
+    function createTokenRewards(
         address,
         address,
         address
