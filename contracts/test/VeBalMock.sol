@@ -478,31 +478,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         return _min;
     }
 
-    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
-        if (_t == 0){
-            _t =  block.timestamp;
-        }
-        uint256 _epoch = 0;
-        if (_t == block.timestamp) {
-            // No need to do binary search, will always live in current epoch
-            _epoch = user_point_epoch[addr];
-        } else {
-            _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
-        }
-
-        if (_epoch == 0) {
-            return 0;
-        } else {
-            Point memory last_point = user_point_history[addr][_epoch];
-            last_point.bias -= last_point.slope * (int128(uint128(_t - last_point.ts)));
-            if (last_point.bias < 0) {
-                last_point.bias = 0;
-            }
-
-            return uint256(uint128(last_point.bias));
-        }
-    }
-
     /**
     @notice Get the current voting power for `msg.sender`
     @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
