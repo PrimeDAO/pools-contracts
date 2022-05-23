@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface BAL_ERC20 { //was just ERC20 in their Vyper contract
-    function decimals_() external view returns (uint256);
+    function decimals() external view returns (uint256);
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);
     function transfer(address to, uint256 amount) external returns (bool); //nonpayable
@@ -25,7 +25,6 @@ interface SmartWalletChecker {
 }   
 
 contract VeBalMock is ERC20, ReentrancyGuard {
-    using SafeMath for uint256;
 
     struct Point{
         int256 bias;
