@@ -163,7 +163,7 @@ contract VoterProxy {
         return true;
     }
 
-    function withdrawVeBal(
+    function withdrawWethBal(
         address _to, //treasury
         address _gauge,
         uint256 _amount

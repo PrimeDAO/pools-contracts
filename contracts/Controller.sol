@@ -385,8 +385,8 @@ contract Controller {
         return true;
     }
 
-    //withdraw veBal, which was unlocked after a year of usage
-    function withdrawUnlockedVeBal(uint256 _pid, uint256 _amount)
+    //withdraw WethBal, which was unlocked after a year of usage
+    function withdrawUnlockedWethBal(uint256 _pid, uint256 _amount)
         public
         returns (bool)
     {
@@ -402,7 +402,7 @@ contract Controller {
         //pull from gauge if not shutdown
         // if shutdown tokens will be in this contract
         if (!pool.shutdown) {
-            IStaker(staker).withdrawVeBal(treasury, gauge, _amount);
+            IStaker(staker).withdrawWethBal(treasury, gauge, _amount);
         }
 
         return true;
