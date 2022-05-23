@@ -164,10 +164,10 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // Kept at zero when they have to
             if (old_locked.end > block.timestamp && old_locked.amount > 0) {
                 u_old.slope = old_locked.amount / (int128(uint128(MAXTIME)));
-                u_old.bias = u_old.slope * (int128(uint128(old_locked.end) - uint128(block.timestamp)));
+                u_old.bias = u_old.slope * (int128(uint128(old_locked.end - block.timestamp)));
             if (new_locked.end > block.timestamp && new_locked.amount > 0) {
                 u_new.slope = new_locked.amount / (int128(uint128(MAXTIME)));
-                u_new.bias = u_new.slope * (int128(uint128(new_locked.end) - uint128(block.timestamp)));
+                u_new.bias = u_new.slope * (int128(uint128(new_locked.end - block.timestamp)));
             }
             // Read values of scheduled changes in the slope
             // old_locked.end can be in the past and in the future
