@@ -56,10 +56,10 @@ describe("Contract: Controller", async () => {
   const halfAYear = lockTime / 2;
   const smallLockTime = time.duration.days(30);
   const doubleSmallLockTime = time.duration.days(60);
-  const tenMillion = 30000;//000;
-  const twentyMillion = 20000;//000;
-  const thirtyMillion = 30000;//000;
-  const sixtyMillion = 60000;//000;
+  const tenMillion = 30000000;
+  const twentyMillion = 20000000;
+  const thirtyMillion = 30000000;
+  const sixtyMillion = 60000000;
   const defaultTimeForBalanceOfVeBal = 0;
   const difference = new BN(28944000); // 1684568938 - 1655624938
   const timeDifference = BigNumber.from(difference.toString());
@@ -194,34 +194,6 @@ describe("Contract: Controller", async () => {
 
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
             });
-            // it("Sets factories", async () => {
-            //   rewardFactory = setup.rewardFactory;
-            //   stashFactory = setup.stashFactoryMock;
-            //   tokenFactory = setup.tokenFactory;
-            //   expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-            // });
-            // it("Sets VoterProxy as StashFactory implementation ", async () => {
-            //     expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
-            // });
-            // it("Adds pool with stash != address(0)", async () => { //now, because of gauge, stash is also = 0
-            //     lptoken = setup.tokens.PoolContract;
-            //     gauge = setup.tokens.GaugeController; //TODO: set gauge address, not gauge controller <-- need withdraw() (ICurveGauge(_gauge).withdraw(_amount);)
-            //     stashVersion = 1;
-
-            //     await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
-            //     expect(
-            //         (await setup.controller.poolLength()).toNumber()
-            //     ).to.equal(2);
-            //     const poolInfo = await setup.controller.poolInfo(1);
-            //     expect(
-            //         (poolInfo.lptoken).toString()
-            //     ).to.equal(lptoken.address.toString());
-            //     expect(
-            //         (poolInfo.gauge).toString()
-            //     ).to.equal(gauge.address.toString());
-
-            //     await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
-            // });
             it("Adds pool with stash != address(0)", async () => {
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
               const zeroStashVersion = 0;
