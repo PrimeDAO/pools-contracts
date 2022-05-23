@@ -203,7 +203,6 @@ describe("Contract: Controller", async () => {
               ).to.equal(3);
 
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
             });
             it("Sets RewardContracts", async () => {
                 rewards = setup.rewardFactory;
@@ -240,7 +239,7 @@ describe("Contract: Controller", async () => {
                 balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
                 const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-                balBal = balBal - profit; //balForTransfer if no treasury
+                balBal = balBal - profit;
                 let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
                 const poolInfo = await setup.controller.poolInfo(0);
@@ -404,7 +403,7 @@ describe("Contract: Controller", async () => {
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address));
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker());
               
-              expect(await setup.tokens.WethBal.mint(setup.tokens.VeBal.address, thirtyMillion)); // edited so thirtyMillion= 30000;//000;
+              expect(await setup.tokens.WethBal.mint(setup.tokens.VeBal.address, thirtyMillion));
               expect(await setup.tokens.WethBal.mint(setup.VoterProxy.address, sixtyMillion));
 
 
@@ -453,7 +452,7 @@ describe("Contract: Controller", async () => {
               await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(alternativeSetup.VoterProxy.address);
               await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
-              await alternativeSetup.tokens.WethBal.mint(alternativeSetup.tokens.VeBal.address, thirtyMillion); // edited so thirtyMillion= 30000;//000;
+              await alternativeSetup.tokens.WethBal.mint(alternativeSetup.tokens.VeBal.address, thirtyMillion);
               await alternativeSetup.tokens.WethBal.mint(alternativeSetup.VoterProxy.address, sixtyMillion);
 
               await alternativeSetup.VoterProxy.connect(root).createLock(tenMillion, unlockTime);              
