@@ -9,9 +9,7 @@ const deploy = async () => {
 
   setup.tokens = await init.getTokens(setup);
   
-  setup.VoterProxy = await init.getVoterProxy(setup);
-
-  setup.VoterProxyMockFactory = await init.getVoterProxyMock(setup);
+  setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
 
   setup.controller = await init.controller(setup);
 
@@ -177,9 +175,9 @@ describe("Contract: Controller", async () => {
             it("Sets VoterProxy as StashFactory implementation ", async () => {
                 expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
             });
-            it("Adds pool", async () => { //now, because of gauge, stash is also = 0
+            it("Adds pool", async () => {
                 lptoken = setup.tokens.PoolContract;
-                gauge = setup.tokens.GaugeController; //TODO: set gauge address, not gauge controller <-- need withdraw() (ICurveGauge(_gauge).withdraw(_amount);)
+                gauge = setup.tokens.GaugeController;
                 stashVersion = 1;
 
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
@@ -196,13 +194,44 @@ describe("Contract: Controller", async () => {
 
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
             });
+            // it("Sets factories", async () => {
+            //   rewardFactory = setup.rewardFactory;
+            //   stashFactory = setup.stashFactoryMock;
+            //   tokenFactory = setup.tokenFactory;
+            //   expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            // });
+            // it("Sets VoterProxy as StashFactory implementation ", async () => {
+            //     expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
+            // });
+            // it("Adds pool with stash != address(0)", async () => { //now, because of gauge, stash is also = 0
+            //     lptoken = setup.tokens.PoolContract;
+            //     gauge = setup.tokens.GaugeController; //TODO: set gauge address, not gauge controller <-- need withdraw() (ICurveGauge(_gauge).withdraw(_amount);)
+            //     stashVersion = 1;
+
+            //     await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
+            //     expect(
+            //         (await setup.controller.poolLength()).toNumber()
+            //     ).to.equal(2);
+            //     const poolInfo = await setup.controller.poolInfo(1);
+            //     expect(
+            //         (poolInfo.lptoken).toString()
+            //     ).to.equal(lptoken.address.toString());
+            //     expect(
+            //         (poolInfo.gauge).toString()
+            //     ).to.equal(gauge.address.toString());
+
+            //     await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
+            // });
             it("Adds pool with stash != address(0)", async () => {
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
-              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
+              const zeroStashVersion = 0;
+              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, zeroStashVersion);
               expect(
                 (await setup.controller.poolLength()).toNumber()
               ).to.equal(3);
+
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
             });
             it("Sets RewardContracts", async () => {
                 rewards = setup.rewardFactory;
@@ -406,8 +435,6 @@ describe("Contract: Controller", async () => {
               expect(await setup.tokens.WethBal.mint(setup.tokens.VeBal.address, thirtyMillion)); // edited so thirtyMillion= 30000;//000;
               expect(await setup.tokens.WethBal.mint(setup.VoterProxy.address, sixtyMillion));
 
-              console.log("VeBal balance weth %s", (await setup.tokens.WethBal.balanceOf(setup.tokens.VeBal.address)).toNumber());
-              console.log("VoterProxy balance weth %s", (await setup.tokens.WethBal.balanceOf(setup.VoterProxy.address)).toNumber());
 
               let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, unlockTime));
@@ -415,12 +442,8 @@ describe("Contract: Controller", async () => {
             it("It increaseAmount veBal", async () => {
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
               const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-console.log("f %s", f.toString());
             });            
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
-              time.increase(new BN(31249454));
-// const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-// console.log("f after time increase %s", f.toString());
               await expectRevert(
                 setup.controller
                     .connect(staker)
@@ -430,10 +453,8 @@ console.log("f %s", f.toString());
             });
 
             it("It withdraw Unlocked VeBal", async () => {
-              // time.increase(halfAYear);//
               time.increase(smallLockTime.add(difference));
               const f = await setup.tokens.VeBal.connect(root).NbalanceOf(setup.VoterProxy.address, 0);
-console.log("f after %s", f.toString());
               let treasury_amount_expected = (await setup.tokens.VeBal.NbalanceOf(treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, tenMillion));
@@ -476,51 +497,15 @@ console.log("f after %s", f.toString());
             });
         });
         context("» restake testing", () => {       
-            // it("Sets VoterProxy depositor", async () => {
-            //     await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
-            //     const stake = true;
-            //     pid = 2;
-
-            //     // expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-
-            //     expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
-  
-            //     const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-            //     const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-  
-            //     expect(
-            //       (await setup.controller.userLockTime(operator.address)).toNumber()
-            //     ).to.equal(timelock);
-
-            // });
-            // it("It fails redeposit tokens when Lock expired", async () => {
-            //   await expectRevert(
-            //     setup.controller
-            //         .connect(root)
-            //         .restake(pid),
-            //     "Lock expired"
-            //   ); 
-            // });
             it("It redeposit tokens", async () => {
-              // time.increase(smallLockTime.add(difference));
-              // const pid = 2;      
-              expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-              console.log("saa %s", setup.controller.address);
-              console.log("roo %s", root.address);
-              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(doubleSmallLockTime)).toString());
-              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
+              time.increase(smallLockTime.add(difference));
 
+              expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
+              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference).add(ethers.BigNumber.from(3)));
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, BNtimelock));
-              console.log("f");
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-
-              expect(await setup.controller.connect(root).restake(pid));
-              console.log("ff");
-
-              // const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-              // const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-              console.log("fff");
-
+              expect(await setup.controller.connect(staker).restake(pid));
 
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
@@ -534,9 +519,9 @@ console.log("f after %s", f.toString());
                 "Controller: can't restake. userLockTime is not reached yet"
               );
             });            
-            it("It redeposit tokens when stash = address(0)", async () => {
+            it("It redeposit tokens when stash != address(0)", async () => {
               time.increase(smallLockTime.add(difference));
-              const pidStashZero = 0;//1;
+              const pidStashZero = 2;
 
               expect(await setup.controller.connect(staker).restake(pidStashZero));
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());

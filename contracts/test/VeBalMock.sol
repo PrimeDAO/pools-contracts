@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "hardhat/console.sol";
 
 interface BAL_ERC20 { //was just ERC20 in their Vyper contract
     function decimals_() external view returns (uint256);
@@ -147,10 +146,8 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             uint8 checkExeption = 0;
             address checker = smart_wallet_checker;
             if (checker != ZERO_ADDRESS) {
-                // if (SmartWalletChecker(checker).check(addr)){ //TODO: uncomment and fix test part; fix check() function
-                    checkExeption = 1;
-                    return;
-                // }
+                checkExeption = 1;
+                return;
             }
             require(checkExeption == 1, "Smart contract depositors not allowed");
             // raise "Smart contract depositors not allowed";
@@ -191,7 +188,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         int256 old_dslope = 0;
         int256 new_dslope = 0;
         uint256 _epoch = epoch;
-console.log("\n_checkpoint: addr %s", addr);
 
         if (addr != ZERO_ADDRESS) {
             // Calculate slopes and biases
@@ -203,7 +199,6 @@ console.log("\n_checkpoint: addr %s", addr);
                 u_new.slope = new_locked.amount / (int256(MAXTIME));
                 u_new.bias = u_new.slope * (int256(new_locked.end - block.timestamp));
             }
-console.log("u_old.bias %s", uint256(u_old.bias));
             // Read values of scheduled changes in the slope
             // old_locked.end can be in the past and in the future
             // new_locked.end can ONLY by in the FUTURE unless everything expired: than zeros
@@ -271,7 +266,6 @@ console.log("u_old.bias %s", uint256(u_old.bias));
             // But in such case we have 0 slope(s)
             last_point.slope += (u_new.slope - u_old.slope);
             last_point.bias += (u_new.bias - u_old.bias);
-console.log("_checkpoint: last_point.bias %s", uint256(last_point.bias)); //because of this is = 0 --> result of balanceOf = 0 while is isn't 0 
             // must, 'TODO':checkpoint first, balanceOf next
             if (last_point.slope < 0) {
                 last_point.slope = 0;
@@ -305,13 +299,10 @@ console.log("_checkpoint: last_point.bias %s", uint256(last_point.bias)); //beca
             }
             // Now handle user history
             user_epoch = user_point_epoch[addr] + 1; //initialized before function because stack is too deep
-console.log("n_checkpoint: user_epoch %s",user_epoch);
-console.log("n_checkpoint: user addr %s",addr);
             user_point_epoch[addr] = user_epoch;
             u_new.ts = block.timestamp;
             u_new.blk = block.number;
             user_point_history[addr][user_epoch] = u_new;
-console.log("n_checkpoint: user_epoch bias %s\n",uint256(u_new.bias)); //problem with saving this (or getting)
 
         }
     }
@@ -337,7 +328,6 @@ console.log("n_checkpoint: user_epoch bias %s\n",uint256(u_new.bias)); //problem
         if (_value != 0) {
             IERC20(TOKEN).transferFrom(_addr, address(this), _value);
         }
-console.log("_deposit_for: uint256(locked[_addr].amount %s", uint256(locked[_addr].amount));
 
         emit Deposit(_addr, _value, _locked.end, uint(actionType), block.timestamp);
         emit Supply(supply_before, supply_before + _value);
@@ -396,12 +386,9 @@ console.log("_deposit_for: uint256(locked[_addr].amount %s", uint256(locked[_add
 
     function withdraw() external nonReentrant {
         LockedBalance memory _locked = locked[msg.sender];
-console.log("withdraw: _locked.end %s", _locked.end);
-console.log("withdraw: block.timestamp %s", block.timestamp);
 
         require(block.timestamp >= _locked.end, "The lock didn't expire");
         uint256 value = uint256(_locked.amount);
-console.log("withdraw: lock %s", value);
 
         LockedBalance memory old_locked = _locked;
         _locked.end = 0;
@@ -409,16 +396,13 @@ console.log("withdraw: lock %s", value);
         locked[msg.sender] = _locked;
         uint256 supply_before = supply;
         supply = supply_before - value;
-console.log("withdraw: supply_before %s", supply_before);//uint256(old_locked.amount));
 
         // old_locked can have either expired <= timestamp or zero end
         // _locked has only 0 end
         // Both can have >= 0 amount
         _checkpoint(msg.sender, old_locked, _locked);
-console.log("withdraw: value %s", value);
+        require(IERC20(TOKEN).transfer(msg.sender, value), "Transfer failed!");
 
-        require(IERC20(TOKEN).transfer(msg.sender, value));
-console.log("withdraw: success");
 
         emit Withdraw(msg.sender, value, block.timestamp);
         emit Supply(supply_before, supply_before - value);
@@ -527,9 +511,7 @@ console.log("withdraw: success");
         return _min;
     }
 
-    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ //need to be, but VoterProxy can't see uint256 _t 
-    // function NbalanceOf(address addr) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
-        // uint256 _t = block.timestamp;
+    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
         if (_t == 0){
             _t =  block.timestamp;
         }
@@ -540,8 +522,6 @@ console.log("withdraw: success");
         } else {
             _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
         }
-console.log("VeBalMock: NbalanceOf: epoch %s", user_point_epoch[addr]); //must be 3
-console.log("VeBalMock: NbalanceOf: bias %s", uint256((user_point_history[addr][_epoch]).bias));
 
         if (_epoch == 0) {
             return 0;
@@ -551,7 +531,6 @@ console.log("VeBalMock: NbalanceOf: bias %s", uint256((user_point_history[addr][
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
-console.log("VeBalMock: NbalanceOf: last_point.bias %s", uint256(last_point.bias));
 
             return uint256(last_point.bias);
         }
@@ -576,20 +555,15 @@ console.log("VeBalMock: NbalanceOf: last_point.bias %s", uint256(last_point.bias
         } else {
             _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
         }
-console.log("\nVeBalMock: balanceOf: epoch %s", _epoch); //must be 3
-console.log("VeBalMock: balanceOf: epoch %s", user_point_epoch[addr]); //must be 3
-console.log("VeBalMock: balanceOf: bias %s", uint256((user_point_history[addr][_epoch]).bias));
 
         if (_epoch == 0) {
             return 0;
         } else {
             Point memory last_point = user_point_history[addr][_epoch];
             last_point.bias -= last_point.slope * (int256(_t - last_point.ts));
-console.log("last_point.bias  %s ", uint256(last_point.bias));
             if (last_point.bias < 0) {
                 last_point.bias = 0;
             }
-console.log("last_point.bias  %s ", uint256(last_point.bias));
 
             return uint256(last_point.bias);
         }
