@@ -139,6 +139,13 @@ const getExtraRewardMock = async () => {
   return await ExtraRewardMockFactory.deploy()
 }
 
+const gaugeController = async (setup) => {
+  const GaugeController = await ethers.getContractFactory(
+    "GaugeControllerMock",
+    setup.roles.root
+  );         
+  return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
+}; 
 
 module.exports = {
   initialize,
@@ -152,4 +159,5 @@ module.exports = {
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
+  gaugeController,
 };

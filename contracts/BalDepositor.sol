@@ -6,6 +6,8 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+/// @title BalDepositor contract
+/// @dev Deposit contract for Prime Pools is based on the convex contract
 contract BalDepositor {
     using Address for address;
 
@@ -36,11 +38,15 @@ contract BalDepositor {
         escrow = _escrow;
     }
 
+    /// @notice Sets the contracts feeManager variable
+    /// @param _feeManager The address of the fee manager
     function setFeeManager(address _feeManager) external {
         require(msg.sender == feeManager, "!auth");
         feeManager = _feeManager;
     }
 
+    /// @notice Sets the lock incentive variable
+    /// @param _lockIncentive Time to lock tokens
     function setFees(uint256 _lockIncentive) external {
         require(msg.sender == feeManager, "!auth");
 
@@ -49,6 +55,7 @@ contract BalDepositor {
         }
     }
 
+    /// @notice Locks initial Weth/Bal balance in veBal contract via voterProxy contract
     function initialLock() external {
         require(msg.sender == feeManager, "!auth");
 
@@ -66,6 +73,8 @@ contract BalDepositor {
         }
     }
 
+    /// @notice Transfers Weth/Bal from VoterProxy `staker` to veBal contract
+    /// @dev VoterProxy `staker` is responsible for transferring Weth/Bal tokens to veBal contract via increaseAmount()
     function _lockBalancer() internal {
         uint256 wethBalBalance = IERC20(wethBal).balanceOf(address(this));
         if (wethBalBalance > 0) {
@@ -91,6 +100,8 @@ contract BalDepositor {
         }
     }
 
+    /// @notice Locks tokens in vBal contract and mints reward tokens to sender
+    /// @dev Needed in order to lockFunds on behalf of someone else
     function lockBalancer() external {
         _lockBalancer();
 
@@ -101,6 +112,13 @@ contract BalDepositor {
         }
     }
 
+    /// @notice Locks initial balance of Weth/Bal in Voter Proxy. Then stakes `_amount` of Weth/Bal tokens to veBal contract
+    /// Mints & stakes d2dBal in Rewards contract on behalf of caller
+    /// @dev VoterProxy `staker` is responsible for sending Weth/Bal tokens to veBal contract via _locktoken()
+    /// All of the minted d2dBal will be automatically staked to the Rewards contract
+    /// @param _amount The amount of tokens user wants to stake
+    /// @param _lock boolean whether depositor wants to lock funds immediately
+    /// @param _stakeAddress The Reward contract address
     function deposit(
         uint256 _amount,
         bool _lock,
@@ -143,10 +161,16 @@ contract BalDepositor {
         }
     }
 
+    /// @notice Mints & stakes `_amount` of rewards tokens for caller in Rewards contract
+    /// @param _amount The amount of Weth/Bal we are staking
+    /// @param _lock boolean whether depositor wants to lock funds immediately
     function deposit(uint256 _amount, bool _lock) external {
         deposit(_amount, _lock, address(0));
     }
 
+    /// @notice Deposits entire Weth/Bal balance of caller. Stakes same amount in Rewards contract
+    /// @param _stakeAddress The Reward contract address
+    /// @param _lock boolean whether depositor wants to lock funds immediately
     function depositAll(bool _lock, address _stakeAddress) external {
         uint256 wethBalBalance = IERC20(wethBal).balanceOf(msg.sender); //This is balancer balance of msg.sender
         deposit(wethBalBalance, _lock, _stakeAddress);
