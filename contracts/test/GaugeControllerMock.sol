@@ -95,15 +95,6 @@ contract GaugeControllerMock {
         time_total = block.timestamp / WEEK * WEEK;
     }
 
-    function withdraw(uint256 _amount) external {
-        IERC20(token).transfer(admin, _amount);
-
-        // this function wasn't in original contract
-        // was added because
-        // function _withdrawSome(address _gauge, uint256 _amount)
-        // from VoterProxy is calling ICurveGauge(_gauge).withdraw(_amount);
-    }
-
     function commit_transfer_ownership(address addr) external {
         /**
         @notice Transfer ownership of GaugeController to `addr`

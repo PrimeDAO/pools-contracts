@@ -22,7 +22,7 @@ contract Controller {
     uint256 public platformFees = 1000; //10% //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
-    uint256 public lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
+    uint256 public constant lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     mapping(address => uint256) public userLockTime; //lock time for each user individually
 
     address public owner;
@@ -385,8 +385,8 @@ contract Controller {
         return true;
     }
 
-    //withdraw veBal, which was unlocked after a year of usage
-    function withdrawUnlockedVeBal(uint256 _pid, uint256 _amount)
+    //withdraw WethBal, which was unlocked after a year of usage
+    function withdrawUnlockedWethBal(uint256 _pid, uint256 _amount)
         public
         returns (bool)
     {
@@ -402,7 +402,7 @@ contract Controller {
         //pull from gauge if not shutdown
         // if shutdown tokens will be in this contract
         if (!pool.shutdown) {
-            IStaker(staker).withdrawVeBal(treasury, gauge, _amount);
+            IStaker(staker).withdrawWethBal(treasury, gauge, _amount);
         }
 
         return true;

@@ -395,9 +395,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         // Both can have >= 0 amount
         _checkpoint(msg.sender, old_locked, _locked);
         require(IERC20(TOKEN).transfer(msg.sender, value), "Transfer failed!");
-        // require(IERC20(TOKEN).transfer(msg.sender, value));
-        // IERC20(TOKEN).transfer(msg.sender, value);
-
 
         emit Withdraw(msg.sender, value, block.timestamp);
         emit Supply(supply_before, supply_before - value);
@@ -504,33 +501,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             }
         }
         return _min;
-    }
-
-    function NbalanceOf(address addr, uint256 _t) external view returns (uint256){ 
-    // function NbalanceOf(address addr) external view returns (uint256){ // TypeError: setup.tokens.VeBal.balanceOf is not a function 
-        // uint256 _t = block.timestamp;
-        if (_t == 0){
-            _t =  block.timestamp;
-        }
-        uint256 _epoch = 0;
-        if (_t == block.timestamp) {
-            // No need to do binary search, will always live in current epoch
-            _epoch = user_point_epoch[addr];
-        } else {
-            _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
-        }
-
-        if (_epoch == 0) {
-            return 0;
-        } else {
-            Point memory last_point = user_point_history[addr][_epoch];
-            last_point.bias -= last_point.slope * (int256(_t - last_point.ts));
-            if (last_point.bias < 0) {
-                last_point.bias = 0;
-            }
-
-            return uint256(last_point.bias);
-        }
     }
 
     /**

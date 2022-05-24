@@ -9,9 +9,7 @@ const deploy = async () => {
 
   setup.tokens = await init.getTokens(setup);
   
-  setup.VoterProxy = await init.getVoterProxy(setup);
-
-  setup.VoterProxyMockFactory = await init.getVoterProxyMock(setup);
+  setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
 
   setup.controller = await init.controller(setup);
 
@@ -177,9 +175,9 @@ describe("Contract: Controller", async () => {
             it("Sets VoterProxy as StashFactory implementation ", async () => {
                 expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
             });
-            it("Adds pool", async () => { //now, because of gauge, stash is also = 0
+            it("Adds pool", async () => {
                 lptoken = setup.tokens.PoolContract;
-                gauge = setup.tokens.GaugeController; //TODO: set gauge address, not gauge controller <-- need withdraw() (ICurveGauge(_gauge).withdraw(_amount);)
+                gauge = setup.tokens.GaugeController;
                 stashVersion = 1;
 
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
@@ -198,10 +196,12 @@ describe("Contract: Controller", async () => {
             });
             it("Adds pool with stash != address(0)", async () => {
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
-              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
+              const zeroStashVersion = 0;
+              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, zeroStashVersion);
               expect(
                 (await setup.controller.poolLength()).toNumber()
               ).to.equal(3);
+
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
             it("Sets RewardContracts", async () => {
@@ -239,7 +239,7 @@ describe("Contract: Controller", async () => {
                 balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
                 const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-                balBal = balBal - profit; //balForTransfer if no treasury
+                balBal = balBal - profit;
                 let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
                 const poolInfo = await setup.controller.poolInfo(0);
@@ -387,12 +387,12 @@ describe("Contract: Controller", async () => {
             });
         });        
 
-        context("» withdrawUnlockedVeBal testing", () => {
+        context("» withdrawUnlockedWethBal testing", () => {
             it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
               await expectRevert(
                 setup.controller
                     .connect(staker)
-                    .withdrawUnlockedVeBal(pid, twentyMillion),
+                    .withdrawUnlockedWethBal(pid, twentyMillion),
                 "Controller: userLockTime is not reached yet"
               );
             });
@@ -403,14 +403,14 @@ describe("Contract: Controller", async () => {
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address));
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker());
               
-              expect(await setup.tokens.WethBal.mint(setup.tokens.VeBal.address, thirtyMillion)); // edited so thirtyMillion= 30000;//000;
+              expect(await setup.tokens.WethBal.mint(setup.tokens.VeBal.address, thirtyMillion));
               expect(await setup.tokens.WethBal.mint(setup.VoterProxy.address, sixtyMillion));
 
 
               let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
               expect(await setup.VoterProxy.connect(root).createLock(tenMillion, unlockTime));
             });
-            it("It increaseAmount veBal", async () => {
+            it("It increaseAmount WethBal", async () => {
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
               let tx = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
             });            
@@ -419,23 +419,22 @@ describe("Contract: Controller", async () => {
               await expectRevert(
                 setup.controller
                     .connect(staker)
-                    .withdrawUnlockedVeBal(pid, tenMillion),
+                    .withdrawUnlockedWethBal(pid, tenMillion),
                 "Controller: userLockTime is not reached yet"
               );
             });
 
-            it("It withdraw Unlocked VeBal", async () => {
+            it("It withdraw Unlocked WethBal", async () => {
               time.increase(smallLockTime.add(difference));
-              const f = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
               let treasury_amount_expected = (await setup.tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
-              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pid, tenMillion));
+              expect(await setup.controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
               expect(
                 (await setup.tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
               ).to.equal(unitTest_treasury_amount_expected.toString());
             });
 
-            it("It withdraw Unlocked VeBal when pool is closed", async () => {
+            it("It withdraw Unlocked WethBal when pool is closed", async () => {
               const alternativeSetup = await deploy();
 
               await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
@@ -453,7 +452,7 @@ describe("Contract: Controller", async () => {
               await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(alternativeSetup.VoterProxy.address);
               await alternativeSetup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
-              await alternativeSetup.tokens.WethBal.mint(alternativeSetup.tokens.VeBal.address, thirtyMillion); // edited so thirtyMillion= 30000;//000;
+              await alternativeSetup.tokens.WethBal.mint(alternativeSetup.tokens.VeBal.address, thirtyMillion);
               await alternativeSetup.tokens.WethBal.mint(alternativeSetup.VoterProxy.address, sixtyMillion);
 
               await alternativeSetup.VoterProxy.connect(root).createLock(tenMillion, unlockTime);              
@@ -465,7 +464,7 @@ describe("Contract: Controller", async () => {
               time.increase(smallLockTime.add(difference));
 
               expect(await alternativeSetup.controller.connect(root).shutdownPool(pid));
-              expect(await alternativeSetup.controller.connect(staker).withdrawUnlockedVeBal(pid, twentyMillion));
+              expect(await alternativeSetup.controller.connect(staker).withdrawUnlockedWethBal(pid, twentyMillion));
             });
         });
         context("» restake testing", () => {       
@@ -493,7 +492,6 @@ describe("Contract: Controller", async () => {
               time.increase(smallLockTime.add(difference));
               const pidStashNonZero = 2;
               expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pidStashNonZero, 0));
-
               expect(await setup.controller.connect(staker).restake(pidStashNonZero));
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
               const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));

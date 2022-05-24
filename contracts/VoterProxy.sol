@@ -163,7 +163,7 @@ contract VoterProxy {
         return true;
     }
 
-    function withdrawVeBal(
+    function withdrawWethBal(
         address _to, //treasury
         address _gauge,
         uint256 _amount
@@ -176,7 +176,6 @@ contract VoterProxy {
                 IBalVoteEscrow(veBal).withdraw();
             }
             IERC20(veBal).transfer(_to, _amount);
-
         return true;
     }
 

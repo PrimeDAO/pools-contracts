@@ -29,9 +29,8 @@ interface IBalVoteEscrow {
     function smart_wallet_checker() external view returns (address);
 
     function balanceOf(address, uint256) external view returns (uint256);
-    function NbalanceOf(address, uint256) external view returns (uint256);
 
-     function balanceOfAt(address, uint256) external view returns (uint256);
+    function balanceOfAt(address, uint256) external view returns (uint256);
 }
 
 interface IWalletChecker {
@@ -86,7 +85,7 @@ interface IRegistry {
 interface IStaker {
     function deposit(address, address) external;
 
-    function withdrawVeBal(  
+    function withdrawWethBal(  
         address,      
         address,
         uint256
