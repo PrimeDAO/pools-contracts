@@ -3,7 +3,6 @@
 pragma solidity 0.8.13;
 
 import "openzeppelin-contracts-sol8/token/ERC20/ERC20.sol";
-import "hardhat/console.sol";
 
 contract CustomERC20Mock is ERC20 {
     mapping(address => uint256) private _balances;
