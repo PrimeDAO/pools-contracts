@@ -13,8 +13,8 @@ contract BalDepositor {
 
     address public immutable wethBal;
 
-    uint256 private constant MAXTIME = 4 * 364 * 86400;
-    uint256 private constant WEEK = 7 * 86400;
+    uint256 private constant MAXTIME = 4 * 364 days;
+    uint256 private constant WEEK = 1 weeks;
 
     uint256 public lockIncentive = 10; //incentive to users who spend gas to lock bal
     uint256 public constant FEE_DENOMINATOR = 10000;
