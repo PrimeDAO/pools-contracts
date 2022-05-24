@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -197,11 +197,7 @@ contract Controller {
     }
 
     //create a new pool
-    function addPool(
-        address _lptoken,
-        address _gauge,
-        uint256 _stashVersion
-    ) external returns (bool) {
+    function addPool(address _lptoken, address _gauge) external returns (bool) {
         require(msg.sender == poolManager && !isShutdown, "!add");
         require(_gauge != address(0) && _lptoken != address(0), "!param");
 
@@ -218,11 +214,10 @@ contract Controller {
             token
         );
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).CreateStash(
+        address stash = IStashFactory(stashFactory).createStash(
             pid,
             _gauge,
-            staker,
-            _stashVersion
+            staker
         );
 
         //add the new pool

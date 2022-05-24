@@ -1,5 +1,5 @@
 // solium-disable linebreak-style
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 interface VotingEscrow {
     function get_last_user_slope(address addr) external view returns (uint256);
@@ -565,7 +565,7 @@ contract GaugeControllerMock {
     function get_total_weight() external view returns (uint256) {
         return points_total[time_total];
     }
-
+    
     /**
     @notice Get sum of gauge weights per type
     @param type_id Type id
