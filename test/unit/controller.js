@@ -9,7 +9,9 @@ const deploy = async () => {
 
   setup.tokens = await init.getTokens(setup);
   
-  setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
+  setup.VoterProxy = await init.getVoterProxy(setup);
+
+  setup.VoterProxyMockFactory = await init.getVoterProxyMock(setup);
 
   setup.controller = await init.controller(setup);
 
@@ -175,9 +177,9 @@ describe("Contract: Controller", async () => {
             it("Sets VoterProxy as StashFactory implementation ", async () => {
                 expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
             });
-            it("Adds pool", async () => {
+            it("Adds pool", async () => { //now, because of gauge, stash is also = 0
                 lptoken = setup.tokens.PoolContract;
-                gauge = setup.tokens.GaugeController;
+                gauge = setup.tokens.GaugeController; //TODO: set gauge address, not gauge controller <-- need withdraw() (ICurveGauge(_gauge).withdraw(_amount);)
                 stashVersion = 1;
 
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
@@ -196,12 +198,10 @@ describe("Contract: Controller", async () => {
             });
             it("Adds pool with stash != address(0)", async () => {
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
-              const zeroStashVersion = 0;
-              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, zeroStashVersion);
+              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
               expect(
                 (await setup.controller.poolLength()).toNumber()
               ).to.equal(3);
-
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
             it("Sets RewardContracts", async () => {
@@ -239,7 +239,7 @@ describe("Contract: Controller", async () => {
                 balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
                 const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-                balBal = balBal - profit;
+                balBal = balBal - profit; //balForTransfer if no treasury
                 let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
                 const poolInfo = await setup.controller.poolInfo(0);
@@ -399,7 +399,7 @@ describe("Contract: Controller", async () => {
             it("Sets VoterProxy depositor", async () => {
               expect(await setup.VoterProxy.connect(root).setDepositor(root.address));
             });
-            it("It configure settings veBal and VoterProxy", async () => {
+            it("It configure settings WethBal and VoterProxy", async () => {
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address));
               expect(await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker());
               
@@ -426,6 +426,7 @@ describe("Contract: Controller", async () => {
 
             it("It withdraw Unlocked WethBal", async () => {
               time.increase(smallLockTime.add(difference));
+              const f = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
               let treasury_amount_expected = (await setup.tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
               expect(await setup.controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
@@ -491,7 +492,7 @@ describe("Contract: Controller", async () => {
             it("It redeposit tokens when stash != address(0)", async () => {
               time.increase(smallLockTime.add(difference));
               const pidStashNonZero = 2;
-              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pidStashNonZero, 0));
+              expect(await setup.controller.connect(staker).withdrawUnlockedWethBal(pidStashNonZero, 0));
               expect(await setup.controller.connect(staker).restake(pidStashNonZero));
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
               const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
