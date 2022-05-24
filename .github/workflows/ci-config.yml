@@ -7,6 +7,10 @@ on:
   # Triggers the workflows on push or pull request events but only for the main branch
   [push, pull_request]
 
+concurrency: 
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 # A workflows run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
@@ -94,5 +98,5 @@ jobs:
       - name: Tests the project
         run: codecov
     env:
-      CODECOV_TOKEN: 'a314c4ab-7b53-4628-96a0-e5ce4d809d3d'
+      CODECOV_TOKEN: '9095761f-e37d-44f6-97b2-b123131a342f'
 

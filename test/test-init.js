@@ -1,3 +1,4 @@
+const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 const { ethers } = require('hardhat')
 
 const initialize = async (accounts) => {
@@ -79,11 +80,17 @@ const rewardFactory = async (setup) => {
   return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
 
+const getMintrMock = async (setup) => {
+  const MintrMock = await ethers.getContractFactory("MintrMock");
+  return await MintrMock.deploy(setup.tokens.BAL.address, ZERO_ADDRESS);
+}
+
 const proxyFactory = async (setup) => {
   const ProxyFactory = await ethers.getContractFactory(
     "ProxyFactory",
     setup.roles.root
   );
+
   return await ProxyFactory.deploy();
 }
 
@@ -100,10 +107,12 @@ const stashFactory = async (setup) => {
     "StashFactory",
     setup.roles.root
   );
-  const operator = setup.controller;
-  const rewardFactory = setup.rewardFactory;
-  const proxyFactory =  setup.VoterProxy;
-  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+
+  const operator = await getControllerMock(setup)
+  const reward = await rewardFactory(setup)
+  const fac = await proxyFactory(setup);
+
+  return await StashFactory.deploy(operator.address, reward.address, fac.address);
 };
 
 const getBaseRewardPool = async (setup) => {
@@ -146,6 +155,13 @@ const getExtraRewardMock = async () => {
   return await ExtraRewardMockFactory.deploy()
 }
 
+const gaugeController = async (setup) => {
+  const GaugeController = await ethers.getContractFactory(
+    "GaugeControllerMock",
+    setup.roles.root
+  );         
+  return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
+}; 
 
 module.exports = {
   initialize,
@@ -154,9 +170,10 @@ module.exports = {
   balDepositor,
   rewardFactory,
   controller,
+  getMintrMock,
   proxyFactory,
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
-
+  gaugeController,
 };
