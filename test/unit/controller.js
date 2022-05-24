@@ -469,31 +469,6 @@ describe("Contract: Controller", async () => {
             });
         });
         context("» restake testing", () => {       
-            // it("Sets VoterProxy depositor", async () => {
-            //     await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
-            //     const stake = true;
-            //     pid = 2;
-
-            //     // expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-
-            //     expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
-  
-            //     const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-            //     const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-  
-            //     expect(
-            //       (await setup.controller.userLockTime(operator.address)).toNumber()
-            //     ).to.equal(timelock);
-
-            // });
-            // it("It fails redeposit tokens when Lock expired", async () => {
-            //   await expectRevert(
-            //     setup.controller
-            //         .connect(root)
-            //         .restake(pid),
-            //     "Lock expired"
-            //   ); 
-            // });
             it("It redeposit tokens", async () => { 
               const difference = new BN(2);
               const timeDifference = ethers.BigNumber.from(difference.toString());
@@ -514,12 +489,12 @@ describe("Contract: Controller", async () => {
                 "Controller: can't restake. userLockTime is not reached yet"
               );
             });            
-            it("It redeposit tokens when stash = address(0)", async () => {
+            it("It redeposit tokens when stash != address(0)", async () => {
               time.increase(smallLockTime.add(difference));
-              const pidStashZero = 0;
-              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pidStashZero, 0));
+              const pidStashNonZero = 2;
+              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pidStashNonZero, 0));
 
-              expect(await setup.controller.connect(staker).restake(pidStashZero));
+              expect(await setup.controller.connect(staker).restake(pidStashNonZero));
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
               const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
               expect(
