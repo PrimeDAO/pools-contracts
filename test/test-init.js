@@ -96,6 +96,7 @@ const proxyFactory = async (setup) => {
     "ProxyFactory",
     setup.roles.root
   );
+
   return await ProxyFactory.deploy();
 }
 
@@ -104,10 +105,12 @@ const stashFactory = async (setup) => {
     "StashFactory",
     setup.roles.root
   );
-  const operator = setup.controller;
-  const rewardFactory = setup.rewardFactory;
-  const proxyFactory =  setup.VoterProxy;
-  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+
+  const operator = await getControllerMock(setup)
+  const reward = await rewardFactory(setup)
+  const fac = await proxyFactory(setup);
+
+  return await StashFactory.deploy(operator.address, reward.address, fac.address);
 };
 
 const getBaseRewardPool = async (setup) => {
