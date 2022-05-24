@@ -48,11 +48,6 @@ contract RewardFactory {
         if (!rewardAccess[msg.sender]) {
             revert Unauthorized();
         }
-        // TODO: why would we want to do this?
-        if (_reward == address(0)) {
-            return true;
-        }
-
         uint256 pid = _pid + 1; // offset by 1 so that we can use 0 as empty
 
         uint256[] memory activeListMemory = rewardActiveList[_reward];
@@ -75,11 +70,6 @@ contract RewardFactory {
         if (!rewardAccess[msg.sender]) {
             revert Unauthorized();
         }
-        // TODO: why would we want to do this?
-        if (_reward == address(0)) {
-            return true;
-        }
-
         uint256 pid = _pid + 1; //offset by 1 so that we can use 0 as empty
 
         uint256[] memory activeListMemory = rewardActiveList[_reward];
@@ -140,7 +130,7 @@ contract RewardFactory {
     function createTokenRewards(
         address _token,
         address _mainRewards,
-        address _operator // TODO: is this operator needed?, we have the operator in contract state
+        address rewardPoolOwner
     ) external returns (address) {
         if (msg.sender != operator && !rewardAccess[msg.sender]) {
             revert Unauthorized();
@@ -150,7 +140,7 @@ contract RewardFactory {
         VirtualBalanceRewardPool rewardPool = new VirtualBalanceRewardPool(
             _mainRewards,
             _token,
-            _operator
+            rewardPoolOwner
         );
         emit VirtualBalanceRewardPoolCreated(address(rewardPool));
 
