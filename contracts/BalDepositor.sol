@@ -57,8 +57,8 @@ contract BalDepositor {
     function initialLock() external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 vBal = IERC20(wethBal).balanceOf(staker);
-        if (vBal == 0) {
+        uint256 wethBalBalance = IERC20(wethBal).balanceOf(staker);
+        if (wethBalBalance == 0) {
             uint256 unlockAt = block.timestamp + MAXTIME;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 

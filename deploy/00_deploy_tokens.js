@@ -7,14 +7,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
         from: root,
         log: true,
     });
-
-    await deploy("PoolToken", {
-        contract: "ERC20Mock",
-        from: root,
-        args: ["Pool Token", "BALP"],
-        log: true,
-    });
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["D2DBal", "PoolToken"];
+module.exports.tags = ["D2DBal"];

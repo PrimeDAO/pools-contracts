@@ -9,7 +9,7 @@ describe("BaseRewardPool", function() {
     const setupTests = deployments.createFixture(async ({ deployments }) => {
         await deployments.fixture();
         const signers = await ethers.getSigners();
-
+        const INITIAL_BAL_BALANCE = ethers.utils.parseEther("10000");
         const setup = await init.initialize(await ethers.getSigners());
         const { BAL, D2DBal } = await init.getTokens(setup);
 
@@ -23,10 +23,7 @@ describe("BaseRewardPool", function() {
         await operator.setRewardContracts(baseRewardPool.address);
 
         // mint BAL to pool so that the pool can give out rewards
-        await BAL.mint(
-            baseRewardPool.address,
-            ethers.utils.parseEther("10000")
-        );
+        await BAL.mint(baseRewardPool.address, INITIAL_BAL_BALANCE);
 
         return {
             baseRewardPool,
@@ -41,6 +38,9 @@ describe("BaseRewardPool", function() {
     });
 
     before("setup", async function() {
+        const ONE_WEEK = 604800;
+        const ZERO = 0;
+        const NEW_REWARD_RATIO = 830;
         const {
             baseRewardPool,
             rewardToken,
@@ -48,7 +48,7 @@ describe("BaseRewardPool", function() {
             rewardManager,
         } = await setupTests();
 
-        expect(await baseRewardPool.DURATION()).to.equal(604800); // 7 days
+        expect(await baseRewardPool.DURATION()).to.equal(ONE_WEEK); // 7 days
         expect(await baseRewardPool.rewardToken()).to.equal(
             rewardToken.address
         );
@@ -58,25 +58,29 @@ describe("BaseRewardPool", function() {
         expect(await baseRewardPool.rewardManager()).to.equal(
             rewardManager.address
         );
-        expect(await baseRewardPool.periodFinish()).to.equal(0);
-        expect(await baseRewardPool.rewardRate()).to.equal(0);
-        expect(await baseRewardPool.lastUpdateTime()).to.equal(0);
-        expect(await baseRewardPool.rewardPerTokenStored()).to.equal(0);
-        expect(await baseRewardPool.queuedRewards()).to.equal(0);
-        expect(await baseRewardPool.currentRewards()).to.equal(0);
-        expect(await baseRewardPool.historicalRewards()).to.equal(0);
-        expect(await baseRewardPool.NEW_REWARD_RATIO()).to.equal(830);
-        expect(await baseRewardPool.extraRewardsLength()).to.equal(0);
-        expect(await baseRewardPool.extraRewardsLength()).to.equal(0);
+        expect(await baseRewardPool.periodFinish()).to.equal(ZERO);
+        expect(await baseRewardPool.rewardRate()).to.equal(ZERO);
+        expect(await baseRewardPool.lastUpdateTime()).to.equal(ZERO);
+        expect(await baseRewardPool.rewardPerTokenStored()).to.equal(ZERO);
+        expect(await baseRewardPool.queuedRewards()).to.equal(ZERO);
+        expect(await baseRewardPool.currentRewards()).to.equal(ZERO);
+        expect(await baseRewardPool.historicalRewards()).to.equal(ZERO);
+        expect(await baseRewardPool.NEW_REWARD_RATIO()).to.equal(
+            NEW_REWARD_RATIO
+        );
+        expect(await baseRewardPool.extraRewardsLength()).to.equal(ZERO);
+        expect(await baseRewardPool.extraRewardsLength()).to.equal(ZERO);
         expect(await baseRewardPool.lastTimeRewardApplicable()).to.be.equal(
-            BigNumber.from(0)
+            BigNumber.from(ZERO)
         );
         expect(await baseRewardPool.rewardPerToken()).to.be.equal(
-            BigNumber.from(0)
+            BigNumber.from(ZERO)
         );
     });
 
     context("Extra rewards", async function() {
+        const ZERO = 0;
+        const ONE = 1;
         it("reverts if not called by reward manager", async function() {
             const { baseRewardPool } = await setupTests();
 
@@ -96,14 +100,14 @@ describe("BaseRewardPool", function() {
             await baseRewardPool
                 .connect(rewardManager)
                 .addExtraReward(addressOne);
-            expect(await baseRewardPool.extraRewardsLength()).to.equal(1);
+            expect(await baseRewardPool.extraRewardsLength()).to.equal(ONE);
         });
 
         it("clears rewards", async function() {
             const { baseRewardPool, rewardManager } = await setupTests();
 
             await baseRewardPool.connect(rewardManager).clearExtraRewards();
-            expect(await baseRewardPool.extraRewardsLength()).to.equal(0);
+            expect(await baseRewardPool.extraRewardsLength()).to.equal(ZERO);
         });
     });
 
@@ -255,6 +259,7 @@ describe("BaseRewardPool", function() {
     });
 
     it("changes ratio by queueing new rewards multiple times", async function() {
+        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
         const { baseRewardPool, operator } = await setupTests();
 
         // 604800 is the minimum number of reward amount
@@ -262,7 +267,7 @@ describe("BaseRewardPool", function() {
         // in this case we have 1 reward token per second
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
-        const nextBlockTimestamp = Math.floor(Date.now() / 1000) + 40;
+        const nextBlockTimestamp = currentTimeInSeconds + 40;
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);
@@ -273,7 +278,7 @@ describe("BaseRewardPool", function() {
             .withArgs(rewardAmount);
 
         // 10 seconds difference between blocks
-        const blockPlusOneTimestamp = Math.floor(Date.now() / 1000) + 50;
+        const blockPlusOneTimestamp = currentTimeInSeconds + 50;
         await network.provider.send("evm_setNextBlockTimestamp", [
             blockPlusOneTimestamp,
         ]);
@@ -286,10 +291,13 @@ describe("BaseRewardPool", function() {
     });
 
     it("changes ratio by queueing new rewards multiple times queuedRation > NEW_REWARD_RATIO", async function() {
+        const FOURTY_SECONDS = 40;
+        const FIFTY_SECONDS = 50;
+        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
         const { baseRewardPool, operator } = await setupTests();
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
-        const nextBlockTimestamp = Math.floor(Date.now() / 1000) + 40;
+        const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);
@@ -300,7 +308,8 @@ describe("BaseRewardPool", function() {
             .withArgs(rewardAmount);
 
         // change timestamp to 10 min + 10 seconds difference between last reward queue
-        const blockPlusOneTimestamp = Math.floor(Date.now() / 1000) + 50 + 6000;
+        const blockPlusOneTimestamp =
+            currentTimeInSeconds + FIFTY_SECONDS + 6000;
         await network.provider.send("evm_setNextBlockTimestamp", [
             blockPlusOneTimestamp,
         ]);
@@ -314,6 +323,8 @@ describe("BaseRewardPool", function() {
     });
 
     it("queues and gets the reward", async function() {
+        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+        const ONE_DAY = 1440;
         const {
             baseRewardPool,
             stakeToken,
@@ -342,7 +353,7 @@ describe("BaseRewardPool", function() {
         await stakeAmount(baseRewardPool, stakeToken, amountStaked, root);
 
         // now + 1 day
-        const nextBlockTimestamp = Math.floor(Date.now() / 1000) + 1440;
+        const nextBlockTimestamp = currentTimeInSeconds + ONE_DAY;
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);

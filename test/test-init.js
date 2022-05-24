@@ -6,12 +6,11 @@ const initialize = async (accounts) => {
     setup.roles = {
         root: accounts[0],
         prime: accounts[1],
-        staker: accounts[2],
-        reward_manager: accounts[3],
-        authorizer_adaptor: accounts[4],
-        operator: accounts[5],
-        buyer1: accounts[6],
-        buyer2: accounts[7],
+        reward_manager: accounts[2],
+        authorizer_adaptor: accounts[3],
+        operator: accounts[4],
+        buyer1: accounts[5],
+        buyer2: accounts[6],
     };
 
     return setup;
@@ -91,7 +90,7 @@ const controller = async (setup) => {
         "Controller",
         setup.roles.root
     );
-    const staker = await ethers.getContract("ERC20Mock");
+    const staker = await getVoterProxy(setup);
     const minter = staker;
 
     return await controller.deploy(

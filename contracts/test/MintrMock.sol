@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../utils/Interfaces.sol";
 import "../utils/MathUtil.sol";
 
-/// @title Token MintSSSer
+/// @title MintrMock Token
 /// @dev Original code https://etherscan.io/address/0xd061d61a4d941c39e5453435b6345dc261c2fce0#code
 ///      Based on Curve's Minter smart contract
 ///      Every mint function 100 BAL tokens
