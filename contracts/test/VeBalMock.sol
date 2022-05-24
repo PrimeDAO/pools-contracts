@@ -9,13 +9,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-interface BAL_ERC20 { //was just ERC20 in their Vyper contract
-    function decimals_() external view returns (uint256);
-    function name() external view returns (string memory);
-    function symbol() external view returns (string memory);
-    function transfer(address to, uint256 amount) external returns (bool); //nonpayable
-    function transferFrom(address spender, address to, uint256 amount) external returns (bool); //nonpayable
-}
 // Interface for checking whether address belongs to a whitelisted
 // type of a smart wallet.
 // When new types are added - the whole contract is changed
@@ -122,12 +115,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     }
     function symbol() public view virtual override returns (string memory){
         return SYMBOL;
-    }
-    // function decimals() public view virtual override returns (uint256){
-    //     return DECIMALS;
-    // }
-    function decimals_() public view virtual returns (uint256){
-        return DECIMALS;
     }
     function admin() external view returns (address){
         return AUTHORIZER_ADAPTOR;
@@ -364,7 +351,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         require(_locked.amount == 0, "Withdraw old tokens first");
         require(unlock_time > block.timestamp, "Can only lock until time in the future");
         require(unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 1 year max");
-
         _deposit_for(msg.sender, _value, unlock_time, _locked, ActionType.CREATE_LOCK_TYPE);
     }
 

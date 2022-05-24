@@ -391,7 +391,6 @@ contract Controller {
         returns (bool)
     {
         PoolInfo storage pool = poolInfo[_pid];
-        address lptoken = pool.lptoken;
         address gauge = pool.gauge;
 
         //check lock
@@ -408,7 +407,6 @@ contract Controller {
 
         return true;
     }
-
     // restake veBAL, which was unlocked after a year of usage
     function restake(uint256 _pid) public returns (bool) {
         require(!isShutdown, "shutdown");
@@ -428,15 +426,12 @@ contract Controller {
             IStash(stash).stashRewards();
         }
 
-        address token = pool.token;
-
         //update timelock info
         userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
+        uint256 _amount = IERC20(bal).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
 
-        uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
-
-        // IStaker(staker).createLock(_amount, lockTime);
-        IStaker(staker).increaseTime(lockTime);
+        IStaker(staker).createLock(_amount, userLockTime[msg.sender]);
+        // IStaker(staker).increaseTime(lockTime);//userLockTime[msg.sender]);
 
         emit Deposited(msg.sender, _pid, _amount);
         return true;

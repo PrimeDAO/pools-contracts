@@ -63,7 +63,7 @@ describe("Contract: Controller", async () => {
   const thirtyMillion = 30000000;
   const sixtyMillion = 60000000;
   const defaultTimeForBalanceOfVeBal = 0;
-  const difference = new BN(28944000); // 1684568938 - 1655624938
+  const difference = new BN(28944000); // 1684568938 - 1655624938 
   const timeDifference = BigNumber.from(difference.toString());
 
   context("» Controller", () => {
@@ -494,23 +494,14 @@ describe("Contract: Controller", async () => {
             //     "Lock expired"
             //   ); 
             // });
-            it("It redeposit tokens", async () => {
-              // time.increase(smallLockTime.add(difference));
-              // const pid = 2;      
-            //   expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(doubleSmallLockTime)).toString());
+            it("It redeposit tokens", async () => { 
+              const difference = new BN(2);
+              const timeDifference = ethers.BigNumber.from(difference.toString());
+              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(lockTime)).toString());
               const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
 
-              expect(await setup.VoterProxy.connect(root).setDepositor(root.address));
-              expect(await setup.VoterProxy.connect(root).createLock(tenMillion, BNtimelock));
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-
-              expect(await setup.controller.connect(root).restake(pid));
-
-              // const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-              // const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-
-
+              expect(await setup.controller.connect(staker).restake(pid));
               expect(
                 (await setup.controller.userLockTime(staker.address)).toNumber()
               ).to.equal(timelock);
@@ -525,7 +516,8 @@ describe("Contract: Controller", async () => {
             });            
             it("It redeposit tokens when stash = address(0)", async () => {
               time.increase(smallLockTime.add(difference));
-              const pidStashZero = 0;//1;
+              const pidStashZero = 0;
+              expect(await setup.controller.connect(staker).withdrawUnlockedVeBal(pidStashZero, 0));
 
               expect(await setup.controller.connect(staker).restake(pidStashZero));
               const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
