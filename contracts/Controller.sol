@@ -431,7 +431,6 @@ contract Controller {
         uint256 _amount = IERC20(bal).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
 
         IStaker(staker).createLock(_amount, userLockTime[msg.sender]);
-        // IStaker(staker).increaseTime(lockTime);//userLockTime[msg.sender]);
 
         emit Deposited(msg.sender, _pid, _amount);
         return true;
