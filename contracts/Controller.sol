@@ -25,6 +25,8 @@ contract Controller {
     uint256 public platformFee = 0; //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
+    uint256 public constant lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
+    mapping(address => uint256) public userLockTime; //lock time for each user individually
 
     address public owner;
     address public feeManager;
@@ -302,6 +304,9 @@ contract Controller {
             IStash(stash).stashRewards();
         }
 
+        //save timelock info
+        userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
+
         address token = pool.token;
         if (_stake) {
             //mint here and send to rewards on user behalf
@@ -338,6 +343,12 @@ contract Controller {
         address lptoken = pool.lptoken;
         address gauge = pool.gauge;
 
+        //check lock
+        require(
+            block.timestamp > userLockTime[_from],
+            "Controller: userLockTime is not reached yet"
+        );
+        
         //remove lp balance
         address token = pool.token;
         ITokenMinter(token).burn(_from, _amount);
