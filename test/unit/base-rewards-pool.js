@@ -79,7 +79,6 @@ describe("BaseRewardPool", function() {
     });
 
     context("Extra rewards", async function() {
-        const ZERO = 0;
         const ONE = 1;
         it("reverts if not called by reward manager", async function() {
             const { baseRewardPool } = await setupTests();
@@ -165,6 +164,8 @@ describe("BaseRewardPool", function() {
     });
 
     context("Unstake", async function() {
+        const FOURTY_SECONDS = 40;
+        const FIFTY_SECONDS = 50;
         it("reverts on invalid unstake amount", async function() {
             const { baseRewardPool } = await setupTests();
 
@@ -249,6 +250,8 @@ describe("BaseRewardPool", function() {
     });
 
     it("changes ratio by queueing new rewards multiple times", async function() {
+        const FOURTY_SECONDS = 40;
+        const FIFTY_SECONDS = 50;
         const currentTimeInSeconds = Math.floor(Date.now() / 1000);
         const { baseRewardPool, operator } = await setupTests();
 
@@ -257,7 +260,7 @@ describe("BaseRewardPool", function() {
         // in this case we have 1 reward token per second
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
-        const nextBlockTimestamp = currentTimeInSeconds + 40;
+        const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);
@@ -268,7 +271,7 @@ describe("BaseRewardPool", function() {
             .withArgs(rewardAmount);
 
         // 10 seconds difference between blocks
-        const blockPlusOneTimestamp = currentTimeInSeconds + 50;
+        const blockPlusOneTimestamp = currentTimeInSeconds + FIFTY_SECONDS;
         await network.provider.send("evm_setNextBlockTimestamp", [
             blockPlusOneTimestamp,
         ]);
