@@ -193,7 +193,7 @@ contract Controller {
             _lptoken
         );
         //create a reward contract for bal rewards
-        address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(
+        address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(
             pid,
             token
         );
