@@ -4,8 +4,9 @@
 // solium-disable linebreak-style
 pragma solidity ^0.8.13;
 
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "hardhat/console.sol";
 
 interface BAL_ERC20 { //was just ERC20 in their Vyper contract
     function decimals() external view returns (uint256);
@@ -56,7 +57,6 @@ contract VeBalMock is ReentrancyGuard {
     uint256 constant WEEK = 7 * 86400; //all future times are rounded by week
     uint256 constant MAXTIME = 365 * 86400;  // 1 year
     uint256 constant MULTIPLIER = 10 ** 18;
-
 
     address immutable TOKEN; 
     address immutable AUTHORIZER_ADAPTOR; //Authorizer Adaptor
@@ -201,7 +201,10 @@ contract VeBalMock is ReentrancyGuard {
         // BAL_ERC20(TOKEN).transferFrom(msg.sender, tokens);
     }
 
-    function increase_amount(uint256) external nonReentrant {}
+    function increase_amount(uint256 _amount) external nonReentrant {
+        IERC20(TOKEN).transferFrom(msg.sender,address(this), _amount);
+    }
+
     function increase_unlock_time(uint256 _unlock_time) external nonReentrant {}
     function withdraw() external nonReentrant {}
 

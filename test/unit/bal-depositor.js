@@ -29,7 +29,11 @@ describe("Contract: BalDepositor", async () => {
     let balDepositorContractAddress;
     let wethBalContract;
     let voterProxyContract;
+    let d2dBal_Contract;
+    let d2dBalAddress;
+    let veBalContract;
     let depositAmount = 20;
+    let depositAmountTwo = 20;
     let _lock = true;
     let incentiveInRange = 15;
     let incentiveOutRange = 45;
@@ -42,6 +46,7 @@ describe("Contract: BalDepositor", async () => {
             buyer2 = setup.roles.buyer2;
             balDepositorContractAddress = await setup.balDepositor.address;
             wethBalContract = await setup.tokens.WethBal;
+            veBalContract = await setup.tokens.VeBal;
         });
         // first deployment test
         it("checks if deployed contracts are ZERO_ADDRESS", async () => {
@@ -93,6 +98,23 @@ describe("Contract: BalDepositor", async () => {
         });
     });
     context("» deposit testing", () => {
+        before("setup", async () => {
+            staker = await setup.balDepositor.staker();
+            voterProxyContract = await ethers.getContractAt(
+                "VoterProxy",
+                staker
+            );
+            d2dBalAddress = await setup.balDepositor.minter();
+            d2dBal_Contract = await ethers.getContractAt(
+                "D2DBal",
+                d2dBalAddress
+            );
+            await d2dBal_Contract
+                .connect(root)
+                .transferOwnership(balDepositorContractAddress);
+
+            await voterProxyContract.setDepositor(balDepositorContractAddress);
+        });
         it("fails if deposit amount is too small", async () => {
             await expect(
                 setup.balDepositor.deposit(
@@ -103,29 +125,15 @@ describe("Contract: BalDepositor", async () => {
             ).to.be.revertedWith("!>0");
         });
         it("allows deposits, transfers tokens to veBal contract, mints D2DToken, and stakes D2DTokens in Rewards contract", async () => {
-            let staker = await setup.balDepositor.staker();
-            voterProxyContract = await ethers.getContractAt(
-                "VoterProxy",
-                staker
-            );
-            let d2dBalAddress = await setup.balDepositor.minter();
-            let d2dBal_Contract = await ethers.getContractAt(
-                "D2DBal",
-                d2dBalAddress
-            );
-            await d2dBal_Contract
-                .connect(root)
-                .transferOwnership(balDepositorContractAddress);
-
-            await voterProxyContract.setDepositor(balDepositorContractAddress);
-
             await wethBalContract.approve(
                 balDepositorContractAddress,
-                constants.MaxUint256
+                depositAmount
             );
+
             await wethBalContract
                 .connect(root)
                 .increaseAllowance(setup.baseRewardPool.address, 1000);
+
             await setup.balDepositor
                 .connect(root)
                 .deposit(depositAmount, _lock, setup.baseRewardPool.address);
@@ -134,7 +142,51 @@ describe("Contract: BalDepositor", async () => {
                 setup.baseRewardPool.address
             );
 
+            let vBal_contract_WethBalBalance = await wethBalContract.balanceOf(
+                veBalContract.address
+            );
+            //Check if the appropriate amount of d2dBal was minted and sent to rewards contract
             expect(rewards_Contract_d2dBalance.toString()).to.equal(
+                depositAmount.toString()
+            );
+            //Check if the appropriate amount of wethbal was sent via voter proxy to veBal contract
+            expect(vBal_contract_WethBalBalance.toString()).to.equal(
+                depositAmount.toString()
+            );
+        });
+        it("Transfers balweth to Baldepositor contract when lock boolean is false", async () => {
+            let lock_false = false;
+            let depositTotal = depositAmount + depositAmountTwo;
+            await wethBalContract.approve(
+                balDepositorContractAddress,
+                depositAmount
+            );
+
+            await wethBalContract
+                .connect(root)
+                .increaseAllowance(setup.baseRewardPool.address, 1000);
+
+            await setup.balDepositor
+                .connect(root)
+                .deposit(
+                    depositAmount,
+                    lock_false,
+                    setup.baseRewardPool.address
+                );
+
+            let rewards_Contract_d2dBalance = await d2dBal_Contract.balanceOf(
+                setup.baseRewardPool.address
+            );
+
+            let balDepositor_contract_WethBalBalance = await wethBalContract.balanceOf(
+                balDepositorContractAddress
+            );
+
+            expect(rewards_Contract_d2dBalance.toString()).to.equal(
+                depositTotal.toString()
+            );
+            //Check if the appropriate amount of wethbal was sent to balDepositor contract
+            expect(balDepositor_contract_WethBalBalance.toString()).to.equal(
                 depositAmount.toString()
             );
         });

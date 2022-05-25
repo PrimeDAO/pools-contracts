@@ -10,7 +10,7 @@ contract VoterProxy {
     using Address for address;
 
     address public immutable mintr;
-    address public immutable bal;
+    address public immutable WethBal;
 
     address public immutable veBal;
     address public immutable gaugeController;
@@ -24,14 +24,14 @@ contract VoterProxy {
 
     constructor(
         address mintr_,
-        address bal_,
+        address WethBal_,
         address veBal_,
         address gaugeController_
     ) public {
         owner = msg.sender;
 
         mintr = mintr_;
-        bal = bal_;
+        WethBal = WethBal_;
         veBal = veBal_;
         gaugeController = gaugeController_;
     }
@@ -143,16 +143,16 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).approve(veBal, 0);
-        IERC20(bal).approve(veBal, _value);
+        IERC20(WethBal).approve(veBal, 0);
+        IERC20(WethBal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).create_lock(_value, _unlockTime);
         return true;
     }
 
     function increaseAmount(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).approve(veBal, 0);
-        IERC20(bal).approve(veBal, _value);
+        IERC20(WethBal).approve(veBal, 0);
+        IERC20(WethBal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).increase_amount(_value);
         return true;
     }
@@ -195,8 +195,8 @@ contract VoterProxy {
 
         uint256 _balance = 0;
         try IMinter(mintr).mint(_gauge) {
-            _balance = IERC20(bal).balanceOf(address(this));
-            IERC20(bal).transfer(operator, _balance);
+            _balance = IERC20(WethBal).balanceOf(address(this));
+            IERC20(WethBal).transfer(operator, _balance);
             //solhint-disable-next-line
         } catch {}
 
