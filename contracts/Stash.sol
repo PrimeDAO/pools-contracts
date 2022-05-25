@@ -130,7 +130,7 @@ contract ExtraRewardStashV3 {
                 (, , , address mainRewardContract, , ) = IDeposit(operator)
                     .poolInfo(pid);
                 address rewardContract = IRewardFactory(rewardFactory)
-                    .CreateTokenRewards(
+                    .createTokenRewards(
                         _token,
                         mainRewardContract,
                         address(this)

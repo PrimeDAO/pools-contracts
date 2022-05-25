@@ -198,6 +198,18 @@ const getVoterProxy = async (setup) => {
     return contract;
 };
 
+const getRewardFactory = async (setup) => {
+    const RewardFactoryFactory = await ethers.getContractFactory(
+        "RewardFactory",
+        setup.roles.root
+    );
+
+    return await RewardFactoryFactory.deploy(
+        setup.roles.operator.address,
+        setup.tokens.BAL.address
+    );
+};
+
 module.exports = {
     initialize,
     getVoterProxy,
@@ -210,4 +222,5 @@ module.exports = {
     stashFactory,
     getBaseRewardPool,
     getExtraRewardMock,
+    getRewardFactory,
 };

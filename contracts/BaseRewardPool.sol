@@ -106,12 +106,6 @@ contract BaseRewardPool {
         return true;
     }
 
-    /// @notice Clears all extra rewards
-    /// @dev only `rewardManager` can clear extra rewards
-    function clearExtraRewards() external onlyAddress(rewardManager) {
-        delete extraRewards;
-    }
-
     /// @notice Returns last time reward applicable
     /// @return The lower value of current block.timestamp or last time reward applicable
     function lastTimeRewardApplicable() public view returns (uint256) {
