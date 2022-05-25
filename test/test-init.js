@@ -36,14 +36,7 @@ const getTokens = async (setup) => {
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await D2DBalFactory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
-
-  const GaugeControllerFactory = await ethers.getContractFactory(
-    "GaugeControllerMock",
-    setup.roles.root
-  );         
-  const GaugeController = await GaugeControllerFactory.deploy(BAL.address, VeBal.address);
-
-  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH, GaugeController };
+  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH};
 
   setup.tokens = tokens
   return tokens;
@@ -67,7 +60,7 @@ const getVoterProxy = async (setup) => {
   const mintr = setup.tokens.D2DBal;
   const bal = setup.tokens.WethBal;
   const veBal = setup.tokens.VeBal;
-  const gaugeController = setup.tokens.GaugeController;
+  const gaugeController = await setup.GaugeController;
 
   return await VoterProxy.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
 };
@@ -77,7 +70,7 @@ const getVoterProxyMock = async (setup) => {
   const mintr = setup.tokens.D2DBal;
   const bal = setup.tokens.BAL;
   const veBal = setup.tokens.VeBal;
-  const gaugeController = setup.tokens.GaugeController;
+  const gaugeController = await setup.GaugeController;
 
   return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
 };
@@ -185,6 +178,14 @@ const getExtraRewardMock = async (setup) => {
   return await ExtraRewardMockFactory.deploy()
 }
 
+const gaugeController = async (setup) => {
+  const GaugeController = await ethers.getContractFactory(
+    "GaugeControllerMock",
+    setup.roles.root
+  );
+
+  return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
+}; 
 
 module.exports = {
   initialize,
@@ -201,4 +202,5 @@ module.exports = {
   tokenFactory,
   getVoterProxyMock,
   getStashFactoryMock,
+  gaugeController
 };

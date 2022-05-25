@@ -8,6 +8,8 @@ const deploy = async () => {
   const setup = await init.initialize(await ethers.getSigners());
 
   setup.tokens = await init.getTokens(setup);
+
+  setup.GaugeController = await init.gaugeController(setup);
   
   setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
 
@@ -177,7 +179,7 @@ describe("Contract: Controller", async () => {
             });
             it("Adds pool", async () => {
                 lptoken = setup.tokens.PoolContract;
-                gauge = setup.tokens.GaugeController;
+                gauge = setup.GaugeController;
                 stashVersion = 1;
 
                 await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
