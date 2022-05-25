@@ -6,6 +6,9 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+
+/// @title Controller contract
+/// @dev Controller contract for Prime Pools is based on the convex Booster.sol contract
 contract Controller {
     using Address for address;
 
@@ -81,22 +84,32 @@ contract Controller {
     }
 
     /// SETTER SECTION ///
-
+    /// @notice Sets the contracts owner variable
+    /// @param _owner The address of the owner of the contract
     function setOwner(address _owner) external {
         require(msg.sender == owner, "!auth");
         owner = _owner;
     }
 
+    /// @notice Sets the contracts feeManager variable
+    /// @param _feeM The address of the fee manager
     function setFeeManager(address _feeM) external {
         require(msg.sender == feeManager, "!auth");
         feeManager = _feeM;
     }
 
+    /// @notice Sets the contracts poolManager variable
+    /// @param _poolM The address of the pool manager
     function setPoolManager(address _poolM) external {
         require(msg.sender == poolManager, "!auth");
         poolManager = _poolM;
     }
 
+
+    /// @notice Sets the contracts reward, token, and stash factory addresses
+    /// @param _rfactory The address of the reward factory
+    /// @param _sfactory The address of the stash factory
+    /// @param _tfactory The address of the token factory
     function setFactories(
         address _rfactory,
         address _sfactory,
@@ -117,16 +130,23 @@ contract Controller {
         stashFactory = _sfactory;
     }
 
+
+    /// @notice Sets the contracts rewardArbitrator variable
+    /// @param _arb The address of the reward arbitrator
     function setArbitrator(address _arb) external {
         require(msg.sender == owner, "!auth");
         rewardArbitrator = _arb;
     }
 
+    /// @notice Sets the contracts voteDelegate variable
+    /// @param _voteDelegate The address of whom votes will be delegated to
     function setVoteDelegate(address _voteDelegate) external {
         require(msg.sender == voteDelegate, "!auth");
         voteDelegate = _voteDelegate;
     }
 
+    /// @notice Sets the contracts lockRewards and stakerRewards variables
+    /// @param _rewards The address of whom votes will be delegated to
     function setRewardContracts(address _rewards, address _stakerRewards)
         external
     {
@@ -140,6 +160,7 @@ contract Controller {
         }
     }
 
+    /// @notice Sets the address of the feeToken
     // Set reward token and claim contract, get from Curve's registry
     function setFeeInfo() external {
         require(msg.sender == feeManager, "!auth");
@@ -157,6 +178,11 @@ contract Controller {
         }
     }
 
+    /// @notice Sets the lock, staker, caller, and platform fees
+    /// @param _lockFees The amount to set for the lock fees
+    /// @param _stakerFees The amount to set for the staker fees
+    /// @param _callerFees The amount to set for the caller fees
+    /// @param _platform The amount to set for the platform fees
     function setFees(
         uint256 _lockFees,
         uint256 _stakerFees,
@@ -185,6 +211,8 @@ contract Controller {
         }
     }
 
+    /// @notice Sets the contracts treasury variables
+    /// @param _treasury The address of the treasury
     function setTreasury(address _treasury) external {
         require(msg.sender == feeManager, "!auth");
         treasury = _treasury;
@@ -192,10 +220,14 @@ contract Controller {
 
     /// END SETTER SECTION ///
 
+    /// @notice returns the length of the pool
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
     }
 
+    /// @notice Creates a new pool
+    /// @param _lptoken The address of the lp token
+    /// @param _gauge The address of the gauge controller
     //create a new pool
     function addPool(address _lptoken, address _gauge) external returns (bool) {
         require(msg.sender == poolManager && !isShutdown, "!add");
@@ -243,7 +275,8 @@ contract Controller {
         return true;
     }
 
-    //shutdown pool
+    /// @notice shuts down a currently active pool
+    /// @param _pid The id of the pool to shutdown
     function shutdownPool(uint256 _pid) external returns (bool) {
         require(msg.sender == poolManager, "!auth");
         PoolInfo storage pool = poolInfo[_pid];
@@ -256,9 +289,8 @@ contract Controller {
         return true;
     }
 
-    //shutdown this contract.
-    //  unstake and pull all lp tokens to this address
-    //  only allow withdrawals
+    /// @notice shuts down all pools
+    /// @dev This shuts down the contract, unstakes and pulls all LP tokens
     function shutdownSystem() external {
         require(msg.sender == owner, "!auth");
         isShutdown = true;
@@ -277,7 +309,10 @@ contract Controller {
         }
     }
 
-    //deposit lp tokens and stake
+    /// @notice allows deposits in a specific pool
+    /// @param _pid The pool id to deposit lp tokens into
+    /// @param _amount The amount of lp tokens to be deposited
+    /// @param _stake bool for wheather the tokens should be staked
     function deposit(
         uint256 _pid,
         uint256 _amount,
@@ -319,7 +354,9 @@ contract Controller {
         return true;
     }
 
-    //deposit all lp tokens and stake
+    /// @notice allows a user to deposit and stake all of their LP tokens
+    /// @param _pid The pool id to deposit lp tokens into
+    /// @param _stake bool for wheather the tokens should be staked
     function depositAll(uint256 _pid, bool _stake) external returns (bool) {
         address lptoken = poolInfo[_pid].lptoken;
         uint256 balance = IERC20(lptoken).balanceOf(msg.sender);
@@ -327,6 +364,12 @@ contract Controller {
         return true;
     }
 
+
+    /// @notice internal function deposits and stakes a specified amount of the callers LP tokens
+    /// @param _pid The pool id to deposit lp tokens into
+    /// @param _amount amount of LP tokens to withdraw
+    /// @param _from address of where the lp tokens will be withdrawn from
+    /// @param _to address of where the lp tokens will be sent to
     //withdraw lp tokens
     function _withdraw(
         uint256 _pid,
@@ -361,12 +404,17 @@ contract Controller {
         emit Withdrawn(_to, _pid, _amount);
     }
 
+    /// @notice Deposits and stakes a specified amount of the callers LP tokens
+    /// @param _pid The pool id to deposit lp tokens into
+    /// @param _amount amount of LP tokens to withdraw
     //withdraw lp tokens
     function withdraw(uint256 _pid, uint256 _amount) public returns (bool) {
         _withdraw(_pid, _amount, msg.sender, msg.sender);
         return true;
     }
 
+    /// @notice Deposits and stakes all of the callers LP tokens
+    /// @param _pid The pool id to deposit lp tokens into
     //withdraw all lp tokens
     function withdrawAll(uint256 _pid) public returns (bool) {
         address token = poolInfo[_pid].token;
@@ -375,6 +423,9 @@ contract Controller {
         return true;
     }
 
+    /// @notice Deposits and stakes all of the callers LP tokens
+    /// @param _pid The pool id to deposit lp tokens into
+    /// @param _amount amount of LP tokens to withdraw
     //allow reward contracts to send here and withdraw to user
     function withdrawTo(
         uint256 _pid,
@@ -388,6 +439,10 @@ contract Controller {
         return true;
     }
 
+    /// @notice Allows a user to submit votes
+    /// @param _voteId the id of the vote
+    /// @param _votingAddress address of the voter?
+    /// @param _support boolean for the vote 
     //delegate address votes on dao
     function vote(
         uint256 _voteId,
@@ -404,6 +459,9 @@ contract Controller {
         return true;
     }
 
+    /// @notice Allows a user to submit votes
+    /// @param _gauge the id of the vote
+    /// @param _weight address of the voter?
     function voteGaugeWeight(
         address[] calldata _gauge,
         uint256[] calldata _weight
@@ -416,6 +474,9 @@ contract Controller {
         return true;
     }
 
+    /// @notice 
+    /// @param _pid the id of the poole
+    /// @param _gauge address of the voter?
     function claimRewards(uint256 _pid, address _gauge)
         external
         returns (bool)
@@ -427,6 +488,8 @@ contract Controller {
         return true;
     }
 
+    /// @notice
+    /// @param _pid the id of the poole
     function setGaugeRedirect(uint256 _pid) external returns (bool) {
         address stash = poolInfo[_pid].stash;
         require(msg.sender == stash, "!auth");
@@ -439,6 +502,8 @@ contract Controller {
         return true;
     }
 
+    /// @notice
+    /// @param _pid the id of the poole
     //claim bal and extra rewards and disperse to reward contracts
     function _earmarkRewards(uint256 _pid) internal {
         PoolInfo storage pool = poolInfo[_pid];
@@ -507,12 +572,15 @@ contract Controller {
         }
     }
 
+    /// @notice 
+    /// @param _pid the id of the poole
     function earmarkRewards(uint256 _pid) external returns (bool) {
         require(!isShutdown, "shutdown");
         _earmarkRewards(_pid);
         return true;
     }
 
+    /// @notice 
     //claim fees from curve distro contract, put in lockers' reward contract
     function earmarkFees() external returns (bool) {
         //claim fee rewards
@@ -524,6 +592,10 @@ contract Controller {
         return true;
     }
 
+    /// @notice 
+    /// @param _pid the id of the poole
+    /// @param _address address of the voter?
+    /// @param _amount address of the voter?
     //callback from reward contract when crv is received.
     function rewardClaimed(
         uint256 _pid,
