@@ -174,15 +174,23 @@ describe("Contract: Controller", async () => {
                 tokenFactory = setup.tokenFactory;
                 expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
             });
-            it("Sets VoterProxy as StashFactory implementation ", async () => {
-                expect(await setup.stashFactory.connect(root).setImplementation(setup.VoterProxy.address, setup.VoterProxy.address, setup.VoterProxy.address));
+            it("Sets StashFactory implementation ", async () => {
+                // Deploy implementation contract
+                const implementationAddress = await ethers.getContractFactory('StashMock')
+                    .then(x => x.deploy())
+                    .then(x => x.address)
+            
+                // Set implementation contract
+                await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                    .to.emit(stashFactory, 'ImpelemntationChanged')
+                    .withArgs(implementationAddress);
             });
             it("Adds pool", async () => {
                 lptoken = setup.tokens.PoolContract;
                 gauge = setup.GaugeController;
                 stashVersion = 1;
 
-                await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);
+                await setup.controller.connect(root).addPool(lptoken.address, gauge.address);
                 expect(
                     (await setup.controller.poolLength()).toNumber()
                 ).to.equal(1);
@@ -194,12 +202,12 @@ describe("Contract: Controller", async () => {
                     (poolInfo.gauge).toString()
                 ).to.equal(gauge.address.toString());
 
-                await setup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion); //need for restake test below
+                await setup.controller.connect(root).addPool(lptoken.address, gauge.address); //need for restake test below
             });
             it("Adds pool with stash != address(0)", async () => {
               expect(await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactoryMock.address, tokenFactory.address));
               const zeroStashVersion = 0;
-              await setup.controller.connect(root).addPool(lptoken.address, gauge.address, zeroStashVersion);
+              await setup.controller.connect(root).addPool(lptoken.address, gauge.address);
               expect(
                 (await setup.controller.poolLength()).toNumber()
               ).to.equal(3);
@@ -443,10 +451,17 @@ describe("Contract: Controller", async () => {
               const stashFactory = alternativeSetup.stashFactory;
               const tokenFactory = alternativeSetup.tokenFactory;
               await alternativeSetup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
-              await alternativeSetup.stashFactory.connect(root).setImplementation(alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address, alternativeSetup.VoterProxy.address);
+              // Deploy implementation contract
+              const implementationAddress = await ethers.getContractFactory('StashMock')
+                .then(x => x.deploy())
+                .then(x => x.address)                      
+              // Set implementation contract
+              await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                .to.emit(stashFactory, 'ImpelemntationChanged')
+                .withArgs(implementationAddress);
               await alternativeSetup.VoterProxy.connect(root).setDepositor(root.address);
 
-              await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address, stashVersion);              
+              await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address);              
               await alternativeSetup.tokens.WethBal.transfer(staker.address, twentyMillion);
 
               let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();

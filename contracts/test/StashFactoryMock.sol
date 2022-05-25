@@ -34,24 +34,19 @@ contract StashFactoryMock {
     }
 
     function setImplementation(
-        address _v1,
-        address _v2,
-        address _v3
+        address _v1
     ) external {
         require(msg.sender == IDeposit(operator).owner(), "!auth");
 
         v1Implementation = _v1;
-        v2Implementation = _v2;
-        v3Implementation = _v3;
     }
 
     //Create a stash contract for the given gauge.
     //function calls are different depending on the version of curve gauges so determine which stash type is needed
-    function CreateStash(
+    function createStash(
         uint256 _pid,
         address _gauge,
-        address _staker,
-        uint256 _stashVersion
+        address _staker
     ) external returns (address) {
         require(msg.sender == operator, "!authorized");
         return address(this);

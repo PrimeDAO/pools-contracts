@@ -254,9 +254,9 @@ interface IRewardFactory {
 
 interface IStashFactory {
     function createStash(
-        uint256 _pid,
-        address _gauge,
-        address _stash
+        uint256,
+        address,
+        address
     ) external returns (address);
 }
 
@@ -265,13 +265,13 @@ interface ITokenFactory {
 }
 
 interface IPools {
-    function addPool(address _lptoken, address _gauge) external returns (bool);
+    function addPool(address, address) external returns (bool);
 
-    function forceAddPool(address _lptoken, address _gauge)
+    function forceAddPool(address, address)
         external
         returns (bool);
 
-    function shutdownPool(uint256 _pid) external returns (bool);
+    function shutdownPool(uint256) external returns (bool);
 
     function poolInfo(uint256)
         external

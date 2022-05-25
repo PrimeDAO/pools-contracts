@@ -37,7 +37,14 @@ const getTokens = async (setup) => {
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await D2DBalFactory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
-  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH};
+ 
+  const StashMockFactory = await ethers.getContractFactory(
+    "StashMock",
+    setup.roles.root
+  ); 
+  const StashMock = StashMockFactory.deploy();
+
+  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH, StashMock};
 
   setup.tokens = tokens
   return tokens;
@@ -133,23 +140,14 @@ const getMintrMock = async (setup) => {
   return await MintrMock.deploy(setup.tokens.BAL.address, ZERO_ADDRESS);
 }
 
-const proxyFactory = async (setup) => {
-  const ProxyFactory = await ethers.getContractFactory(
-    "ProxyFactory",
-    setup.roles.root
-  );
-
-  return await ProxyFactory.deploy();
-}
-
 const stashFactory = async (setup) => {
   const StashFactory = await ethers.getContractFactory(
     "StashFactory",
     setup.roles.root
   );
   const operator = setup.controller;
-  const rewardFactory = setup.rewardFactory;
-  const proxyFactory =  setup.proxyFactory;
+  const rewardFactory = await rewardFactory(setup)
+  const proxyFactory = await proxyFactory(setup);
   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
 };
 
