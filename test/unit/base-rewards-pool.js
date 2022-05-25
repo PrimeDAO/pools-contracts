@@ -64,7 +64,6 @@ describe("BaseRewardPool", function () {
             const signers = await ethers.getSigners()
     
             await expect(baseRewardPool.connect(signers[10]).addExtraReward(addressOne)).to.be.revertedWith('Unauthorized()')
-            await expect(baseRewardPool.connect(signers[10]).clearExtraRewards()).to.be.revertedWith('Unauthorized()')
         });
 
         it("adds rewards", async function () {
@@ -72,13 +71,6 @@ describe("BaseRewardPool", function () {
     
             await baseRewardPool.connect(rewardManager).addExtraReward(addressOne)
             expect(await baseRewardPool.extraRewardsLength()).to.equal(1)
-        });
-
-        it("clears rewards", async function () {
-            const { baseRewardPool, rewardManager } = await setupTests();
-    
-            await baseRewardPool.connect(rewardManager).clearExtraRewards()
-            expect(await baseRewardPool.extraRewardsLength()).to.equal(0)
         });
     });
 
