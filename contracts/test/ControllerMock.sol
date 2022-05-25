@@ -2,16 +2,21 @@
 pragma solidity ^0.8.13;
 
 import "../utils/Interfaces.sol";
-import "hardhat/console.sol";
 
 contract ControllerMock is IDeposit {
 
+    event StashCreated();
+
     address public lockRewards;
 
-    constructor() {}
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     function isShutdown() external view returns (bool) {
-        return true;
+        return false;
     }
 
     function balanceOf(address _account) external view returns (uint256) {
@@ -60,12 +65,18 @@ contract ControllerMock is IDeposit {
         return false;
     }
 
-    function owner() external returns (address) {
-        address(0);
-    }
-
     function queueNewRewards(uint256 _rewards) external {
         IRewards(lockRewards).queueNewRewards(_rewards);
+    }
+
+    function createStash(address _stash) external {
+        address createdStash = IStashFactory(_stash).createStash(
+            1,
+            address(0),
+            address(0)
+        );
+
+        emit StashCreated();
     }
 
     function setRewardContracts(address _rewards) external {

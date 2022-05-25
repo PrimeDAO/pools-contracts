@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract Controller {
     using Address for address;
 
-    address public immutable bal;
+    address public immutable wethBal;
     address public constant registry =
         address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
@@ -36,7 +36,7 @@ contract Controller {
     address public voteDelegate;
     address public treasury;
     address public stakerRewards; //bal rewards
-    address public lockRewards; //balBal rewards(bal)
+    address public lockRewards; //wethBalBal rewards(bal)
     address public feeDistro;
     address public feeToken;
 
@@ -69,7 +69,7 @@ contract Controller {
 
     constructor(address _staker, address _feeManager, address _wethBal) public {
         isShutdown = false;
-        bal = _wethBal;
+        wethBal = _wethBal;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
@@ -182,11 +182,7 @@ contract Controller {
     }
 
     //create a new pool
-    function addPool(
-        address _lptoken,
-        address _gauge,
-        uint256 _stashVersion
-    ) external returns (bool) {
+    function addPool(address _lptoken, address _gauge) external returns (bool) {
         require(msg.sender == poolManager && !isShutdown, "!add");
         require(_gauge != address(0) && _lptoken != address(0), "!param");
 
@@ -197,16 +193,15 @@ contract Controller {
             _lptoken
         );
         //create a reward contract for bal rewards
-        address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(
+        address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(
             pid,
             token
         );
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).CreateStash(
+        address stash = IStashFactory(stashFactory).createStash(
             pid,
             _gauge,
-            staker,
-            _stashVersion
+            staker
         );
         //add the new pool
         poolInfo.push(
@@ -276,7 +271,7 @@ contract Controller {
         require(pool.shutdown == false, "pool is closed");
 
         //send to proxy to stake
-        address lptoken = pool.lptoken; //veBal
+        address lptoken = pool.lptoken;
         IERC20(lptoken).transferFrom(msg.sender, staker, _amount);
 
         //stake
@@ -507,15 +502,15 @@ contract Controller {
             IStash(stash).processStash();
         }
 
-        //bal balance
-        uint256 balBal = IERC20(bal).balanceOf(address(this));
+        //wethBalBal balance
+        uint256 wethBalBal = IERC20(wethBal).balanceOf(address(this));
 
-        if (balBal > 0) {
+        if (wethBalBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
-            uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal - _profit;
+            uint256 _profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
+            wethBalBal = wethBalBal - _profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
-            IERC20(bal).transfer(feeManager, _profit);
+            IERC20(wethBal).transfer(feeManager, _profit);
 
             //send treasury
             if (
@@ -524,14 +519,14 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
-                balBal = balBal - _platform;
-                IERC20(bal).transfer(treasury, _platform);
+                uint256 _platform = (wethBalBal * platformFees) / FEE_DENOMINATOR;
+                wethBalBal = wethBalBal - _platform;
+                IERC20(wethBal).transfer(treasury, _platform);
             }
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
-            IERC20(bal).transfer(rewardContract, balBal);
-            IRewards(rewardContract).queueNewRewards(balBal);
+            IERC20(wethBal).transfer(rewardContract, wethBalBal);
+            IRewards(rewardContract).queueNewRewards(wethBalBal);
         }
     }
 
