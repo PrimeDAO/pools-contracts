@@ -164,8 +164,6 @@ describe("BaseRewardPool", function() {
     });
 
     context("Unstake", async function() {
-        const FOURTY_SECONDS = 40;
-        const FIFTY_SECONDS = 50;
         it("reverts on invalid unstake amount", async function() {
             const { baseRewardPool } = await setupTests();
 
