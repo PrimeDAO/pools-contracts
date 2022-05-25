@@ -146,11 +146,8 @@ const stashFactory = async (setup) => {
     setup.roles.root
   );
   const operator = setup.controller;
-  console.log("operator is %s", operator.address);
   const rewardFactory = setup.rewardFactory;
-  console.log("rewardFactory is %s", rewardFactory.address);
   const proxyFactory = setup.proxyFactory;
-  console.log("proxyFactory is %s", proxyFactory.address);
   return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
 };
 
