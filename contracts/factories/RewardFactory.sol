@@ -126,11 +126,12 @@ contract RewardFactory {
     /// @dev used for extra incentive tokens(ex. snx) as well as vebal fees
     /// @param _token address of the token
     /// @param _mainRewards address of the main reward pool contract
+    /// @param _rewardPoolOwner address of the reward pool owner
     /// @return address of the new reward pool
     function createTokenRewards(
         address _token,
         address _mainRewards,
-        address rewardPoolOwner
+        address _rewardPoolOwner
     ) external returns (address) {
         if (msg.sender != operator && !rewardAccess[msg.sender]) {
             revert Unauthorized();
@@ -140,7 +141,7 @@ contract RewardFactory {
         VirtualBalanceRewardPool rewardPool = new VirtualBalanceRewardPool(
             _mainRewards,
             _token,
-            rewardPoolOwner
+            _rewardPoolOwner
         );
         emit VirtualBalanceRewardPoolCreated(address(rewardPool));
 
