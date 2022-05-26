@@ -6,7 +6,6 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "hardhat/console.sol";
 
 interface BAL_ERC20 { //was just ERC20 in their Vyper contract
     function decimals() external view returns (uint256);

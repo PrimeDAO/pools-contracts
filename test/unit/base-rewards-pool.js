@@ -4,6 +4,13 @@ const { deployments, ethers } = require("hardhat");
 const init = require("../test-init.js");
 
 const addressOne = "0x0000000000000000000000000000000000000001";
+const FOURTY_SECONDS = 40;
+const FIFTY_SECONDS = 50;
+const ONE_WEEK = 604800;
+const ZERO = 0;
+const NEW_REWARD_RATIO = 830;
+const ONE_DAY = 1440;
+const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
 describe("BaseRewardPool", function() {
     const setupTests = deployments.createFixture(async ({ deployments }) => {
@@ -38,9 +45,6 @@ describe("BaseRewardPool", function() {
     });
 
     before("setup", async function() {
-        const ONE_WEEK = 604800;
-        const ZERO = 0;
-        const NEW_REWARD_RATIO = 830;
         const {
             baseRewardPool,
             rewardToken,
@@ -248,9 +252,6 @@ describe("BaseRewardPool", function() {
     });
 
     it("changes ratio by queueing new rewards multiple times", async function() {
-        const FOURTY_SECONDS = 40;
-        const FIFTY_SECONDS = 50;
-        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
         const { baseRewardPool, operator } = await setupTests();
 
         // 604800 is the minimum number of reward amount
@@ -263,7 +264,7 @@ describe("BaseRewardPool", function() {
             nextBlockTimestamp,
         ]);
 
-        const rewardAmount = BigNumber.from("604800");
+        const rewardAmount = BigNumber.from(ONE_WEEK.toString());
         await expect(operator.queueNewRewards(rewardAmount))
             .to.emit(baseRewardPool, "RewardAdded")
             .withArgs(rewardAmount);
@@ -282,9 +283,6 @@ describe("BaseRewardPool", function() {
     });
 
     it("changes ratio by queueing new rewards multiple times queuedRation > NEW_REWARD_RATIO", async function() {
-        const FOURTY_SECONDS = 40;
-        const FIFTY_SECONDS = 50;
-        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
         const { baseRewardPool, operator } = await setupTests();
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
@@ -293,7 +291,7 @@ describe("BaseRewardPool", function() {
             nextBlockTimestamp,
         ]);
 
-        const rewardAmount = BigNumber.from("60480000").mul(100);
+        const rewardAmount = BigNumber.from(ONE_WEEK.toString()).mul(10000);
         await expect(operator.queueNewRewards(rewardAmount))
             .to.emit(baseRewardPool, "RewardAdded")
             .withArgs(rewardAmount);
@@ -305,17 +303,15 @@ describe("BaseRewardPool", function() {
             blockPlusOneTimestamp,
         ]);
 
-        const newRewardAmount = BigNumber.from("60480000");
+        const newRewardAmount = BigNumber.from(ONE_WEEK.toString()).mul(100);
         await operator.queueNewRewards(newRewardAmount);
 
         expect(await baseRewardPool.queuedRewards()).to.equal(
-            BigNumber.from("60480000")
+            BigNumber.from(ONE_WEEK.toString()).mul(100)
         );
     });
 
     it("queues and gets the reward", async function() {
-        const currentTimeInSeconds = Math.floor(Date.now() / 1000);
-        const ONE_DAY = 1440;
         const {
             baseRewardPool,
             stakeToken,

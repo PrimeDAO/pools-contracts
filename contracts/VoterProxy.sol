@@ -57,7 +57,6 @@ contract VoterProxy {
 
     function setDepositor(address _depositor) external {
         require(msg.sender == owner, "!auth");
-
         depositor = _depositor;
     }
 

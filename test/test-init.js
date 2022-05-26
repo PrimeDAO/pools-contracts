@@ -76,7 +76,7 @@ const balDepositor = async (setup) => {
         setup.roles.root
     );
 
-    const staker = await getVoterProxy(setup);
+    const staker = setup.voterProxy;
 
     return await balDepositor.deploy(
         setup.tokens.WethBal.address,
@@ -90,7 +90,7 @@ const controller = async (setup) => {
         "Controller",
         setup.roles.root
     );
-    const staker = await getVoterProxy(setup);
+    const staker = setup.voterProxy;
     const minter = staker;
 
     return await controller.deploy(
@@ -188,14 +188,12 @@ const getVoterProxy = async (setup) => {
     const bal = setup.tokens.WethBal;
     const veBal = setup.tokens.VeBal;
     const gaugeController = setup.tokens.GaugeController;
-
-    let contract = await VoterProxy.deploy(
+    return await VoterProxy.deploy(
         mintr.address,
         bal.address,
         veBal.address,
         gaugeController.address
     );
-    return contract;
 };
 
 const getRewardFactory = async (setup) => {
