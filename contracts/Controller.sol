@@ -171,7 +171,7 @@ contract Controller {
         address _feeToken = IFeeDistro(feeDistro).token();
         if (feeToken != _feeToken) {
             //create a new reward contract for the new token
-            lockFees = IRewardFactory(rewardFactory).CreateTokenRewards(
+            lockFees = IRewardFactory(rewardFactory).createTokenRewards(
                 _feeToken,
                 lockRewards,
                 address(this)
@@ -243,7 +243,7 @@ contract Controller {
             _lptoken
         );
         //create a reward contract for bal rewards
-        address newRewardPool = IRewardFactory(rewardFactory).CreateBalRewards(
+        address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(
             pid,
             token
         );
