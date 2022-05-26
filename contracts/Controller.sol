@@ -387,7 +387,7 @@ contract Controller {
         return true;
     }
 
-    // restake veBAL, which was unlocked after a year of usage
+    // restake wethBAL, which was unlocked after a year of usage
     function restake(uint256 _pid) public returns (bool) {
         require(!isShutdown, "shutdown");
         PoolInfo storage pool = poolInfo[_pid];
