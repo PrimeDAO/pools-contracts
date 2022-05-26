@@ -2,13 +2,11 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 const { expect } = require("chai");
 const { deployments, ethers } = require("hardhat");
 const init = require("../test-init.js");
-
-const addressOne = '0x0000000000000000000000000000000000000001';
+const { ONE_ADDRESS } = require('../helpers/constants')
 
 describe("StashFactory", function () {
 
-    const setupTests = deployments.createFixture(async ({ deployments }) => {
-        await deployments.fixture();
+    const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
 
         const setup = await init.initialize(await ethers.getSigners());
@@ -27,7 +25,7 @@ describe("StashFactory", function () {
     it('reverts if unauthorized on setImplementation', async function() {
         const { stashFactory, randomUser } = await setupTests();
 
-        await expect(stashFactory.connect(randomUser).setImplementation(addressOne))
+        await expect(stashFactory.connect(randomUser).setImplementation(ONE_ADDRESS))
             .to.be.revertedWith('Unauthorized()')
     });
 

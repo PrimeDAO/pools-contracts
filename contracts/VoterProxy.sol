@@ -2,59 +2,72 @@
 pragma solidity ^0.8.14;
 
 import "./utils/Interfaces.sol";
+import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title VoterProxy contract
 /// @dev based on Convex's VoterProxy smart contract
 ///      https://etherscan.io/address/0x989AEb4d175e16225E39E87d0D97A3360524AD80#code
-contract VoterProxy is Ownable {
+contract VoterProxy {
+    using MathUtil for uint256;
+
     event OperatorChanged(address newOperator);
     event DepositorChanged(address newDepositor);
+    event OwnerChanged(address newOwner);
 
+    error BadInput();
     error Unauthorized();
+    error NeedsShutdown(); // Current operator must be shutdown before changing the operator
 
     address public immutable mintr;
     address public immutable bal;
     address public immutable veBal;
     address public immutable gaugeController;
 
-    address public operator;
-    address public depositor;
+    address public owner; // MultiSig
+    address public operator; // Controller smart contract
+    address public depositor; // BalDepositor smart contract
 
-    mapping(address => bool) private stashPool;
-    mapping(address => bool) private protectedTokens;
+    mapping(address => bool) private stashAccess; // stash -> canAccess
+    mapping(address => bool) private protectedTokens; // token -> protected
 
     constructor(
-        address mintr_,
-        address bal_,
-        address veBal_,
-        address gaugeController_
-    ) public {
-        mintr = mintr_;
-        bal = bal_;
-        veBal = veBal_;
-        gaugeController = gaugeController_;
-        IERC20(bal_).approve(veBal_, type(uint256).max);
+        address _mintr,
+        address _bal,
+        address _veBal,
+        address _gaugeController
+    ) {
+        mintr = _mintr;
+        bal = _bal;
+        veBal = _veBal;
+        gaugeController = _gaugeController;
+        owner = msg.sender;
+        IERC20(_bal).approve(_veBal, type(uint256).max);
     }
 
-    /// @notice Returns contract name // TODO: Do we really need it? remove it?
-    function getName() external pure returns (string memory) {
-        return "PrimeVoterProxy";
+    /// @notice Used to change the owner of the contract
+    /// @param _newOwner The new owner of the contract
+    function setOwner(address _newOwner) external {
+        if (msg.sender != owner) {
+            revert Unauthorized();
+        }
+        owner = _newOwner;
+        emit OwnerChanged(_newOwner);
     }
 
     /// @notice Changes the operator of the contract
     /// @dev Only the owner can change the operator
     ///      Current operator must be shutdown before changing the operator
-    ///      Or we can se toperator to address(0)
+    ///      Or we can set operator to address(0)
     /// @param _operator The new operator of the contract
-    function setOperator(address _operator) external onlyOwner {
-        require(
-            operator == address(0) || IDeposit(operator).isShutdown(),
-            "needs shutdown"
-        );
+    function setOperator(address _operator) external {
+        if (msg.sender != owner) {
+            revert Unauthorized();
+        }
 
+        if (operator != address(0) && !IDeposit(operator).isShutdown()) {
+            revert NeedsShutdown();
+        }
         operator = _operator;
         emit OperatorChanged(_operator);
     }
@@ -62,7 +75,10 @@ contract VoterProxy is Ownable {
     /// @notice Changes the depositor of the contract
     /// @dev Only the owner can change the depositor
     /// @param _depositor The new depositor of the contract
-    function setDepositor(address _depositor) external onlyOwner {
+    function setDepositor(address _depositor) external {
+        if (msg.sender != owner) {
+            revert Unauthorized();
+        }
         depositor = _depositor;
         emit DepositorChanged(_depositor);
     }
@@ -79,13 +95,13 @@ contract VoterProxy is Ownable {
         }
 
         if (_stash != address(0)) {
-            stashPool[_stash] = _status;
+            stashAccess[_stash] = _status;
         }
         return true;
     }
 
     /// @notice Used to deposit tokens
-    /// @param _token The token to deposit
+    /// @param _token The address of the LP token
     /// @param _gauge The gauge to deposit to
     /// @return true if the deposit was successful
     function deposit(address _token, address _gauge) external returns (bool) {
@@ -113,7 +129,7 @@ contract VoterProxy is Ownable {
     /// @param _asset ERC20 token address
     /// @return amount of tokens withdrawn
     function withdraw(IERC20 _asset) external returns (uint256) {
-        if (!stashPool[msg.sender]) {
+        if (!stashAccess[msg.sender]) {
             revert Unauthorized();
         }
 
@@ -159,9 +175,7 @@ contract VoterProxy is Ownable {
         external
         returns (bool)
     {
-        if (msg.sender != operator) {
-            revert Unauthorized();
-        }
+        // withdraw has authorization check, so we don't need to check here
         uint256 amount = balanceOfPool(_gauge) +
             (IERC20(_token).balanceOf(address(this)));
         withdraw(_token, _gauge, amount);
@@ -251,12 +265,13 @@ contract VoterProxy is Ownable {
         address[] calldata _gauges,
         uint256[] calldata _weights
     ) external returns (bool) {
-        require(_gauges.length == _weights.length, "bad input");
+        if (_gauges.length != _weights.length) {
+            revert BadInput();
+        }
         if (msg.sender != operator) {
             revert Unauthorized();
         }
-
-        for (uint256 i = 0; i < _gauges.length; i++) {
+        for (uint256 i = 0; i < _gauges.length; i = i.unsafeInc()) {
             IVoting(gaugeController).vote_for_gauge_weights(
                 _gauges[i],
                 _weights[i]

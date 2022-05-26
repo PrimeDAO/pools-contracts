@@ -1,4 +1,3 @@
-const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 const { ethers } = require('hardhat')
 
 const initialize = async (accounts) => {
@@ -16,12 +15,12 @@ const initialize = async (accounts) => {
 };
 
 const getTokens = async (setup) => {
-  const ERC20Factory =  await ethers.getContractFactory(
+  const ERC20Factory = await ethers.getContractFactory(
     "ERC20Mock",
     setup.roles.root
-  ); 
+  );
 
-  const VeBalFactory =  await ethers.getContractFactory(
+  const VeBalFactory = await ethers.getContractFactory(
     "VeBalMock",
     setup.roles.root
   );
@@ -32,13 +31,14 @@ const getTokens = async (setup) => {
   );
 
   const Balancer80BAL20WETH = await ERC20Factory.deploy("Balancer80BAL20WETH", "Balancer80BAL20WETH");
+  const B50WBTC50WETH = await ERC20Factory.deploy("Balancer 50 WBTC 50 WETH", "B-50WBTC-50WETH"); // LP token
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
   const D2DBal = await D2DBalFactory.deploy("D2DBal", "D2DBAL");
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
-  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH }
+  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH, B50WBTC50WETH }
 
   setup.tokens = tokens
   return tokens;
@@ -50,9 +50,9 @@ const balDepositor = async (setup) => {
     setup.roles.root
   );
   const wethBal = setup.tokens.WethBal;
-  const minter =  setup.tokens.D2DBal;
-  const staker =  setup.roles.staker;
-  const escrow =  setup.tokens.VeBal;
+  const minter = setup.tokens.D2DBal;
+  const staker = setup.roles.staker;
+  const escrow = setup.tokens.VeBal;
 
   return await balDepositor.deploy(wethBal.address, staker.address, minter.address, escrow.address);
 };
@@ -79,11 +79,6 @@ const rewardFactory = async (setup) => {
 
   return await RewardFactoryFactory.deploy(bal.address, operator.address);
 };
-
-const getMintrMock = async (setup) => {
-  const MintrMock = await ethers.getContractFactory("MintrMock");
-  return await MintrMock.deploy(setup.tokens.BAL.address, ZERO_ADDRESS);
-}
 
 const proxyFactory = async (setup) => {
   const ProxyFactory = await ethers.getContractFactory(
@@ -117,7 +112,7 @@ const stashFactory = async (setup) => {
 
 const getBaseRewardPool = async (setup) => {
   const BaseRewardPoolFactory = await ethers.getContractFactory(
-    'BaseRewardPoolInTest', 
+    'BaseRewardPoolInTest',
     setup.roles.root
   );
 
@@ -126,15 +121,12 @@ const getBaseRewardPool = async (setup) => {
   return await BaseRewardPoolFactory.deploy(1, setup.tokens.Balancer80BAL20WETH.address, setup.tokens.BAL.address, controller.address, setup.roles.reward_manager.address);
 }
 
-const getVoterProxy = async (setup) => {
+const getVoterProxy = async (setup, gaugeControllerMock) => {
   const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
 
   const mintr = await getMintrMock(setup);
 
-  // TODO: Fix this
-  const gaugeControllerMock = ZERO_ADDRESS;
-
-  return await VoterProxy.deploy(mintr.address, setup.tokens.BAL.address, setup.tokens.VeBal.address, gaugeControllerMock);
+  return await VoterProxy.deploy(mintr.address, setup.tokens.BAL.address, setup.tokens.VeBal.address, gaugeControllerMock.address);
 };
 
 const getControllerMock = async (setup) => {
@@ -155,13 +147,45 @@ const getExtraRewardMock = async () => {
   return await ExtraRewardMockFactory.deploy()
 }
 
-const gaugeController = async (setup) => {
+const gaugeControllerMock = async (setup) => {
   const GaugeController = await ethers.getContractFactory(
     "GaugeControllerMock",
     setup.roles.root
-  );         
+  );
   return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
-}; 
+};
+
+const getGaugeMock = async (setup, lpTokenAddress) => {
+  const GaugeMock = await ethers.getContractFactory(
+    "GaugeMock",
+    setup.roles.root
+  );
+  return await GaugeMock.deploy(lpTokenAddress);
+};
+
+const getVotingMock = async (setup) => {
+  const VotingMock = await ethers.getContractFactory(
+    "VotingMock",
+    setup.roles.root
+  );
+  return await VotingMock.deploy();
+};
+
+const getDistroMock = async (setup) => {
+  const DistroMock = await ethers.getContractFactory(
+    "DistroMock",
+    setup.roles.root
+  );
+  return await DistroMock.deploy();
+};
+
+const getExternalContractMock = async (setup) => {
+  const DistroMock = await ethers.getContractFactory(
+    "ExternalContractMock",
+    setup.roles.root
+  );
+  return await DistroMock.deploy();
+};
 
 const getRewardFactory = async (setup) => {
   const RewardFactoryFactory = await ethers.getContractFactory(
@@ -184,6 +208,11 @@ module.exports = {
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
-  gaugeController,
   getRewardFactory,
+  gaugeControllerMock,
+  getControllerMock,
+  getGaugeMock,
+  getVotingMock,
+  getDistroMock,
+  getExternalContractMock,
 };

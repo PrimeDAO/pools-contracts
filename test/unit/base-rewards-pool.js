@@ -2,13 +2,11 @@ const { expect } = require("chai");
 const { BigNumber, constants } = require("ethers");
 const { deployments, ethers } = require("hardhat");
 const init = require("../test-init.js");
-
-const addressOne = '0x0000000000000000000000000000000000000001';
+const { ONE_ADDRESS } = require('../helpers/constants')
 
 describe("BaseRewardPool", function () {
 
-    const setupTests = deployments.createFixture(async ({ deployments }) => {
-        await deployments.fixture();
+    const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
 
         const setup = await init.initialize(await ethers.getSigners());
@@ -63,13 +61,13 @@ describe("BaseRewardPool", function () {
 
             const signers = await ethers.getSigners()
     
-            await expect(baseRewardPool.connect(signers[10]).addExtraReward(addressOne)).to.be.revertedWith('Unauthorized()')
+            await expect(baseRewardPool.connect(signers[10]).addExtraReward(ONE_ADDRESS)).to.be.revertedWith('Unauthorized()')
         });
 
         it("adds rewards", async function () {
             const { baseRewardPool, rewardManager } = await setupTests();
     
-            await baseRewardPool.connect(rewardManager).addExtraReward(addressOne)
+            await baseRewardPool.connect(rewardManager).addExtraReward(ONE_ADDRESS)
             expect(await baseRewardPool.extraRewardsLength()).to.equal(1)
         });
     });
