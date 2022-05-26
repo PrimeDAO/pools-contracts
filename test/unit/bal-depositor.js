@@ -10,7 +10,6 @@ describe("BalDepositor", function () {
 
         const setup = await init.initialize(await ethers.getSigners());
 
-
         const tokens = await init.getTokens(setup);
 
         const balDepositor = await init.balDepositor(setup);
