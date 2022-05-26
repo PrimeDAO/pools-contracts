@@ -6,7 +6,6 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-
 /// @title Controller contract
 /// @dev Controller contract for Prime Pools is based on the convex Booster.sol contract
 contract Controller {
@@ -106,7 +105,6 @@ contract Controller {
         poolManager = _poolM;
     }
 
-
     /// @notice Sets the contracts reward, token, and stash factory addresses
     /// @param _rfactory The address of the reward factory
     /// @param _sfactory The address of the stash factory
@@ -130,7 +128,6 @@ contract Controller {
         //updating may be required to handle new types of gauges
         stashFactory = _sfactory;
     }
-
 
     /// @notice Sets the contracts rewardArbitrator variable
     /// @param _arb The address of the reward arbitrator
@@ -365,7 +362,6 @@ contract Controller {
         deposit(_pid, balance, _stake);
         return true;
     }
-
 
     /// @notice Internal function that allows user to withdraw lp tokens from the pool
     /// @param _pid The pool id to withdraw the tokens from
