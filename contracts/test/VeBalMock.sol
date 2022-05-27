@@ -18,10 +18,10 @@ interface SmartWalletChecker {
 }   
 
 contract VeBalMock is ERC20, ReentrancyGuard {
-    
+
     struct Point{
-        int128 bias;
-        int128 slope; // - dweight / dt
+        int256 bias;
+        int256 slope; // - dweight / dt
         uint256 ts;
         uint256 blk; // block
     }
@@ -30,7 +30,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // What we can do is to extrapolate ***At functions
 
     struct LockedBalance{
-        int128 amount; 
+        int256 amount; 
         uint256 end;
     }  
 
@@ -64,7 +64,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     Point[100000000000000000000000000000] public point_history; //epoch -> unsigned point
     mapping(address => Point[1000000000]) private user_point_history; //user -> Point[user_epoch]
     mapping(address => uint256) public user_point_epoch;
-    mapping(uint256 => int128) public slope_changes; //time -> signed slope change
+    mapping(uint256 => int256) public slope_changes; //time -> signed slope change
 
     // Checker for whitelisted (smart contract) wallets which are allowed to deposit
     // The goal is to prevent tokenizing the escrow
@@ -320,7 +320,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         require(_locked.amount == 0, "Withdraw old tokens first");
         require(unlock_time > block.timestamp, "Can only lock until time in the future");
         require(unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 1 year max");
-
         _deposit_for(msg.sender, _value, unlock_time, _locked, ActionType.CREATE_LOCK_TYPE);
     }
 
@@ -374,7 +373,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // The following ERC20/minime-compatible methods are not real balanceOf and supply!
     // They measure the weights for the purpose of voting, so they don't represent
     // real coins.
-
 
     /**
     @notice Binary search to find epoch containing block number
