@@ -18,7 +18,7 @@ interface SmartWalletChecker {
 }   
 
 contract VeBalMock is ERC20, ReentrancyGuard {
-    
+
     struct Point{
         int128 bias;
         int128 slope; // - dweight / dt
@@ -150,7 +150,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {
         Point memory u_old; //empty(Point);
         Point memory u_new; //empty(Point);
-
         int128 old_dslope = 0;
         int128 new_dslope = 0;
         uint256 _epoch = epoch;
@@ -232,6 +231,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // But in such case we have 0 slope(s)
             last_point.slope += (u_new.slope - u_old.slope);
             last_point.bias += (u_new.bias - u_old.bias);
+
             if (last_point.slope < 0) {
                 last_point.slope = 0;
             }
@@ -492,7 +492,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         } else {
             _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
         }
-
         if (_epoch == 0) {
             return 0;
         } else {

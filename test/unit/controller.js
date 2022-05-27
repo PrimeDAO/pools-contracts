@@ -370,24 +370,12 @@ describe("Contract: Controller", async () => {
               const stake = true;
 
               expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
-
-              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-
-              expect(
-                (await setup.controller.userLockTime(operator.address)).toNumber()
-              ).to.equal(timelock);
             });
             it("It deposit lp tokens stake = true", async () => {
               await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
               const stake = true;
 
               expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
-              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-              expect(
-                (await setup.controller.userLockTime(staker.address)).toNumber()
-              ).to.equal(timelock);
             });
 
             it("It deposit lp tokens stake = false", async () => {
@@ -398,14 +386,6 @@ describe("Contract: Controller", async () => {
         });        
 
         context("» withdrawUnlockedWethBal testing", () => {
-            it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
-              await expectRevert(
-                setup.controller
-                    .connect(staker)
-                    .withdrawUnlockedWethBal(pid, twentyMillion),
-                "Controller: userLockTime is not reached yet"
-              );
-            });
             it("Sets VoterProxy depositor", async () => {
               expect(await setup.VoterProxy.connect(root).setDepositor(root.address));
             });
@@ -423,17 +403,7 @@ describe("Contract: Controller", async () => {
             it("It increaseAmount WethBal", async () => {
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
               let tx = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
-            });            
-            it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
-              time.increase(new BN(31249454));
-              await expectRevert(
-                setup.controller
-                    .connect(staker)
-                    .withdrawUnlockedWethBal(pid, tenMillion),
-                "Controller: userLockTime is not reached yet"
-              );
             });
-
             it("It withdraw Unlocked WethBal", async () => {
               time.increase(smallLockTime.add(difference));
               const f = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
@@ -494,28 +464,12 @@ describe("Contract: Controller", async () => {
 
               expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
               expect(await setup.controller.connect(staker).restake(pid));
-              expect(
-                (await setup.controller.userLockTime(staker.address)).toNumber()
-              ).to.equal(timelock);
-            });
-            it("It fails redeposit tokens until userLockTime is not reached", async () => {
-              await expectRevert(
-                setup.controller
-                    .connect(staker)
-                    .restake(pid),
-                "Controller: can't restake. userLockTime is not reached yet"
-              );
-            });            
+            });           
             it("It redeposit tokens when stash != address(0)", async () => {
               time.increase(smallLockTime.add(difference));
-              const pidStashNonZero = 2;
-              expect(await setup.controller.connect(staker).withdrawUnlockedWethBal(pidStashNonZero, 0));
-              expect(await setup.controller.connect(staker).restake(pidStashNonZero));
-              const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-              const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-              expect(
-                (await setup.controller.userLockTime(staker.address)).toNumber()
-              ).to.equal(timelock);
+              const pidStashZero = 2;
+
+              expect(await setup.controller.connect(staker).restake(pidStashZero));
             });
             it("It fails redeposit tokens when pool is closed", async () => {
               expect(await setup.controller.connect(root).shutdownPool(pid));
