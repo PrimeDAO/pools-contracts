@@ -18,10 +18,10 @@ interface SmartWalletChecker {
 }   
 
 contract VeBalMock is ERC20, ReentrancyGuard {
-
+    
     struct Point{
-        int256 bias;
-        int256 slope; // - dweight / dt
+        int128 bias;
+        int128 slope; // - dweight / dt
         uint256 ts;
         uint256 blk; // block
     }
@@ -30,13 +30,14 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     // What we can do is to extrapolate ***At functions
 
     struct LockedBalance{
-        int256 amount; 
+        int128 amount; 
         uint256 end;
     }  
 
     address constant ZERO_ADDRESS = address(0x0000000000000000000000000000000000000000);
 
     enum ActionType {DEPOSIT_FOR_TYPE, CREATE_LOCK_TYPE, INCREASE_LOCK_AMOUNT, INCREASE_UNLOCK_TIME}
+
     event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts);
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
@@ -63,7 +64,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     Point[100000000000000000000000000000] public point_history; //epoch -> unsigned point
     mapping(address => Point[1000000000]) private user_point_history; //user -> Point[user_epoch]
     mapping(address => uint256) public user_point_epoch;
-    mapping(uint256 => int256) public slope_changes; //time -> signed slope change
+    mapping(uint256 => int128) public slope_changes; //time -> signed slope change
 
     // Checker for whitelisted (smart contract) wallets which are allowed to deposit
     // The goal is to prevent tokenizing the escrow
@@ -121,6 +122,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         require(msg.sender == AUTHORIZER_ADAPTOR);
         smart_wallet_checker = future_smart_wallet_checker;
     }
+    
     function assert_not_contract(address addr) internal {
         if (addr != tx.origin) {
             uint8 checkExeption = 0;
@@ -133,7 +135,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // raise "Smart contract depositors not allowed";
         }
     }    
-
     function get_last_user_slope(address addr) external view returns (int128){
         uint256 uepoch = user_point_epoch[addr];
         return user_point_history[addr][uepoch].slope;
@@ -149,6 +150,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {
         Point memory u_old; //empty(Point);
         Point memory u_new; //empty(Point);
+
         int128 old_dslope = 0;
         int128 new_dslope = 0;
         uint256 _epoch = epoch;
@@ -230,7 +232,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
             // But in such case we have 0 slope(s)
             last_point.slope += (u_new.slope - u_old.slope);
             last_point.bias += (u_new.bias - u_old.bias);
-
             if (last_point.slope < 0) {
                 last_point.slope = 0;
             }
@@ -491,6 +492,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         } else {
             _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
         }
+
         if (_epoch == 0) {
             return 0;
         } else {
