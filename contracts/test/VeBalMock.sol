@@ -37,7 +37,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     address constant ZERO_ADDRESS = address(0x0000000000000000000000000000000000000000);
 
     enum ActionType {DEPOSIT_FOR_TYPE, CREATE_LOCK_TYPE, INCREASE_LOCK_AMOUNT, INCREASE_UNLOCK_TIME}
-
     event Deposit(address indexed provider, uint256 value, uint256 indexed locktime, uint actionType, uint256 ts);
     event Withdraw(address indexed provider, uint256 value, uint256 ts);
     event Supply(uint256 prevSupply, uint256 supply);
@@ -150,7 +149,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     function _checkpoint(address addr, LockedBalance memory old_locked, LockedBalance memory new_locked) internal {
         Point memory u_old; //empty(Point);
         Point memory u_new; //empty(Point);
-
         int128 old_dslope = 0;
         int128 new_dslope = 0;
         uint256 _epoch = epoch;
@@ -490,7 +488,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         } else {
             _epoch = find_timestamp_user_epoch(addr, _t, user_point_epoch[addr]);
         }
-
         if (_epoch == 0) {
             return 0;
         } else {
