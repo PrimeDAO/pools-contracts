@@ -84,28 +84,28 @@ contract Controller {
 
     /// SETTER SECTION ///
 
-    /// @notice Sets the contracts owner variable
+    /// @notice sets the owner variable
     /// @param _owner The address of the owner of the contract
     function setOwner(address _owner) external {
         require(msg.sender == owner, "!auth");
         owner = _owner;
     }
 
-    /// @notice Sets the contracts feeManager variable
+    /// @notice sets the feeManager variable
     /// @param _feeM The address of the fee manager
     function setFeeManager(address _feeM) external {
         require(msg.sender == feeManager, "!auth");
         feeManager = _feeM;
     }
 
-    /// @notice Sets the contracts poolManager variable
+    /// @notice sets the poolManager variable
     /// @param _poolM The address of the pool manager
     function setPoolManager(address _poolM) external {
         require(msg.sender == poolManager, "!auth");
         poolManager = _poolM;
     }
 
-    /// @notice Sets the contracts reward, token, and stash factory addresses
+    /// @notice sets the reward, token, and stash factory addresses
     /// @param _rfactory The address of the reward factory
     /// @param _sfactory The address of the stash factory
     /// @param _tfactory The address of the token factory
@@ -129,21 +129,21 @@ contract Controller {
         stashFactory = _sfactory;
     }
 
-    /// @notice Sets the contracts rewardArbitrator variable
+    /// @notice sets the rewardArbitrator variable
     /// @param _arb The address of the reward arbitrator
     function setArbitrator(address _arb) external {
         require(msg.sender == owner, "!auth");
         rewardArbitrator = _arb;
     }
 
-    /// @notice Sets the contracts voteDelegate variable
+    /// @notice sets the voteDelegate variable
     /// @param _voteDelegate The address of whom votes will be delegated to
     function setVoteDelegate(address _voteDelegate) external {
         require(msg.sender == voteDelegate, "!auth");
         voteDelegate = _voteDelegate;
     }
 
-    /// @notice Sets the contracts lockRewards and stakerRewards variables
+    /// @notice sets the lockRewards and stakerRewards variables
     /// @param _rewards The address of the rewards contract
     /// @param _stakerRewards The address of the staker rewards contract
     function setRewardContracts(address _rewards, address _stakerRewards)
@@ -159,7 +159,7 @@ contract Controller {
         }
     }
 
-    /// @notice Sets the address of the feeToken
+    /// @notice sets the address of the feeToken
     // Set reward token and claim contract, get from Curve's registry
     function setFeeInfo() external {
         require(msg.sender == feeManager, "!auth");
@@ -177,7 +177,7 @@ contract Controller {
         }
     }
 
-    /// @notice Sets the lock, staker, caller, and platform fees
+    /// @notice sets the lock, staker, caller, and platform fees
     /// @param _lockFees The amount to set for the lock fees
     /// @param _stakerFees The amount to set for the staker fees
     /// @param _callerFees The amount to set for the caller fees
@@ -210,7 +210,7 @@ contract Controller {
         }
     }
 
-    /// @notice Sets the contracts treasury variables
+    /// @notice sets the contracts treasury variables
     /// @param _treasury The address of the treasury contract
     function setTreasury(address _treasury) external {
         require(msg.sender == feeManager, "!auth");
@@ -224,10 +224,9 @@ contract Controller {
         return poolInfo.length;
     }
 
-    /// @notice Creates a new pool
+    /// @notice creates a new pool
     /// @param _lptoken The address of the lp token
     /// @param _gauge The address of the gauge controller
-    //create a new pool
     function addPool(address _lptoken, address _gauge) external returns (bool) {
         require(msg.sender == poolManager && !isShutdown, "!add");
         require(_gauge != address(0) && _lptoken != address(0), "!param");
@@ -308,7 +307,7 @@ contract Controller {
         }
     }
 
-    /// @notice allows deposits into a specific pool, mints reward tokens and stakes them into the reward contract
+    /// @notice deposits an amount into a specific pool, mints reward tokens and stakes them into the reward contract
     /// @param _pid The pool id to deposit lp tokens into
     /// @param _amount The amount of lp tokens to be deposited
     /// @param _stake bool for wheather the tokens should be staked
@@ -353,7 +352,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice allows a user to deposit and stake all of their LP tokens
+    /// @notice deposits and stakes all LP tokens
     /// @param _pid The pool id to deposit lp tokens into
     /// @param _stake bool for wheather the tokens should be staked
     function depositAll(uint256 _pid, bool _stake) external returns (bool) {
@@ -363,7 +362,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice Internal function that allows user to withdraw lp tokens from the pool
+    /// @notice internal function that withdraws lp tokens from the pool
     /// @param _pid The pool id to withdraw the tokens from
     /// @param _amount amount of LP tokens to withdraw
     /// @param _from address of where the lp tokens will be withdrawn from
@@ -401,7 +400,7 @@ contract Controller {
         emit Withdrawn(_to, _pid, _amount);
     }
 
-    /// @notice allows users to withdraw lp tokens from the pool
+    /// @notice withdraws lp tokens from the pool
     /// @param _pid The pool id to withdraw lp tokens from
     /// @param _amount amount of LP tokens to withdraw
     function withdraw(uint256 _pid, uint256 _amount) public returns (bool) {
@@ -409,7 +408,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice allows users to withdraw all of the lp tokens they have in the pool
+    /// @notice withdraws all of the lp tokens in the pool
     /// @param _pid The pool id to withdraw lp tokens from
     function withdrawAll(uint256 _pid) public returns (bool) {
         address token = poolInfo[_pid].token;
@@ -418,7 +417,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice allows users to withdraw their LP tokens and send rewards to a specified address
+    /// @notice withdraws LP tokens and sends rewards to a specified address
     /// @param _pid The pool id to deposit lp tokens into
     /// @param _amount amount of LP tokens to withdraw
     function withdrawTo(
@@ -433,7 +432,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice Allows a user to submit votes for proposals
+    /// @notice submits votes for proposals
     /// @param _voteId the id of the vote
     /// @param _votingAddress the address placing the vote
     /// @param _support boolean for the vote support
@@ -452,7 +451,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice Allows a user to submit votes
+    /// @notice sets the voteGaugeWeight
     /// @param _gauge array of gauge addresses
     /// @param _weight array of vote weights
     function voteGaugeWeight(
@@ -467,7 +466,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice allows user to claim rewards from a specific pool
+    /// @notice claims rewards from a specific pool
     /// @param _pid the id of the pool
     /// @param _gauge address of the gauge
     function claimRewards(uint256 _pid, address _gauge)
@@ -495,7 +494,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice internal function that allows users to claim rewards from a pool and disperse to the rewards contract
+    /// @notice internal function that claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held
     function _earmarkRewards(uint256 _pid) internal {
         PoolInfo storage pool = poolInfo[_pid];
@@ -564,7 +563,7 @@ contract Controller {
         }
     }
 
-    /// @notice external function that allows users to claim rewards from a pool and disperse to the rewards contract
+    /// @notice external function that claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held
     function earmarkRewards(uint256 _pid) external returns (bool) {
         require(!isShutdown, "shutdown");
@@ -572,7 +571,7 @@ contract Controller {
         return true;
     }
 
-    /// @notice allows users to claim fees from the feeDistro contract, transfer the lockfees into the rewards contract
+    /// @notice claims fees from the feeDistro contract, transfers the lockfees into the rewards contract
     function earmarkFees() external returns (bool) {
         //claim fee rewards
         IStaker(staker).claimFees(feeDistro, feeToken);
