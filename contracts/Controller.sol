@@ -23,7 +23,6 @@ contract Controller {
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
     uint256 public constant lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
-    mapping(address => uint256) public userLockTime; //lock time for each user individually
 
     address public owner;
     address public feeManager;
@@ -285,9 +284,6 @@ contract Controller {
             IStash(stash).stashRewards();
         }
 
-        //save timelock info
-        userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
-
         address token = pool.token; //D2DPool token
         if (_stake) {
             //mint here and send to rewards on user behalf
@@ -323,12 +319,6 @@ contract Controller {
         PoolInfo storage pool = poolInfo[_pid];
         address lptoken = pool.lptoken;
         address gauge = pool.gauge;
-
-        //check lock
-        require(
-            block.timestamp > userLockTime[_from],
-            "Controller: userLockTime is not reached yet"
-        );
 
         //remove lp balance
         address token = pool.token;
@@ -388,12 +378,6 @@ contract Controller {
         PoolInfo storage pool = poolInfo[_pid];
         address gauge = pool.gauge;
 
-        //check lock
-        require(
-            block.timestamp > userLockTime[msg.sender],
-            "Controller: userLockTime is not reached yet"
-        );
-
         //pull from gauge if not shutdown
         // if shutdown tokens will be in this contract
         if (!pool.shutdown) {
@@ -402,17 +386,12 @@ contract Controller {
 
         return true;
     }
-    // restake veBAL, which was unlocked after a year of usage
+
+    // restake wethBAL, which was unlocked after a year of usage
     function restake(uint256 _pid) public returns (bool) {
         require(!isShutdown, "shutdown");
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
-
-        //check lock
-        require(
-            block.timestamp > userLockTime[msg.sender],
-            "Controller: can't restake. userLockTime is not reached yet"
-        );
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;
@@ -421,11 +400,10 @@ contract Controller {
             IStash(stash).stashRewards();
         }
 
-        //update timelock info
-        userLockTime[msg.sender] = block.timestamp + lockTime; //current time + year
-        uint256 _amount = IERC20(bal).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+        address token = pool.token;
 
-        IStaker(staker).createLock(_amount, userLockTime[msg.sender]);
+        uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+        IStaker(staker).increaseTime(lockTime);
 
         emit Deposited(msg.sender, _pid, _amount);
         return true;
