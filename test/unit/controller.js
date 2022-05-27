@@ -187,7 +187,7 @@ describe("Contract: Controller", async () => {
                     .to.emit(stashFactory, 'ImpelemntationChanged')
                     .withArgs(implementationAddress);
             });
-            it("Adds pool", async () => { //now, because of gauge, stash is also = 0
+            it("Adds pool", async () => {
                 lptoken = setup.tokens.PoolContract;
                 gauge = setup.GaugeController;
                 stashVersion = 1;
@@ -246,10 +246,10 @@ describe("Contract: Controller", async () => {
                 ).to.equal(thirtyMillion.toString()); 
             });
             it("Calls earmarkRewards with existing pool number with non-empty balance", async () => {
-                balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                wethBalBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
-                const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-                balBal = balBal - profit; //balForTransfer if no treasury
+                const profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
+                wethBalBal = wethBalBal - profit; //balForTransfer if no treasury
                 let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
                 const poolInfo = await setup.controller.poolInfo(0);
@@ -277,13 +277,13 @@ describe("Contract: Controller", async () => {
             it("Calls earmarkRewards with existing pool number with non-empty balance and treasury", async () => {
                 await setup.tokens.WethBal.transfer(setup.controller.address, thirtyMillion);
 
-                balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                wethBalBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
-                const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-                balBal = balBal - profit;
+                const profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
+                wethBalBal = wethBalBal - profit;
                 let platformFees = await setup.controller.platformFees();
-                const platform = (balBal * platformFees) / FEE_DENOMINATOR;
-                rewardContract_amount_expected = balBal - platform;
+                const platform = (wethBalBal * platformFees) / FEE_DENOMINATOR;
+                rewardContract_amount_expected = wethBalBal - platform;
 
                 let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber() + platform;
                 let feeManager_amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
@@ -306,13 +306,13 @@ describe("Contract: Controller", async () => {
                         .setFees("0", profitFee);            
             });
             it("Calls earmarkRewardsc check 'send treasury' when platformFees = 0", async () => {
-                balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                wethBalBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
-                const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-                balBal = balBal - profit;
+                const profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
+                wethBalBal = wethBalBal - profit;
                 let platformFees = await setup.controller.platformFees();
-                const platform = (balBal * platformFees) / FEE_DENOMINATOR;
-                rewardContract_amount_expected = balBal - platform;
+                const platform = (wethBalBal * platformFees) / FEE_DENOMINATOR;
+                rewardContract_amount_expected = wethBalBal - platform;
 
                 let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber() + platform;
 
@@ -335,13 +335,13 @@ describe("Contract: Controller", async () => {
                 ).to.equal(setup.controller.address.toString());
             });
             it("Calls earmarkRewardsc check 'send treasury' when treasury = controller", async () => {
-                balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                wethBalBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
-                const profit = (balBal * profitFees) / FEE_DENOMINATOR;
-                balBal = balBal - profit;
+                const profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
+                wethBalBal = wethBalBal - profit;
                 let platformFees = await setup.controller.platformFees();
-                const platform = (balBal * platformFees) / FEE_DENOMINATOR;
-                rewardContract_amount_expected = balBal - platform;
+                const platform = (wethBalBal * platformFees) / FEE_DENOMINATOR;
+                rewardContract_amount_expected = wethBalBal - platform;
 
                 let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber() + platform;
 
