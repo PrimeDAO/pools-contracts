@@ -65,7 +65,7 @@ describe("Contract: Controller", async () => {
   const thirtyMillion = 30000000;
   const sixtyMillion = 60000000;
   const defaultTimeForBalanceOfVeBal = 0;
-  const difference = new BN(28944000); // 1684568938 - 1655624938 
+  const difference = new BN(28944000); // 1684568938 - 1655624938
   const timeDifference = BigNumber.from(difference.toString());
 
   context("» Controller", () => {
