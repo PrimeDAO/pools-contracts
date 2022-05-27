@@ -46,6 +46,7 @@ const getTokens = async (setup) => {
         "VeBAL",
         setup.roles.authorizer_adaptor.address
     );
+
     const GaugeControllerFactory = await ethers.getContractFactory(
         "GaugeControllerMock",
         setup.roles.root

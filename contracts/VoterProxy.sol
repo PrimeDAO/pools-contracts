@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -10,7 +10,7 @@ contract VoterProxy {
     using Address for address;
 
     address public immutable mintr;
-    address public immutable WethBal;
+    address public immutable wethBal;
 
     address public immutable veBal;
     address public immutable gaugeController;
@@ -24,14 +24,14 @@ contract VoterProxy {
 
     constructor(
         address mintr_,
-        address WethBal_,
+        address wethBal_,
         address veBal_,
         address gaugeController_
     ) public {
         owner = msg.sender;
 
         mintr = mintr_;
-        WethBal = WethBal_;
+        wethBal = wethBal_;
         veBal = veBal_;
         gaugeController = gaugeController_;
     }
@@ -142,16 +142,16 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == depositor, "!auth");
-        IERC20(WethBal).approve(veBal, 0);
-        IERC20(WethBal).approve(veBal, _value);
+        IERC20(wethBal).approve(veBal, 0);
+        IERC20(wethBal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).create_lock(_value, _unlockTime);
         return true;
     }
 
     function increaseAmount(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
-        IERC20(WethBal).approve(veBal, 0);
-        IERC20(WethBal).approve(veBal, _value);
+        IERC20(wethBal).approve(veBal, 0);
+        IERC20(wethBal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).increase_amount(_value);
         return true;
     }
@@ -194,8 +194,8 @@ contract VoterProxy {
 
         uint256 _balance = 0;
         try IMinter(mintr).mint(_gauge) {
-            _balance = IERC20(WethBal).balanceOf(address(this));
-            IERC20(WethBal).transfer(operator, _balance);
+            _balance = IERC20(wethBal).balanceOf(address(this));
+            IERC20(wethBal).transfer(operator, _balance);
             //solhint-disable-next-line
         } catch {}
 
