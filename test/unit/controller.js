@@ -20,7 +20,7 @@ const difference = new BN(28944000); // 1684568938 - 1655624938
 const timeDifference = BigNumber.from(difference.toString());
 
 let setup;
-let root_;
+let root;
 let platformFee;
 let profitFee;
 let pid;
@@ -33,7 +33,10 @@ let stashVersion;
 let wethBalBal;
 let feeManager;
 let treasury;
-let controller_;
+let VoterProxy;
+let controller; 
+let GaugeController;
+let tokens;
 
 describe("Controller", function () {
 
@@ -67,16 +70,16 @@ describe("Controller", function () {
         profitFee = 100;
 
         return {
-            tokens,
-            GaugeController: setup.GaugeController,
-            VoterProxy: setup.VoterProxy,
-            controller: setup.controller,
-            rewardFactory: setup.rewardFactory,
-            proxyFactory: setup.proxyFactory,
-            stashFactory: setup.stashFactory ,
-            tokenFactory: setup.tokenFactory,
+            tokens_: tokens,
+            GaugeController_: setup.GaugeController,
+            VoterProxy_: setup.VoterProxy,
+            controller_: setup.controller,
+            rewardFactory_: setup.rewardFactory,
+            proxyFactory_: setup.proxyFactory,
+            stashFactory_: setup.stashFactory ,
+            tokenFactory_: setup.tokenFactory,
             stashFactoryMock : setup.stashFactoryMock,
-            root: setup.roles.root,
+            root_: setup.roles.root,
             staker: setup.roles.staker,
             admin: setup.roles.prime,
             reward_manager: setup.roles.reward_manager,
@@ -86,105 +89,115 @@ describe("Controller", function () {
         }
     });
 
-    context("» setFeeInfo testing", () => {
-        it("Checks feeToken", async () => {
-            const { controller } = await setupTests();
-            expect((await controller.feeToken()).toString()).to.equal(zero_address);
-        });
-    });
-    context("» setFees testing", () => {
-        it("Should fail if caller if not feeManager", async () => {
-            const { controller, staker } = await setupTests();
-            await expectRevert(
-                controller
-                    .connect(staker)
-                    .setFees(platformFee, profitFee),
-                "!auth"
-            );      
-        });
-        it("Sets correct fees", async () => {
-            const { controller, root } = await setupTests();
-            await controller
-                    .connect(root)
-                    .setFees(platformFee, profitFee);            
-        });
-        it("Should fail if total >MaxFees", async () => {
-            const { controller, root } = await setupTests();
-            platformFee = 1000;
-            profitFee = 1001;
-            await expectRevert(
-                controller
-                    .connect(root)
-                    .setFees(platformFee, profitFee),
-                ">MaxFees"
-            );                
-        });
-        it("Should fail if platformFee is too small", async () => {
-            const { controller, root } = await setupTests();
-            platformFee = 400;
-            profitFee = 100;
-            await controller
-                    .connect(root)
-                    .setFees(platformFee, profitFee);
-            expect((await controller.platformFees()).toString()).to.equal("1000");              
-        });
-        it("Should fail if platformFee is too big", async () => {
-            const { controller, root } = await setupTests();
-            platformFee = 10000;
-            profitFee = 100;
-            await expectRevert(
-                controller
-                    .connect(root)
-                    .setFees(platformFee, profitFee),
-                ">MaxFees"
-            );  
-        });
-        it("Should fail if profitFee is too small", async () => {
-            const { controller, root } = await setupTests();
-            platformFee = 500;
-            profitFee = 10;
-            await controller
-                    .connect(root)
-                    .setFees(platformFee, profitFee);
-            expect((await controller.profitFees()).toString()).to.equal("250"); //default value in Controller contract
+    // context("» setFeeInfo testing", () => {
+    //     it("Checks feeToken", async () => {
+    //         const { controller } = await setupTests();
+    //         expect((await controller.feeToken()).toString()).to.equal(zero_address);
+    //     });
+    // });
+    // context("» setFees testing", () => {
+    //     it("Should fail if caller if not feeManager", async () => {
+    //         const { controller, staker } = await setupTests();
+    //         await expectRevert(
+    //             controller
+    //                 .connect(staker)
+    //                 .setFees(platformFee, profitFee),
+    //             "!auth"
+    //         );      
+    //     });
+    //     it("Sets correct fees", async () => {
+    //         const { controller, root } = await setupTests();
+    //         await controller
+    //                 .connect(root)
+    //                 .setFees(platformFee, profitFee);            
+    //     });
+    //     it("Should fail if total >MaxFees", async () => {
+    //         const { controller, root } = await setupTests();
+    //         platformFee = 1000;
+    //         profitFee = 1001;
+    //         await expectRevert(
+    //             controller
+    //                 .connect(root)
+    //                 .setFees(platformFee, profitFee),
+    //             ">MaxFees"
+    //         );                
+    //     });
+    //     it("Should fail if platformFee is too small", async () => {
+    //         const { controller, root } = await setupTests();
+    //         platformFee = 400;
+    //         profitFee = 100;
+    //         await controller
+    //                 .connect(root)
+    //                 .setFees(platformFee, profitFee);
+    //         expect((await controller.platformFees()).toString()).to.equal("1000");              
+    //     });
+    //     it("Should fail if platformFee is too big", async () => {
+    //         const { controller, root } = await setupTests();
+    //         platformFee = 10000;
+    //         profitFee = 100;
+    //         await expectRevert(
+    //             controller
+    //                 .connect(root)
+    //                 .setFees(platformFee, profitFee),
+    //             ">MaxFees"
+    //         );  
+    //     });
+    //     it("Should fail if profitFee is too small", async () => {
+    //         const { controller, root } = await setupTests();
+    //         platformFee = 500;
+    //         profitFee = 10;
+    //         await controller
+    //                 .connect(root)
+    //                 .setFees(platformFee, profitFee);
+    //         expect((await controller.profitFees()).toString()).to.equal("250"); //default value in Controller contract
 
-        });
-        it("Should fail if profitFee is too big", async () => {
-            const { controller, root } = await setupTests();
-            platformFee = 500;
-            profitFee = 1000;
-            await controller
-                    .connect(root)
-                    .setFees(platformFee, profitFee);
-            expect((await controller.profitFees()).toString()).to.equal("250");
+    //     });
+    //     it("Should fail if profitFee is too big", async () => {
+    //         const { controller, root } = await setupTests();
+    //         platformFee = 500;
+    //         profitFee = 1000;
+    //         await controller
+    //                 .connect(root)
+    //                 .setFees(platformFee, profitFee);
+    //         expect((await controller.profitFees()).toString()).to.equal("250");
 
-        });
-    });
+    //     });
+    // });
         context("» _earmarkRewards testing", () => {
             before('>>> setup', async function() {
-                const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, tokens, root } = await setupTests();
-                expect(await VoterProxy.connect(root).setOperator(controller.address));
-                expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-                // Deploy implementation contract
-                const implementationAddress = await ethers.getContractFactory('StashMock')
-                    .then(x => x.deploy())
-                    .then(x => x.address)  
-                // Set implementation contract
-                await expect(stashFactory.connect(root).setImplementation(implementationAddress))
-                    .to.emit(stashFactory, 'ImpelemntationChanged')
-                    .withArgs(implementationAddress);
+                const { VoterProxy_, controller_, rewardFactory_, stashFactory_, tokenFactory_, GaugeController_, tokens_, root_ } = await setupTests();
+                VoterProxy = VoterProxy_; 
+                rewardFactory = rewardFactory_;
+                stashFactory = stashFactory_;
+                tokenFactory = tokenFactory_; 
+                GaugeController = GaugeController_;
+                tokens = tokens_;
+                controller = controller_;
+                root = root_;
 
-                lptoken = tokens.PoolContract;
-                gauge = GaugeController;
-                await controller.connect(root).addPool(lptoken.address, gauge.address);
-                rewards = rewardFactory;
-                stakerRewards = stashFactory;
-                // controller_ = controller;
-                // root_ = root;
-                expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
+                // expect(await VoterProxy.connect(root).setOperator(controller.address));
+                // expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+                // // Deploy implementation contract
+                // const implementationAddress = await ethers.getContractFactory('StashMock')
+                //     .then(x => x.deploy())
+                //     .then(x => x.address)  
+                // // Set implementation contract
+                // await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                //     .to.emit(stashFactory, 'ImpelemntationChanged')
+                //     .withArgs(implementationAddress);
+
+                // lptoken = tokens.PoolContract;
+                // gauge = GaugeController;
+                // await controller.connect(root).addPool(lptoken.address, gauge.address);
+                // expect(
+                //     (await controller.poolLength()).toNumber()
+                // ).to.equal(1);
+                
+                // rewards = rewardFactory;
+                // stakerRewards = stashFactory;
+                // expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
             })
             it("Calls earmarkRewards with non existing pool number", async () => {
-                // const { controller, root } = await setupTests();
                 pid = 1;
                 await expectRevert(
                     controller
@@ -193,18 +206,18 @@ describe("Controller", function () {
                     "Controller: pool is not exists"
                 );  
             });
-            // it("Sets VoterProxy operator ", async () => {
-            //     const { VoterProxy, controller, root } = await setupTests();
-            //     expect(await VoterProxy.connect(root).setOperator(controller.address));
-            // });
-            // it("Sets factories", async () => {
-            //     const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, root } = await setupTests();
+            it("Sets VoterProxy operator ", async () => {
+                // const { VoterProxy, controller, root } = await setupTests();
+                expect(await VoterProxy.connect(root).setOperator(controller.address));
+            });
+            it("Sets factories", async () => {
+                // const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, root } = await setupTests();
 
-            //     // rewardFactory = setup.rewardFactory;
-            //     // stashFactory = setup.stashFactory;
-            //     // tokenFactory = setup.tokenFactory;
-            //     expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-            // });
+                // rewardFactory = setup.rewardFactory;
+                // stashFactory = setup.stashFactory;
+                // tokenFactory = setup.tokenFactory;
+                expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            });
             it("Sets StashFactory implementation ", async () => {
                 // const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, root } = await setupTests();
 
@@ -219,7 +232,7 @@ describe("Controller", function () {
                     .withArgs(implementationAddress);
             });
             it("Adds pool", async () => { //now, because of gauge, stash is also = 0
-                const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, tokens, root } = await setupTests();
+                // const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, tokens, root } = await setupTests();
                 expect(await VoterProxy.connect(root).setOperator(controller.address));
                 expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
 
@@ -364,10 +377,8 @@ describe("Controller", function () {
                 const platform = (wethBalBal * platformFees) / FEE_DENOMINATOR;
                 rewardContract_amount_expected = wethBalBal - platform;
 
-                let treasury_amount_expected = (await setup.tokens.WethBal.balanceOf(treasury.address)).toNumber() + platform;
-
-                await setup.controller.connect(root).earmarkRewards(pid);
-
+                let treasury_amount_expected                // controller_ = controller;
+                // root_ = root;
                 //expect 0 when platformFees = 0
                 expect(
                     (await setup.tokens.WethBal.balanceOf(treasury.address)).toString()
