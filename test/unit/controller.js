@@ -84,7 +84,95 @@ describe("Controller", function () {
             randomUser: signers.pop(),
         }
     });
-    
+    const setupTests2 = deployments.createFixture(async ({ deployments }) => {
+        const signers = await ethers.getSigners();
+        const setup = await init.initialize(await ethers.getSigners());
+
+        const tokens = await init.getTokens(setup);
+
+        setup.GaugeController = await init.gaugeController(setup);
+
+        setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
+      
+        setup.controller = await init.controller(setup);
+      
+        setup.baseRewardPool = await init.baseRewardPool(setup);
+      
+        setup.rewardFactory = await init.rewardFactory(setup);
+      
+        setup.proxyFactory = await init.proxyFactory(setup);
+      
+        setup.stashFactory = await init.stashFactory(setup);
+      
+        setup.stashFactoryMock = await init.getStashFactoryMock(setup);
+      
+        setup.tokenFactory = await init.tokenFactory(setup);
+      
+        setup.extraRewardFactory = await init.getExtraRewardMock(setup);
+      
+        platformFee = 500;
+        profitFee = 100;
+
+        expect(await setup.VoterProxy.connect(setup.roles.root).setOperator(setup.controller.address));
+        expect(await setup.controller.connect(setup.roles.root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address));
+        // Deploy implementation contract
+        const implementationAddress = await ethers.getContractFactory('StashMock')
+            .then(x => x.deploy())
+            .then(x => x.address)  
+        // Set implementation contract
+        await expect(setup.stashFactory.connect(setup.roles.root).setImplementation(implementationAddress))
+            .to.emit(setup.stashFactory, 'ImpelemntationChanged')
+            .withArgs(implementationAddress);
+
+        lptoken = tokens.PoolContract;
+        gauge = setup.GaugeController;
+        expect(await setup.controller.connect(setup.roles.root).addPool(lptoken.address, gauge.address));
+
+        rewards = setup.rewardFactory;
+        stakerRewards = setup.stashFactory;
+        expect(await setup.controller.connect(setup.roles.root).setRewardContracts(rewards.address, stakerRewards.address)); 
+
+        return {
+            tokens,
+            GaugeController: setup.GaugeController,
+            VoterProxy: setup.VoterProxy,
+            controller: setup.controller,
+            rewardFactory: setup.rewardFactory,
+            proxyFactory: setup.proxyFactory,
+            stashFactory: setup.stashFactory ,
+            tokenFactory: setup.tokenFactory,
+            stashFactoryMock : setup.stashFactoryMock,
+            root: setup.roles.root,
+            staker: setup.roles.staker,
+            admin: setup.roles.prime,
+            reward_manager: setup.roles.reward_manager,
+            authorizer_adaptor: setup.roles.authorizer_adaptor,
+            operator: setup.roles.operator,
+            randomUser: signers.pop(),
+        }
+    });
+    // before('setup', async function() {
+    //     const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, tokens, root } = await setupTests();
+    //     expect(await VoterProxy.connect(root).setOperator(controller.address));
+    //     expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+    //     // Deploy implementation contract
+    //     const implementationAddress = await ethers.getContractFactory('StashMock')
+    //         .then(x => x.deploy())
+    //         .then(x => x.address)  
+    //     // Set implementation contract
+    //     await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+    //         .to.emit(stashFactory, 'ImpelemntationChanged')
+    //         .withArgs(implementationAddress);
+
+    //     lptoken = tokens.PoolContract;
+    //     gauge = GaugeController;
+    //     expect(await controller.connect(root).addPool(lptoken.address, gauge.address));
+
+    //     rewards = rewardFactory;
+    //     stakerRewards = stashFactory;
+    //     expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));    
+    // })
+
     context("» setFeeInfo testing", () => {
         it("Checks feeToken", async () => {
             const { controller } = await setupTests();
@@ -160,11 +248,11 @@ describe("Controller", function () {
         });
     });
         context("» _earmarkRewards testing", () => {
-            before('>>> setup', async function() {
-                const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, root } = await setupTests();
-                expect(await VoterProxy.connect(root).setOperator(controller.address));
-                expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-            })
+            // before('>>> setup', async function() {
+            //     const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, root } = await setupTests();
+            //     expect(await VoterProxy.connect(root).setOperator(controller.address));
+            //     expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            // })
             it("Calls earmarkRewards with non existing pool number", async () => {
                 const { controller, root } = await setupTests();
                 pid = 1;
@@ -242,24 +330,24 @@ describe("Controller", function () {
                 expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
             });
             it("Calls earmarkRewards with existing pool number", async () => {
-                const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, tokens, root } = await setupTests();
-                expect(await VoterProxy.connect(root).setOperator(controller.address));
-                expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-                // Deploy implementation contract
-                const implementationAddress = await ethers.getContractFactory('StashMock')
-                    .then(x => x.deploy())
-                    .then(x => x.address)  
-                // Set implementation contract
-                await expect(stashFactory.connect(root).setImplementation(implementationAddress))
-                    .to.emit(stashFactory, 'ImpelemntationChanged')
-                    .withArgs(implementationAddress);
+                const { VoterProxy, controller, rewardFactory, stashFactory, tokenFactory, GaugeController, tokens, root } = await setupTests2();
+                // expect(await VoterProxy.connect(root).setOperator(controller.address));
+                // expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+                // // Deploy implementation contract
+                // const implementationAddress = await ethers.getContractFactory('StashMock')
+                //     .then(x => x.deploy())
+                //     .then(x => x.address)  
+                // // Set implementation contract
+                // await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                //     .to.emit(stashFactory, 'ImpelemntationChanged')
+                //     .withArgs(implementationAddress);
 
-                lptoken = tokens.PoolContract;
-                gauge = GaugeController;
-                await controller.connect(root).addPool(lptoken.address, gauge.address);
-                rewards = rewardFactory;
-                stakerRewards = stashFactory;
-                expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
+                // lptoken = tokens.PoolContract;
+                // gauge = GaugeController;
+                // await controller.connect(root).addPool(lptoken.address, gauge.address);
+                // rewards = rewardFactory;
+                // stakerRewards = stashFactory;
+                // expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
 
                 pid = 0;
                 await controller.connect(root).earmarkRewards(pid);
