@@ -8,7 +8,6 @@ const addressOne = '0x0000000000000000000000000000000000000001';
 describe("StashFactory", function () {
 
     const setupTests = deployments.createFixture(async ({ deployments }) => {
-        await deployments.fixture();
         const signers = await ethers.getSigners();
 
         const setup = await init.initialize(await ethers.getSigners());
