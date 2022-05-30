@@ -24,6 +24,7 @@ let root;
 let staker;
 let admin;
 let operator;
+let authorizer_adaptor;
 let reward_manager;
 let platformFee;
 let profitFee;
@@ -233,15 +234,13 @@ describe("Controller", function () {
             expect(
                 (poolInfo.gauge).toString()
             ).to.equal(gauge.address.toString());
-
-            await controller.connect(root).addPool(lptoken.address, gauge.address); //need for restake test below
         });
         it("Adds pool with stash == address(0)", async () => {
           expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address));
           await controller.connect(root).addPool(lptoken.address, gauge.address);
           expect(
             (await controller.poolLength()).toNumber()
-          ).to.equal(3);
+          ).to.equal(2);
           expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
         });
         it("Sets RewardContracts", async () => {
@@ -279,7 +278,7 @@ describe("Controller", function () {
             wethBalBal = await tokens.WethBal.balanceOf(controller.address);
             let profitFees = await controller.profitFees();
             const profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
-            wethBalBal = wethBalBal - profit; //balForTransfer if no treasury
+            wethBalBal = wethBalBal - profit; //wethBalForTransfer if no treasury
             let amount_expected = (await tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
             const poolInfo = await controller.poolInfo(0);
@@ -390,63 +389,22 @@ describe("Controller", function () {
         });           
     });        
     context("» earmarkFees testing", () => {
-        // before('>>> setup', async function() {
-        //     const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, tokens_, roles } = await setupTests();
-        //     VoterProxy = VoterProxy_; 
-        //     rewardFactory = rewardFactory_;
-        //     stashFactory = stashFactory_;
-        //     stashFactoryMock = stashFactoryMock_;
-        //     tokenFactory = tokenFactory_; 
-        //     GaugeController = GaugeController_;
-        //     tokens = tokens_;
-        //     controller = controller_;
-        //     root = roles.root;
-        //     staker = roles.staker;
-        //     admin = roles.prime;
-        //     reward_manager = roles.reward_manager;
-        // });
         it("Calls earmarkFees", async () => {
 
         });
     });
     context("» deposit testing", () => {
-        // before('>>> setup', async function() {
-        //     const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, tokens_, roles } = await setupTests();
-        //     VoterProxy = VoterProxy_; 
-        //     rewardFactory = rewardFactory_;
-        //     stashFactory = stashFactory_;
-        //     stashFactoryMock = stashFactoryMock_;
-        //     tokenFactory = tokenFactory_; 
-        //     GaugeController = GaugeController_;
-        //     tokens = tokens_;
-        //     controller = controller_;
-        //     root = roles.root;
-        //     staker = roles.staker;
-        //     admin = roles.prime;
-        //     operator = roles.operator;
-        //     reward_manager = roles.reward_manager;
-        // });
         it("It deposit lp tokens from operator stake = true", async () => {
           await tokens.WethBal.transfer(staker.address, twentyMillion);
           const stake = true;
 
           expect(await controller.connect(operator).deposit(pid, twentyMillion, stake));
-
-        //   const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-        //   const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-
-        //   const lockedInfo = await tokens.VeBal.locked(VoterProxy.address); //not even that contract - not there
-        //   const endInfo = (lockedInfo.end).toNumber();
-
-        //   expect(endInfo).to.equal(timelock);
         });
         it("It deposit lp tokens stake = true", async () => {
           await tokens.WethBal.transfer(staker.address, twentyMillion);
           const stake = true;
 
           expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
-        //   const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-        //   const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
         });
         it("It deposit lp tokens stake = false", async () => {
           await tokens.WethBal.transfer(staker.address, twentyMillion);
@@ -469,14 +427,28 @@ describe("Controller", function () {
             staker = roles.staker;
             admin = roles.prime;
             reward_manager = roles.reward_manager;
-        });
-        it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
-          await expectRevert(
-            controller
-                .connect(staker)
-                .withdrawUnlockedWethBal(pid, twentyMillion),
-            "Controller: userLockTime is not reached yet"
-          );
+            authorizer_adaptor = roles.authorizer_adaptor;
+
+            expect(await VoterProxy.connect(root).setOperator(controller.address));
+            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+
+            // Deploy implementation contract
+            const implementationAddress = await ethers.getContractFactory('StashMock')
+                .then(x => x.deploy())
+                .then(x => x.address)
+        
+            // Set implementation contract
+            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                .to.emit(stashFactory, 'ImpelemntationChanged')
+                .withArgs(implementationAddress);
+
+            lptoken = tokens.PoolContract;
+            gauge = GaugeController;
+            await controller.connect(root).addPool(lptoken.address, gauge.address);
+
+            rewards = rewardFactory;
+            stakerRewards = stashFactory;
+            expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
         });
         it("Sets VoterProxy depositor", async () => {
           expect(await VoterProxy.connect(root).setDepositor(root.address));
@@ -488,24 +460,13 @@ describe("Controller", function () {
           expect(await tokens.WethBal.mint(tokens.VeBal.address, thirtyMillion));
           expect(await tokens.WethBal.mint(VoterProxy.address, sixtyMillion));
 
-
           let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
           expect(await VoterProxy.connect(root).createLock(tenMillion, unlockTime));
         });
         it("It increaseAmount WethBal", async () => {
           expect(await VoterProxy.connect(root).increaseAmount(thirtyMillion));     
           let tx = await tokens.VeBal["balanceOf(address,uint256)"](VoterProxy.address, 0);
-        });            
-        it("It fails withdraw Unlocked VeBal until userLockTime is not reached", async () => {
-          time.increase(new BN(31249454));
-          await expectRevert(
-            setup.controller
-                .connect(staker)
-                .withdrawUnlockedWethBal(pid, tenMillion),
-            "Controller: userLockTime is not reached yet"
-          );
         });
-
         it("It withdraw Unlocked WethBal", async () => {
           time.increase(smallLockTime.add(difference));
           const f = await tokens.VeBal["balanceOf(address,uint256)"](VoterProxy.address, 0);
@@ -576,53 +537,64 @@ describe("Controller", function () {
             staker = roles.staker;
             admin = roles.prime;
             reward_manager = roles.reward_manager;
+
+            expect(await VoterProxy.connect(root).setOperator(controller.address));
+            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+
+            // Deploy implementation contract
+            const implementationAddress = await ethers.getContractFactory('StashMock')
+                .then(x => x.deploy())
+                .then(x => x.address)
+        
+            // Set implementation contract
+            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                .to.emit(stashFactory, 'ImpelemntationChanged')
+                .withArgs(implementationAddress);
+
+            lptoken = tokens.PoolContract;
+            gauge = GaugeController;
+            await controller.connect(root).addPool(lptoken.address, gauge.address);
+
+            rewards = rewardFactory;
+            stakerRewards = stashFactory;
+            expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
         });
         it("It redeposit tokens", async () => { 
-          const difference = new BN(2);
-          const timeDifference = ethers.BigNumber.from(difference.toString());
-          const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(lockTime)).toString());
-          const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
+            const difference = new BN(2);
+            const timeDifference = ethers.BigNumber.from(difference.toString());
+            const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(lockTime)).toString());
+            const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
 
-          expect(await setup.VoterProxy.connect(root).setDepositor(setup.controller.address));
-          expect(await setup.controller.connect(staker).restake(pid));
-          expect(
-            (await setup.controller.userLockTime(staker.address)).toNumber()
-          ).to.equal(timelock);
-        });
-        it("It fails redeposit tokens until userLockTime is not reached", async () => {
-          await expectRevert(
-            setup.controller
-                .connect(staker)
-                .restake(pid),
-            "Controller: can't restake. userLockTime is not reached yet"
-          );
-        });            
-        it("It redeposit tokens when stash != address(0)", async () => {
-          time.increase(smallLockTime.add(difference));
-          const pidStashNonZero = 2;
-          expect(await setup.controller.connect(staker).withdrawUnlockedWethBal(pidStashNonZero, 0));
-          expect(await setup.controller.connect(staker).restake(pidStashNonZero));
-          const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-          const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-          expect(
-            (await setup.controller.userLockTime(staker.address)).toNumber()
-          ).to.equal(timelock);
+            expect(await VoterProxy.connect(root).setDepositor(controller.address));
+            expect(await controller.connect(staker).restake(pid));
+        });          
+        it("It redeposit tokens when stash == address(0)", async () => {
+            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address));
+            await controller.connect(root).addPool(lptoken.address, gauge.address);
+            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+
+            time.increase(smallLockTime.add(difference));
+            const pidStashZero = 1;
+            expect(await controller.connect(staker).withdrawUnlockedWethBal(pidStashZero, 0));
+            expect(await controller.connect(staker).restake(pidStashZero));
+            const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
+            const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
         });
         it("It fails redeposit tokens when pool is closed", async () => {
-          expect(await setup.controller.connect(root).shutdownPool(pid));
+          expect(await controller.connect(root).shutdownPool(pid));
 
           await expectRevert(
-            setup.controller
+            controller
                 .connect(staker)
                 .restake(pid),
             "pool is closed"
           );
         });
         it("It fails redeposit tokens when shutdownSystem", async () => {
-          expect(await setup.controller.connect(root).shutdownSystem());
+          expect(await controller.connect(root).shutdownSystem());
 
           await expectRevert(
-            setup.controller
+            controller
                 .connect(staker)
                 .restake(pid),
             "shutdown"
