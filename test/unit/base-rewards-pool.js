@@ -85,6 +85,7 @@
 //     context('Stake', async function() {
 //         it("reverts on invalid amount able to stake", async function() {
 //             const { baseRewardPool } = await setupTests();
+
     
 //             await expect(baseRewardPool.stake(0)).to.be.revertedWith('InvalidAmount()')
 //         });
