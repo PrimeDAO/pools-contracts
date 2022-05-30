@@ -8,8 +8,7 @@ const addressTwo = '0x0000000000000000000000000000000000000002';
 
 describe("RewardFactory", function () {
 
-    const setupTests = deployments.createFixture(async ({ deployments }) => {
-        await deployments.fixture();
+    const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(await ethers.getSigners());
         await init.getTokens(setup);

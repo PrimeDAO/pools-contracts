@@ -109,3 +109,6 @@ dist
 
 # build
 build
+
+/deployments/localhost/*
+coverage.json

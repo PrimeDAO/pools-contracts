@@ -12,7 +12,7 @@ contract Controller {
     using Address for address;
 
     address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
+        address(0x41286Bb1D3E870f3F750eB7E1C25d7E48c8A1Ac7);
     address public constant registry =
         address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;

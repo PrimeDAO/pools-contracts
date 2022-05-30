@@ -20,6 +20,16 @@ if (PK) {
   };
 }
 
+// Moralis has archive node for free
+// And we are using it to test the deployment on a fork
+const testForking = {
+  ...sharedNetworkConfig,
+  forking: {
+    url: `https://speedy-nodes-nyc.moralis.io/${process.env.MORALIS_KEY}/eth/${process.env.BLOCKCHAIN_FORK}/archive`,
+    blockNumber: process.env.BLOCKCHAIN_FORK == 'kovan' ? 31844292 : 14854404 // Adapt if needed 
+  },
+}
+
 module.exports = {
   paths: {
     artifacts: "build/artifacts",
@@ -46,7 +56,7 @@ module.exports = {
       gas: 2000000,
       saveDeployments: false,
     },
-    hardhat: {
+    hardhat: process.env.BLOCKCHAIN_FORK ? testForking : {
       blockGasLimit: 10000000000000,
       gas: 200000000000,
       saveDeployments: false,
@@ -98,10 +108,13 @@ module.exports = {
       },
     ],
   },
-  etherscan: {
-    apiKey: {
-      mainnet: ETHERSCAN_API_KEY,
-      arbitrumOne: ARBISCAN_API_KEY,
+  verify: {
+    etherscan: {
+      apiKey: {
+        mainnet: ETHERSCAN_API_KEY,
+        kovan: ETHERSCAN_API_KEY,
+        arbitrumOne: ARBISCAN_API_KEY,
+      },
     },
   },
   namedAccounts: {

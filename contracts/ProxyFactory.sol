@@ -5,6 +5,7 @@ pragma solidity 0.8.13;
 contract ProxyFactory {
     function clone(address target) external returns (address result) {
         bytes20 targetBytes = bytes20(target);
+        // solhint-disable-next-line
         assembly {
             let clone := mload(0x40)
             mstore(
