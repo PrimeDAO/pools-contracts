@@ -1,5 +1,4 @@
 const { expect } = require("chai");
-const { BigNumber } = require("ethers");
 const { deployments, ethers } = require("hardhat");
 const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
 const init = require("../test-init.js");
@@ -7,7 +6,6 @@ const init = require("../test-init.js");
 //constants
 const zero_address = "0x0000000000000000000000000000000000000000";
 const FEE_DENOMINATOR = 10000;
-const lockTime = time.duration.days(365);
 const smallLockTime = time.duration.days(30);
 const doubleSmallLockTime = time.duration.days(60);
 const tenMillion = 30000000;
@@ -15,7 +13,6 @@ const twentyMillion = 20000000;
 const thirtyMillion = 30000000;
 const sixtyMillion = 60000000;
 const difference = new BN(28944000); // 1684568938 - 1655624938 
-const timeDifference = BigNumber.from(difference.toString());
 
 let root;
 let staker;
@@ -41,7 +38,7 @@ let tokens;
 
 describe("Controller", function () {
 
-    const setupTests = deployments.createFixture(async ({ deployments }) => {
+    const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(await ethers.getSigners());
 
@@ -465,7 +462,6 @@ describe("Controller", function () {
         });
         it("It withdraw Unlocked WethBal", async () => {
           time.increase(smallLockTime.add(difference));
-          let treasury_amount_expected = (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).add(twentyMillion);
           let unitTest_treasury_amount_expected = 0;
           expect(await controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
           expect(
