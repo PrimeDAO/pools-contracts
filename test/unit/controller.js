@@ -249,14 +249,13 @@ describe("Contract: Controller", async () => {
                 wethBalBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
                 const profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
-                wethBalBal = wethBalBal - profit; //balForTransfer if no treasury
+                wethBalBal = wethBalBal - profit; //wethBalForTransfer if no treasury
                 let amount_expected = (await setup.tokens.WethBal.balanceOf(feeManager.address)).toNumber() + profit;
 
                 const poolInfo = await setup.controller.poolInfo(0);
                 balRewards = (poolInfo.balRewards).toString();
 
                 await setup.controller.connect(root).earmarkRewards(pid);
-
                 expect(
                     (await setup.tokens.WethBal.balanceOf(feeManager.address)).toString()
                 ).to.equal(amount_expected.toString());
@@ -265,7 +264,7 @@ describe("Contract: Controller", async () => {
                 ).to.equal("0");
                 expect(
                     (await setup.tokens.WethBal.balanceOf(balRewards)).toString()
-                ).to.equal(balBal.toString());
+                ).to.equal(wethBalBal.toString());
             });
             it("Set treasury", async () => {
                 treasury = admin;
@@ -418,7 +417,7 @@ describe("Contract: Controller", async () => {
             it("It withdraw Unlocked WethBal when pool is closed", async () => {
               const alternativeSetup = await deploy();
 
-              await alternativeSetup.VoterProxy.connect(root).setOperator(setup.controller.address);
+              await alternativeSetup.VoterProxy.connect(root).setOperator(alternativeSetup.controller.address);
               const rewardFactory = alternativeSetup.rewardFactory;
               const stashFactory = alternativeSetup.stashFactory;
               const tokenFactory = alternativeSetup.tokenFactory;
@@ -432,7 +431,6 @@ describe("Contract: Controller", async () => {
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
               await alternativeSetup.VoterProxy.connect(root).setDepositor(root.address);
-
               await alternativeSetup.controller.connect(root).addPool(lptoken.address, gauge.address);              
               await alternativeSetup.tokens.WethBal.transfer(staker.address, twentyMillion);
 
@@ -452,7 +450,7 @@ describe("Contract: Controller", async () => {
               time.increase(smallLockTime.add(difference));
 
               expect(await alternativeSetup.controller.connect(root).shutdownPool(pid));
-              expect(await alternativeSetup.controller.connect(staker).withdrawUnlockedWethBal(pid, twentyMillion));
+              expect(await alternativeSetup.controller.connect(root).withdrawUnlockedWethBal(pid, twentyMillion));
             });
         });
         context("» restake testing", () => {       
