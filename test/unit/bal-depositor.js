@@ -6,12 +6,9 @@ const init = require("../test-init.js");
 describe("BalDepositor", function () {
 
     const setupTests = deployments.createFixture(async ({ deployments }) => {
-        await deployments.fixture();
         const signers = await ethers.getSigners();
 
         const setup = await init.initialize(await ethers.getSigners());
-
-        await init.getTokens(setup);
 
         const tokens = await init.getTokens(setup);
 
