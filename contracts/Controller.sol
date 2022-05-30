@@ -399,7 +399,7 @@ contract Controller {
         if (stash != address(0)) {
             IStash(stash).stashRewards();
         }
-        
+
         address token = pool.token;
 
         uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
