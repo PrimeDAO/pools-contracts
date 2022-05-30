@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { BigNumber, constants } = require("ethers");
-const { deployments, ethers } = require("hardhat");
+const { ethers } = require("hardhat");
 const init = require("../test-init.js");
 
 const addressOne = "0x0000000000000000000000000000000000000001";
@@ -13,8 +13,7 @@ const ONE_DAY = 1440;
 const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
 describe("BaseRewardPool", function() {
-    const setupTests = deployments.createFixture(async ({ deployments }) => {
-        await deployments.fixture();
+    const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const INITIAL_BAL_BALANCE = ethers.utils.parseEther("10000");
         const setup = await init.initialize(await ethers.getSigners());

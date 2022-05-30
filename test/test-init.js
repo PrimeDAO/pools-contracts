@@ -186,11 +186,13 @@ const getVoterProxy = async (setup) => {
     );
 
     const mintr = setup.tokens.D2DBal;
-    const bal = setup.tokens.WethBal;
+    const wethBal = setup.tokens.WethBal;
+    const bal = setup.tokens.BAL;
     const veBal = setup.tokens.VeBal;
     const gaugeController = setup.tokens.GaugeController;
     return await VoterProxy.deploy(
         mintr.address,
+        wethBal.address,
         bal.address,
         veBal.address,
         gaugeController.address

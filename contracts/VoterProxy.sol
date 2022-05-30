@@ -11,6 +11,7 @@ contract VoterProxy {
 
     address public immutable mintr;
     address public immutable wethBal;
+    address public immutable bal;
 
     address public immutable veBal;
     address public immutable gaugeController;
@@ -25,6 +26,7 @@ contract VoterProxy {
     constructor(
         address mintr_,
         address wethBal_,
+        address bal_,
         address veBal_,
         address gaugeController_
     ) public {
@@ -32,6 +34,7 @@ contract VoterProxy {
 
         mintr = mintr_;
         wethBal = wethBal_;
+        bal = bal_;
         veBal = veBal_;
         gaugeController = gaugeController_;
     }
@@ -194,8 +197,8 @@ contract VoterProxy {
 
         uint256 _balance = 0;
         try IMinter(mintr).mint(_gauge) {
-            _balance = IERC20(wethBal).balanceOf(address(this));
-            IERC20(wethBal).transfer(operator, _balance);
+            _balance = IERC20(bal).balanceOf(address(this));
+            IERC20(bal).transfer(operator, _balance);
             //solhint-disable-next-line
         } catch {}
 
