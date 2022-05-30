@@ -17,7 +17,7 @@ const initialize = async (accounts) => {
 
 const getTokens = async (setup) => {
   const ERC20Factory =  await ethers.getContractFactory(
-    "CustomERC20Mock",
+    "ERC20Mock",
     setup.roles.root
   ); 
 
@@ -32,10 +32,10 @@ const getTokens = async (setup) => {
   );
 
   const Balancer80BAL20WETH = await ERC20Factory.deploy("Balancer80BAL20WETH", "Balancer80BAL20WETH");
-  const BAL = await D2DBalFactory.deploy("Bal", "BAL");
+  const BAL = await ERC20Factory.deploy("Bal", "BAL");
   const D2DBal = await D2DBalFactory.deploy("D2DBal", "D2DBAL");
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
-  const WethBal = await D2DBalFactory.deploy("WethBal", "WethBAL");
+  const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
  
   const StashMockFactory = await ethers.getContractFactory(
@@ -182,7 +182,7 @@ const getControllerMock = async (setup) => {
   return await ControllerMockFactory.deploy()
 }
 
-const getExtraRewardMock = async (setup) => {
+const getExtraRewardMock = async () => {
   const ExtraRewardMockFactory = await ethers.getContractFactory(
     'ExtraRewardMock',
     setup.roles.root

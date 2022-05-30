@@ -359,20 +359,26 @@ describe("Contract: Controller", async () => {
         });
         context("» deposit testing", () => {
             it("It deposit lp tokens from operator stake = true", async () => {
-              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+              await lptoken.mint(staker.address, twentyMillion);
+              await lptoken.connect(staker).approve(setup.controller.address, twentyMillion);
+
               const stake = true;
 
-              expect(await setup.controller.connect(operator).deposit(pid, twentyMillion, stake));
+              expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
             });
             it("It deposit lp tokens stake = true", async () => {
-              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+              await lptoken.mint(staker.address, twentyMillion);
+              await lptoken.connect(staker).approve(setup.controller.address, twentyMillion);
+
               const stake = true;
 
               expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
             });
 
             it("It deposit lp tokens stake = false", async () => {
-              await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+              await lptoken.mint(staker.address, twentyMillion);
+              await lptoken.connect(staker).approve(setup.controller.address, twentyMillion);
+
               const stake = false;
               expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
             });

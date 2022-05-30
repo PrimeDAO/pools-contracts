@@ -8,7 +8,7 @@ const addressOne = '0x0000000000000000000000000000000000000001';
 describe("BaseRewardPool", function () {
 
     const setupTests = deployments.createFixture(async ({ deployments }) => {
-        // await deployments.fixture();
+        await deployments.fixture();
         const signers = await ethers.getSigners();
 
         const setup = await init.initialize(await ethers.getSigners());
@@ -29,7 +29,7 @@ describe("BaseRewardPool", function () {
             operator,
             rewardToken: BAL,
             stakeToken: Balancer80BAL20WETH, 
-            extraRewardMock: await init.getExtraRewardMock(setup),
+            extraRewardMock: await init.getExtraRewardMock(),
             root: setup.roles.root,
             rewardManager: setup.roles.reward_manager,
             anotherUser: signers.pop(),
