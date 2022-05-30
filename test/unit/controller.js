@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-const { BigNumber, constants } = require("ethers");
+const { BigNumber } = require("ethers");
 const { deployments, ethers } = require("hardhat");
 const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
 const init = require("../test-init.js");
@@ -8,18 +8,15 @@ const init = require("../test-init.js");
 const zero_address = "0x0000000000000000000000000000000000000000";
 const FEE_DENOMINATOR = 10000;
 const lockTime = time.duration.days(365);
-const halfAYear = lockTime / 2;
 const smallLockTime = time.duration.days(30);
 const doubleSmallLockTime = time.duration.days(60);
 const tenMillion = 30000000;
 const twentyMillion = 20000000;
 const thirtyMillion = 30000000;
 const sixtyMillion = 60000000;
-const defaultTimeForBalanceOfVeBal = 0;
 const difference = new BN(28944000); // 1684568938 - 1655624938 
 const timeDifference = BigNumber.from(difference.toString());
 
-let setup;
 let root;
 let staker;
 let admin;
@@ -465,11 +462,9 @@ describe("Controller", function () {
         });
         it("It increaseAmount WethBal", async () => {
           expect(await VoterProxy.connect(root).increaseAmount(thirtyMillion));     
-          let tx = await tokens.VeBal["balanceOf(address,uint256)"](VoterProxy.address, 0);
         });
         it("It withdraw Unlocked WethBal", async () => {
           time.increase(smallLockTime.add(difference));
-          const f = await tokens.VeBal["balanceOf(address,uint256)"](VoterProxy.address, 0);
           let treasury_amount_expected = (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).add(twentyMillion);
           let unitTest_treasury_amount_expected = 0;
           expect(await controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
@@ -479,7 +474,7 @@ describe("Controller", function () {
         });
 
         it("It withdraw Unlocked WethBal when pool is closed", async () => {
-          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, tokens_, roles } = await setupTests();
+          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, tokenFactory_, tokens_, roles } = await setupTests();
 
           const root = roles.root;
           const authorizer_adaptor = roles.authorizer_adaptor;
@@ -513,7 +508,6 @@ describe("Controller", function () {
           await VoterProxy_.connect(root).createLock(tenMillion, unlockTime);              
           await VoterProxy_.connect(root).increaseAmount(thirtyMillion);     
 
-          const stake = false;
           const pid = 0;
 
           time.increase(smallLockTime.add(difference));
@@ -560,11 +554,6 @@ describe("Controller", function () {
             expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
         });
         it("It redeposit tokens", async () => { 
-            const difference = new BN(2);
-            const timeDifference = ethers.BigNumber.from(difference.toString());
-            const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(lockTime)).toString());
-            const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
-
             expect(await VoterProxy.connect(root).setDepositor(controller.address));
             expect(await controller.connect(staker).restake(pid));
         });          
@@ -577,8 +566,6 @@ describe("Controller", function () {
             const pidStashZero = 1;
             expect(await controller.connect(staker).withdrawUnlockedWethBal(pidStashZero, 0));
             expect(await controller.connect(staker).restake(pidStashZero));
-            const BNtimelock = ethers.BigNumber.from(((await time.latest()).add(smallLockTime)).toString());
-            const timelock = ethers.BigNumber.from(BNtimelock.add(timeDifference));
         });
         it("It fails redeposit tokens when pool is closed", async () => {
           expect(await controller.connect(root).shutdownPool(pid));
