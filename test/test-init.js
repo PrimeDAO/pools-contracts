@@ -150,6 +150,15 @@ const gaugeController = async (setup) => {
   return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
 }; 
 
+const getRewardFactory = async (setup) => {
+  const RewardFactoryFactory = await ethers.getContractFactory(
+    'RewardFactory',
+    setup.roles.root
+  );
+
+  return await RewardFactoryFactory.deploy(setup.roles.operator.address, setup.tokens.BAL.address);
+}
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -163,4 +172,5 @@ module.exports = {
   getBaseRewardPool,
   getExtraRewardMock,
   gaugeController,
+  getRewardFactory,
 };
