@@ -66,7 +66,11 @@ contract Controller {
         uint256 amount
     );
 
-    constructor(address _staker, address _feeManager, address _wethBal) public {
+    constructor(
+        address _staker,
+        address _feeManager,
+        address _wethBal
+    ) public {
         isShutdown = false;
         wethBal = _wethBal;
         staker = _staker;
@@ -497,7 +501,8 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (wethBalBal * platformFees) / FEE_DENOMINATOR;
+                uint256 _platform = (wethBalBal * platformFees) /
+                    FEE_DENOMINATOR;
                 wethBalBal = wethBalBal - _platform;
                 IERC20(wethBal).transfer(treasury, _platform);
             }

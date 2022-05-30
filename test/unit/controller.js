@@ -1,6 +1,5 @@
 const { expect } = require("chai");
-const { deployments, ethers } = require("hardhat");
-const { BigNumber, constants } = require("ethers");
+const { ethers } = require("hardhat");
 const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
 const init = require("../test-init.js");
 
@@ -47,7 +46,6 @@ describe("Contract: Controller", async () => {
   let tokenFactory;
   let lptoken;
   let gauge;
-  let stashVersion;
   let balBal;
   let feeManager;
   let treasury;
@@ -56,17 +54,13 @@ describe("Contract: Controller", async () => {
   //constants
   const zero_address = "0x0000000000000000000000000000000000000000";
   const FEE_DENOMINATOR = 10000;
-  const lockTime = time.duration.days(365);
-  const halfAYear = lockTime / 2;
   const smallLockTime = time.duration.days(30);
   const doubleSmallLockTime = time.duration.days(60);
   const tenMillion = 30000000;
   const twentyMillion = 20000000;
   const thirtyMillion = 30000000;
   const sixtyMillion = 60000000;
-  const defaultTimeForBalanceOfVeBal = 0;
   const difference = new BN(28944000); // 1684568938 - 1655624938
-  const timeDifference = BigNumber.from(difference.toString());
 
   context("» Controller", () => {
     
@@ -401,12 +395,9 @@ describe("Contract: Controller", async () => {
             });
             it("It increaseAmount WethBal", async () => {
               expect(await setup.VoterProxy.connect(root).increaseAmount(thirtyMillion));     
-              let tx = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
             });
             it("It withdraw Unlocked WethBal", async () => {
               time.increase(smallLockTime.add(difference));
-              const f = await setup.tokens.VeBal["balanceOf(address,uint256)"](setup.VoterProxy.address, 0);
-              let treasury_amount_expected = (await setup.tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).add(twentyMillion);
               let unitTest_treasury_amount_expected = 0;
               expect(await setup.controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
               expect(
@@ -444,7 +435,6 @@ describe("Contract: Controller", async () => {
               await alternativeSetup.VoterProxy.connect(root).createLock(tenMillion, unlockTime);              
               await alternativeSetup.VoterProxy.connect(root).increaseAmount(thirtyMillion);     
 
-              const stake = false;
               const pid = 0;
 
               time.increase(smallLockTime.add(difference));
