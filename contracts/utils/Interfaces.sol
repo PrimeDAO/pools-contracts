@@ -85,8 +85,8 @@ interface IRegistry {
 interface IStaker {
     function deposit(address, address) external;
 
-    function withdrawWethBal(  
-        address,      
+    function withdrawWethBal(
+        address,
         address,
         uint256
     ) external returns (bool);
@@ -267,9 +267,7 @@ interface ITokenFactory {
 interface IPools {
     function addPool(address, address) external returns (bool);
 
-    function forceAddPool(address, address)
-        external
-        returns (bool);
+    function forceAddPool(address, address) external returns (bool);
 
     function shutdownPool(uint256) external returns (bool);
 
