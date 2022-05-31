@@ -48,7 +48,7 @@ interface IRegistry {
 interface IStaker {
     function deposit(address _token, address _gauge) external;
 
-    function withdraw(IERC20 _asset) external returns(uint256 balance);
+    function withdraw(IERC20 _asset) external returns (uint256 balance);
 
     function withdraw(
         address _token,
@@ -70,7 +70,9 @@ interface IStaker {
 
     function claimRewards(address _gauge) external;
 
-    function claimFees(address _distroContract, address _token) external returns (uint256);
+    function claimFees(address _distroContract, address _token)
+        external
+        returns (uint256);
 
     function setStashAccess(address _stash, bool _status) external;
 
