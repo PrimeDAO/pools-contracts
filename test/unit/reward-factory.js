@@ -17,14 +17,14 @@ describe("RewardFactory", function () {
             root: setup.roles.root,
             operator: setup.roles.operator,
             anotherUser: signers.pop(),
-        }
+        };
     });
 
     before('>>> setup', async function () {
         const { rewardFactoryContract, operator, bal } = await setupTests();
-        assert(await rewardFactoryContract.bal() == bal.address);
-        assert(await rewardFactoryContract.operator() == operator.address);
-    })
+        assert((await rewardFactoryContract.bal()) == bal.address);
+        assert((await rewardFactoryContract.operator()) == operator.address);
+    });
 
     context('access', async function () {
         it('sets access', async function () {
@@ -67,8 +67,9 @@ describe("RewardFactory", function () {
         it('reverts if user is unauthorized to add access', async function () {
             const { rewardFactoryContract, anotherUser } = await setupTests();
 
-            await expect(rewardFactoryContract.setAccess(anotherUser.address, true))
-                .to.be.revertedWith('Unauthorized()');
+            await expect(
+                rewardFactoryContract.setAccess(anotherUser.address, true)
+            ).to.be.revertedWith("Unauthorized()");
         });
 
         it("gets rewards count", async function () {
@@ -107,8 +108,16 @@ describe("RewardFactory", function () {
             await expect(rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid + 3)).to.emit(rewardFactoryContract, 'ExtraRewardAdded');
 
             // returns early zero address test
-            await expect(rewardFactoryContract.connect(anotherUser).removeActiveReward(ZERO_ADDRESS, pid))
-            await expect(rewardFactoryContract.connect(anotherUser).removeActiveReward(ZERO_ADDRESS, pid))
+            await expect(
+                rewardFactoryContract
+                    .connect(anotherUser)
+                    .removeActiveReward(ZERO_ADDRESS, pid)
+            );
+            await expect(
+                rewardFactoryContract
+                    .connect(anotherUser)
+                    .removeActiveReward(ZERO_ADDRESS, pid)
+            );
 
             await expect(rewardFactoryContract.connect(anotherUser).removeActiveReward(ONE_ADDRESS, pid))
                 .to.emit(rewardFactoryContract, 'ExtraRewardRemoved')
@@ -152,7 +161,11 @@ describe("RewardFactory", function () {
             const mainPoolAddress = receipt.events.pop().args.poolAddress
 
             // Give access to somebody
-            await expect(rewardFactoryContract.connect(operator).setAccess(anotherUser.address, true))
+            await expect(
+                rewardFactoryContract
+                    .connect(operator)
+                    .setAccess(anotherUser.address, true)
+            );
 
             await expect(rewardFactoryContract.connect(anotherUser).createTokenRewards(ONE_ADDRESS, mainPoolAddress, operator.address)).to.emit(rewardFactoryContract, 'VirtualBalanceRewardPoolCreated');
         });

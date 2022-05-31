@@ -43,7 +43,7 @@ describe("VoterProxy", function () {
     });
 
     context('setup', async function () {
-        it('shoould setup', async function () {
+        it('should setup', async function () {
             const { voterProxy, bal, wethBal, gaugeController, root, veBal, mintr } = await setupTests();
 
             expect(await voterProxy.mintr()).to.equals(mintr.address)
@@ -58,14 +58,14 @@ describe("VoterProxy", function () {
     });
 
     context('Owner', async function () {
-        it('shoould set owner', async function () {
+        it('should set owner', async function () {
             const { voterProxy, anotherUser, root } = await setupTests();
             await expect(voterProxy.connect(root).setOwner(anotherUser.address))
                 .to.emit(voterProxy, 'OwnerChanged')
                 .withArgs(anotherUser.address);
         });
 
-        it('shoould revert if not authorized', async function () {
+        it('should revert if not authorized', async function () {
             const { voterProxy, anotherUser } = await setupTests();
             await expect(voterProxy.connect(anotherUser).setOwner(ZERO_ADDRESS))
                 .to.be.revertedWith('Unauthorized()')
@@ -271,7 +271,7 @@ describe("VoterProxy", function () {
                     .to.be.revertedWith('Unauthorized()');
             });
 
-            it('creates a lock and', async function () {
+            it('creates a lock', async function () {
                 const { voterProxy, anotherUser } = await setupTests();
 
                 await voterProxy.setDepositor(anotherUser.address)
