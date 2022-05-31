@@ -73,15 +73,15 @@ const balDepositor = async (setup) => {
     );
 };
 
-const getVoterProxy = async (setup) => {
-  const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
-  const mintr = setup.tokens.D2DBal;
-  const bal = setup.tokens.WethBal;
-  const veBal = setup.tokens.VeBal;
-  const gaugeController = await setup.GaugeController;
+// const getVoterProxy = async (setup) => {
+//   const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
+//   const mintr = setup.tokens.D2DBal;
+//   const bal = setup.tokens.WethBal;
+//   const veBal = setup.tokens.VeBal;
+//   const gaugeController = await setup.GaugeController;
 
-  return await VoterProxy.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
-};
+//   return await VoterProxy.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
+// };
 
 const getVoterProxyMock = async (setup) => {
   const VoterProxyMockFactory = await ethers.getContractFactory("VoterProxyMock", setup.roles.root);
@@ -198,7 +198,7 @@ const getControllerMock = async (setup) => {
     return await ControllerMockFactory.deploy();
 };
 
-const getExtraRewardMock = async () => {
+const getExtraRewardMock = async (setup) => {
     const ExtraRewardMockFactory = await ethers.getContractFactory(
         "ExtraRewardMock",
         setup.roles.root
@@ -206,6 +206,14 @@ const getExtraRewardMock = async () => {
 
     return await ExtraRewardMockFactory.deploy();
 };
+
+const gaugeController = async (setup) => {
+  const GaugeController = await ethers.getContractFactory(
+    "GaugeControllerMock",
+    setup.roles.root
+  );         
+  return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
+}; 
 
 const getVoterProxy = async (setup) => {
     const VoterProxy = await ethers.getContractFactory(
@@ -217,7 +225,7 @@ const getVoterProxy = async (setup) => {
     const wethBal = setup.tokens.WethBal;
     const bal = setup.tokens.BAL;
     const veBal = setup.tokens.VeBal;
-    const gaugeController = setup.tokens.GaugeController;
+    const gaugeController = setup.GaugeController;
     return await VoterProxy.deploy(
         mintr.address,
         wethBal.address,
