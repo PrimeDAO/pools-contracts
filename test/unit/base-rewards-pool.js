@@ -10,7 +10,7 @@ describe("BaseRewardPool", function () {
         const signers = await ethers.getSigners();
 
         const setup = await init.initialize(await ethers.getSigners());
-        const { BAL, Balancer80BAL20WETH } = await init.getTokens(setup);
+        const { BAL, WethBal } = await init.getTokens(setup);
         
         const baseRewardPool = await init.getBaseRewardPool(setup);
 
@@ -26,7 +26,7 @@ describe("BaseRewardPool", function () {
             baseRewardPool,
             operator,
             rewardToken: BAL,
-            stakeToken: Balancer80BAL20WETH, 
+            stakeToken: WethBal, 
             extraRewardMock: await init.getExtraRewardMock(),
             root: setup.roles.root,
             rewardManager: setup.roles.reward_manager,

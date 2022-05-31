@@ -20,8 +20,9 @@ contract VoterProxy {
     error NeedsShutdown(); // Current operator must be shutdown before changing the operator
 
     address public immutable mintr;
-    address public immutable bal;
-    address public immutable veBal;
+    address public immutable bal; // Reward token
+    address public immutable wethBal; // Staking token
+    address public immutable veBal; // veBal
     address public immutable gaugeController;
 
     address public owner; // MultiSig
@@ -34,15 +35,24 @@ contract VoterProxy {
     constructor(
         address _mintr,
         address _bal,
+        address _wethBal,
         address _veBal,
         address _gaugeController
     ) {
         mintr = _mintr;
         bal = _bal;
+        wethBal = _wethBal;
         veBal = _veBal;
         gaugeController = _gaugeController;
         owner = msg.sender;
-        IERC20(_bal).approve(_veBal, type(uint256).max);
+        IERC20(_wethBal).approve(_veBal, type(uint256).max);
+    }
+
+    /// @notice Balance of gauge
+    /// @param _gauge The gauge to check
+    /// @return uint256 balance
+    function balanceOfPool(address _gauge) public view returns (uint256) {
+        return ICurveGauge(_gauge).balanceOf(address(this));
     }
 
     /// @notice Used to change the owner of the contract
@@ -324,13 +334,6 @@ contract VoterProxy {
         uint256 _balance = IERC20(_token).balanceOf(address(this));
         IERC20(_token).transfer(operator, _balance);
         return _balance;
-    }
-
-    /// @notice Balance of gauge
-    /// @param _gauge The gauge to check
-    /// @return uint256 balance
-    function balanceOfPool(address _gauge) public view returns (uint256) {
-        return ICurveGauge(_gauge).balanceOf(address(this));
     }
 
     /// @notice Executes a call to `_to` with calldata `_data`

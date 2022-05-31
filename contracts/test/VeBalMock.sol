@@ -312,10 +312,39 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         _deposit_for(_addr, _value, 0, _locked, ActionType.DEPOSIT_FOR_TYPE);
     }
 
-    function create_lock(uint256 tokens, uint256 _unlockTime) external nonReentrant {}
+    function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant {
+        // assert_not_contract(msg.sender); commented because we will be whitelisted
+        uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
+        LockedBalance memory _locked = locked[msg.sender]; 
+        require(_value > 0); // dev: need non-zero value
+        require(_locked.amount == 0, "Withdraw old tokens first");
+        require(unlock_time > block.timestamp, "Can only lock until time in the future");
+        require(unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 1 year max");
 
-    function increase_amount(uint256 _value) external nonReentrant {}
-    function increase_unlock_time(uint256 _unlock_time) external nonReentrant {}
+        _deposit_for(msg.sender, _value, unlock_time, _locked, ActionType.CREATE_LOCK_TYPE);
+    }
+
+    function increase_amount(uint256 _value) external nonReentrant {
+        // assert_not_contract(msg.sender); commented because we will be whitelisted
+        LockedBalance memory _locked = locked[msg.sender];
+
+        require(_value > 0); // dev: need non-zero value
+        require(_locked.amount > 0, "No existing lock found");
+        require(_locked.end > block.timestamp, "Cannot add to expired lock. Withdraw");
+        _deposit_for(msg.sender, _value, 0, _locked, ActionType.INCREASE_LOCK_AMOUNT);
+    }
+    function increase_unlock_time(uint256 _unlock_time) external nonReentrant {
+        // assert_not_contract(msg.sender); commented because we will be whitelisted
+        LockedBalance memory _locked = locked[msg.sender];
+        uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
+
+        require(_locked.end > block.timestamp, "Lock expired");
+        require(_locked.amount > 0, "Nothing is locked");
+        require(unlock_time > _locked.end, "Can only increase lock duration");
+        require(unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 1 year max");
+
+        _deposit_for(msg.sender, 0, unlock_time, _locked, ActionType.INCREASE_UNLOCK_TIME);
+    }
 
     function withdraw() external nonReentrant {
         LockedBalance memory _locked = locked[msg.sender];

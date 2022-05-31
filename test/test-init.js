@@ -30,15 +30,14 @@ const getTokens = async (setup) => {
     setup.roles.root
   );
 
-  const Balancer80BAL20WETH = await ERC20Factory.deploy("Balancer80BAL20WETH", "Balancer80BAL20WETH");
   const B50WBTC50WETH = await ERC20Factory.deploy("Balancer 50 WBTC 50 WETH", "B-50WBTC-50WETH"); // LP token
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
   const D2DBal = await D2DBalFactory.deploy("D2DBal", "D2DBAL");
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
-  const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
+  const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL"); // Balancer80BAL20WETH LP token
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
-  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, Balancer80BAL20WETH, B50WBTC50WETH }
+  const tokens = { BAL, D2DBal, PoolContract, WethBal, VeBal, B50WBTC50WETH }
 
   setup.tokens = tokens
   return tokens;
@@ -118,15 +117,13 @@ const getBaseRewardPool = async (setup) => {
 
   const controller = await getControllerMock(setup)
 
-  return await BaseRewardPoolFactory.deploy(1, setup.tokens.Balancer80BAL20WETH.address, setup.tokens.BAL.address, controller.address, setup.roles.reward_manager.address);
+  return await BaseRewardPoolFactory.deploy(1, setup.tokens.WethBal.address, setup.tokens.BAL.address, controller.address, setup.roles.reward_manager.address);
 }
 
-const getVoterProxy = async (setup, gaugeControllerMock) => {
+const getVoterProxy = async (setup, gaugeControllerMock, mintr) => {
   const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
 
-  const mintr = await getMintrMock(setup);
-
-  return await VoterProxy.deploy(mintr.address, setup.tokens.BAL.address, setup.tokens.VeBal.address, gaugeControllerMock.address);
+  return await VoterProxy.deploy(mintr.address, setup.tokens.BAL.address, setup.tokens.WethBal.address, setup.tokens.VeBal.address, gaugeControllerMock.address);
 };
 
 const getControllerMock = async (setup) => {

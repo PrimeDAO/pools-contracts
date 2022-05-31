@@ -3,6 +3,7 @@ const { expect } = require("chai");
 const { deployments, ethers } = require("hardhat");
 const init = require("../test-init.js");
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
+const { getFutureTimestamp } = require('../helpers/helpers')
 
 describe("VoterProxy", function () {
     const setupTests = deployments.createFixture(async () => {
@@ -11,8 +12,8 @@ describe("VoterProxy", function () {
         await init.getTokens(setup);
 
         const gaugeControllerMock = await init.gaugeControllerMock(setup);
-
-        const voterProxy = await init.getVoterProxy(setup, gaugeControllerMock);
+        const mintr = await init.getMintrMock(setup);
+        const voterProxy = await init.getVoterProxy(setup, gaugeControllerMock, mintr);
         const controllerMock = await init.getControllerMock(setup)
         const distroMock = await init.getDistroMock(setup);
         const externalContractMock = await init.getExternalContractMock(setup);
@@ -20,8 +21,11 @@ describe("VoterProxy", function () {
         const B50WBTC50WETH = setup.tokens.B50WBTC50WETH;
         const gaugeMock = await init.getGaugeMock(setup, B50WBTC50WETH.address);
 
+        await setup.tokens.WethBal.mint(voterProxy.address, ONE_HUNDRED_ETHER.mul(5));
+
         return {
             voterProxy,
+            mintr,
             operator: controllerMock,
             gauge: gaugeMock,
             distro: distroMock,
@@ -29,11 +33,28 @@ describe("VoterProxy", function () {
             externalContract: externalContractMock,
             root: setup.roles.root,
             bal: setup.tokens.BAL,
+            veBal: setup.tokens.VeBal,
+            wethBal: setup.tokens.WethBal,
             votingMock: await init.getVotingMock(setup),
             B50WBTC50WETH, // LP token
             anotherUser: signers.pop(),
             stash: signers.pop()
         }
+    });
+
+    context('setup', async function () {
+        it('shoould setup', async function () {
+            const { voterProxy, bal, wethBal, gaugeController, root, veBal, mintr } = await setupTests();
+
+            expect(await voterProxy.mintr()).to.equals(mintr.address)
+            expect(await voterProxy.bal()).to.equals(bal.address)
+            expect(await voterProxy.wethBal()).to.equals(wethBal.address)
+            expect(await voterProxy.veBal()).to.equals(veBal.address)
+            expect(await voterProxy.gaugeController()).to.equals(gaugeController.address)
+            expect(await voterProxy.owner()).to.equals(root.address)
+            expect(await voterProxy.operator()).to.equals(ZERO_ADDRESS)
+            expect(await voterProxy.depositor()).to.equals(ZERO_ADDRESS)
+        });
     });
 
     context('Owner', async function () {
@@ -250,13 +271,12 @@ describe("VoterProxy", function () {
                     .to.be.revertedWith('Unauthorized()');
             });
 
-            it('creates a lock', async function () {
+            it('creates a lock and', async function () {
                 const { voterProxy, anotherUser } = await setupTests();
 
                 await voterProxy.setDepositor(anotherUser.address)
 
-                // since veBal is mock, it will pass with any value
-                await voterProxy.connect(anotherUser).createLock(1, 1)
+                await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(365))
             });
         });
 
@@ -272,6 +292,8 @@ describe("VoterProxy", function () {
                 const { voterProxy, anotherUser } = await setupTests();
 
                 await voterProxy.setDepositor(anotherUser.address)
+
+                await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(365))
 
                 await voterProxy.connect(anotherUser).increaseAmount(1)
             });
@@ -290,24 +312,13 @@ describe("VoterProxy", function () {
 
                 await voterProxy.setDepositor(anotherUser.address)
 
-                await voterProxy.connect(anotherUser).increaseTime(1)
-            });
-        });
+                // lock for 100 days
+                await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(100))
 
-        context('release', async function () {
-            it('reverts if unauthorized', async function () {
-                const { voterProxy, anotherUser } = await setupTests();
+                // increase lock to 200 days
+                const nextUnlock = getFutureTimestamp(200)
 
-                await expect(voterProxy.connect(anotherUser).release())
-                    .to.be.revertedWith('Unauthorized()');
-            });
-
-            it('increases time', async function () {
-                const { voterProxy, anotherUser } = await setupTests();
-
-                await voterProxy.setDepositor(anotherUser.address)
-
-                await voterProxy.connect(anotherUser).release()
+                await voterProxy.connect(anotherUser).increaseTime(nextUnlock)
             });
         });
 
@@ -443,7 +454,7 @@ describe("VoterProxy", function () {
 
                 await bal.mint(voterProxy.address, ONE_HUNDRED_ETHER);
                 expect(await bal.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER)
-                
+
                 // distro mock does nothing
                 await voterProxy.connect(operator).claimFees(distro.address, bal.address)
                 expect(await bal.balanceOf(voterProxy.address)).to.equals(0)
@@ -451,7 +462,7 @@ describe("VoterProxy", function () {
             });
         });
 
-        context('execute', async function() {
+        context('execute', async function () {
             it('reverts on unauthorized', async function () {
                 const { voterProxy } = await setupTests();
 
