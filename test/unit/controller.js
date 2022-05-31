@@ -388,20 +388,60 @@ describe("Controller", function () {
         });
     });
     context("» deposit testing", () => {
+        before('>>> setup', async function() {
+            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, tokens_, roles } = await setupTests();
+            VoterProxy = VoterProxy_; 
+            rewardFactory = rewardFactory_;
+            stashFactory = stashFactory_;
+            stashFactoryMock = stashFactoryMock_;
+            tokenFactory = tokenFactory_; 
+            GaugeController = GaugeController_;
+            tokens = tokens_;
+            controller = controller_;
+            root = roles.root;
+            staker = roles.staker;
+            admin = roles.prime;
+            reward_manager = roles.reward_manager;
+            authorizer_adaptor = roles.authorizer_adaptor;
+
+            expect(await VoterProxy.connect(root).setOperator(controller.address));
+            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+
+            // Deploy implementation contract
+            const implementationAddress = await ethers.getContractFactory('StashMock')
+                .then(x => x.deploy())
+                .then(x => x.address)
+        
+            // Set implementation contract
+            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                .to.emit(stashFactory, 'ImpelemntationChanged')
+                .withArgs(implementationAddress);
+
+            lptoken = tokens.PoolContract;
+            gauge = GaugeController;
+            await controller.connect(root).addPool(lptoken.address, gauge.address);
+
+            rewards = rewardFactory;
+            stakerRewards = stashFactory;
+            expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
+        });
         it("It deposit lp tokens from operator stake = true", async () => {
-          await tokens.WethBal.transfer(staker.address, twentyMillion);
+          await lptoken.mint(staker.address, twentyMillion);
+          await lptoken.connect(staker).approve(controller.address, twentyMillion);
           const stake = true;
 
-          expect(await controller.connect(operator).deposit(pid, twentyMillion, stake));
+          expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
         });
         it("It deposit lp tokens stake = true", async () => {
-          await tokens.WethBal.transfer(staker.address, twentyMillion);
+          await lptoken.mint(staker.address, twentyMillion);
+          await lptoken.connect(staker).approve(controller.address, twentyMillion);
           const stake = true;
 
           expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
         });
         it("It deposit lp tokens stake = false", async () => {
-          await tokens.WethBal.transfer(staker.address, twentyMillion);
+          await lptoken.mint(staker.address, twentyMillion);
+          await lptoken.connect(staker).approve(controller.address, twentyMillion);
           const stake = false;
           expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
         });

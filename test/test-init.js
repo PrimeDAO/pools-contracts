@@ -17,7 +17,7 @@ const initialize = async (accounts) => {
 
 const getTokens = async (setup) => {
   const ERC20Factory =  await ethers.getContractFactory(
-    "CustomERC20Mock",
+    "ERC20Mock",
     setup.roles.root
   ); 
 
