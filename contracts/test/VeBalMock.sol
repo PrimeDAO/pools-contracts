@@ -46,7 +46,6 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     uint256 constant MAXTIME = 365 * 86400;  // 1 year
     uint256 constant MULTIPLIER = 10 ** 18;
 
-
     address immutable TOKEN; 
     address immutable AUTHORIZER_ADAPTOR; //Authorizer Adaptor
 
@@ -325,25 +324,13 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     }
 
     function increase_amount(uint256 _value) external nonReentrant {
-        assert_not_contract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
-
         require(_value > 0); // dev: need non-zero value
-        require(_locked.amount > 0, "No existing lock found");
-        require(_locked.end > block.timestamp, "Cannot add to expired lock. Withdraw");
-
         _deposit_for(msg.sender, _value, 0, _locked, ActionType.INCREASE_LOCK_AMOUNT);
     }
     function increase_unlock_time(uint256 _unlock_time) external nonReentrant {
-        assert_not_contract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
-
-        require(_locked.end > block.timestamp, "Lock expired");
-        require(_locked.amount > 0, "Nothing is locked");
-        require(unlock_time > _locked.end, "Can only increase lock duration");
-        require(unlock_time <= block.timestamp + MAXTIME, "Voting lock can be 1 year max");
-
         _deposit_for(msg.sender, 0, unlock_time, _locked, ActionType.INCREASE_UNLOCK_TIME);
     }
 
@@ -616,4 +603,3 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     }
 
 }
-
