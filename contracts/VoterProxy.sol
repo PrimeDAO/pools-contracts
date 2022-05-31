@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -10,6 +10,7 @@ contract VoterProxy {
     using Address for address;
 
     address public immutable mintr;
+    address public immutable wethBal;
     address public immutable bal;
 
     address public immutable veBal;
@@ -24,6 +25,7 @@ contract VoterProxy {
 
     constructor(
         address mintr_,
+        address wethBal_,
         address bal_,
         address veBal_,
         address gaugeController_
@@ -31,13 +33,14 @@ contract VoterProxy {
         owner = msg.sender;
 
         mintr = mintr_;
+        wethBal = wethBal_;
         bal = bal_;
         veBal = veBal_;
         gaugeController = gaugeController_;
     }
 
     function getName() external pure returns (string memory) {
-        return "CurveVoterProxy";
+        return "VoterProxy";
     }
 
     function setOwner(address _owner) external {
@@ -57,7 +60,6 @@ contract VoterProxy {
 
     function setDepositor(address _depositor) external {
         require(msg.sender == owner, "!auth");
-
         depositor = _depositor;
     }
 
@@ -143,16 +145,16 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).approve(veBal, 0);
-        IERC20(bal).approve(veBal, _value);
+        IERC20(wethBal).approve(veBal, 0);
+        IERC20(wethBal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).create_lock(_value, _unlockTime);
         return true;
     }
 
     function increaseAmount(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).approve(veBal, 0);
-        IERC20(bal).approve(veBal, _value);
+        IERC20(wethBal).approve(veBal, 0);
+        IERC20(wethBal).approve(veBal, _value);
         ICurveVoteEscrow(veBal).increase_amount(_value);
         return true;
     }

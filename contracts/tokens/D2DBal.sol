@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // solium-disable linebreak-style
-pragma solidity 0.8.13;
+pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -12,14 +12,14 @@ contract D2DBal is ERC20, Ownable {
 
     uint256 public constant INITIAL_SUPPLY = 100_000 ether;
 
-    constructor(uint8 decimals_) ERC20("D2DBal", "D2DBAL") {
+    constructor() ERC20("D2DBal", "D2DBAL") {
         _mint(msg.sender, INITIAL_SUPPLY);
-        _decimals = decimals_;
+        _decimals = 18;
         _transferOwnership(_msgSender()); // as D2DBal is Ownable
     }
 
-    function mint(uint256 amount) public onlyOwner {
-        _mint(msg.sender, amount);
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
     }
 
     function burn(address account) public onlyOwner {
