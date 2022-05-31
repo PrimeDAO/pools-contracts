@@ -145,16 +145,16 @@ contract VoterProxy {
         returns (bool)
     {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).approve(veBal, 0);
-        IERC20(bal).approve(veBal, _value);
+        IERC20(wethBal).approve(veBal, 0);
+        IERC20(wethBal).approve(veBal, _value);
         IBalVoteEscrow(veBal).create_lock(_value, _unlockTime);
         return true;
     }
 
     function increaseAmount(uint256 _value) external returns (bool) {
         require(msg.sender == depositor, "!auth");
-        IERC20(bal).approve(veBal, 0);
-        IERC20(bal).approve(veBal, _value);
+        IERC20(wethBal).approve(veBal, 0);
+        IERC20(wethBal).approve(veBal, _value);
         IBalVoteEscrow(veBal).increase_amount(_value);
         return true;
     }
