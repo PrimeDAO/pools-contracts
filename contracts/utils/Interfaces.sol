@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-interface ICurveGauge {
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+interface IBalGauge {
     function deposit(uint256) external;
 
     function balanceOf(address) external view returns (uint256);
@@ -10,14 +12,12 @@ interface ICurveGauge {
 
     function claim_rewards() external;
 
-    function reward_tokens(uint256) external view returns (address); //v2
-
-    function rewarded_token() external view returns (address); //v1
+    function reward_tokens(uint256) external view returns (address);
 
     function lp_token() external view returns (address);
 }
 
-interface ICurveVoteEscrow {
+interface IBalVoteEscrow {
     function create_lock(uint256, uint256) external;
 
     function increase_amount(uint256) external;
@@ -25,12 +25,6 @@ interface ICurveVoteEscrow {
     function increase_unlock_time(uint256) external;
 
     function withdraw() external;
-
-    function smart_wallet_checker() external view returns (address);
-}
-
-interface IWalletChecker {
-    function check(address) external view returns (bool);
 }
 
 interface IVoting {
@@ -40,22 +34,6 @@ interface IVoting {
         bool
     ) external; //voteId, support, executeIfDecided
 
-    function getVote(uint256)
-        external
-        view
-        returns (
-            bool,
-            bool,
-            uint64,
-            uint64,
-            uint64,
-            uint64,
-            uint256,
-            uint256,
-            uint256,
-            bytes memory
-        );
-
     function vote_for_gauge_weights(address, uint256) external;
 }
 
@@ -64,58 +42,47 @@ interface IMinter {
 }
 
 interface IRegistry {
-    function get_registry() external view returns (address);
-
     function get_address(uint256 _id) external view returns (address);
-
-    function gauge_controller() external view returns (address);
-
-    function get_lp_token(address) external view returns (address);
-
-    function get_gauges(address)
-        external
-        view
-        returns (address[10] memory, uint128[10] memory);
 }
 
 interface IStaker {
-    function deposit(address, address) external;
+    function deposit(address _token, address _gauge) external;
 
-    function withdraw(address) external;
+    function withdraw(IERC20 _asset) external returns(uint256 balance);
 
     function withdraw(
-        address,
-        address,
-        uint256
+        address _token,
+        address _gauge,
+        uint256 _amount
     ) external;
 
-    function withdrawAll(address, address) external;
+    function withdrawAll(address _token, address _gauge) external;
 
-    function createLock(uint256, uint256) external;
+    function createLock(uint256 _value, uint256 _unlockTime) external;
 
-    function increaseAmount(uint256) external;
+    function increaseAmount(uint256 _value) external;
 
-    function increaseTime(uint256) external;
+    function increaseTime(uint256 _unlockTimestamp) external;
 
     function release() external;
 
-    function claimCrv(address) external returns (uint256);
+    function claimBal(address _gauge) external returns (uint256);
 
-    function claimRewards(address) external;
+    function claimRewards(address _gauge) external;
 
-    function claimFees(address, address) external;
+    function claimFees(address _distroContract, address _token) external returns (uint256);
 
-    function setStashAccess(address, bool) external;
+    function setStashAccess(address _stash, bool _status) external;
 
     function vote(
-        uint256,
-        address,
-        bool
+        uint256 _voteId,
+        address _votingAddress,
+        bool _support
     ) external;
 
-    function voteGaugeWeight(address, uint256) external;
+    function voteGaugeWeight(address _gauge, uint256 _weight) external;
 
-    function balanceOfPool(address) external view returns (uint256);
+    function balanceOfPool(address _gauge) external view returns (uint256);
 
     function operator() external view returns (address);
 

@@ -91,7 +91,7 @@ contract ExtraRewardStashV3 {
     //check if gauge rewards have changed
     function checkForNewRewardTokens() internal {
         for (uint256 i = 0; i < maxRewards; i++) {
-            address token = ICurveGauge(gauge).reward_tokens(i);
+            address token = IBalGauge(gauge).reward_tokens(i);
             if (token == address(0)) {
                 break;
             }

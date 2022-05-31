@@ -503,7 +503,7 @@ contract Controller {
         address gauge = pool.gauge;
 
         //claim bal
-        IStaker(staker).claimCrv(gauge);
+        IStaker(staker).claimBal(gauge);
 
         //check if there are extra rewards
         address stash = pool.stash;

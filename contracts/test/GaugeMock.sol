@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 import "../utils/Interfaces.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract GaugeMock is ICurveGauge {
+contract GaugeMock is IBalGauge {
 
     IERC20 public lpToken;
 
