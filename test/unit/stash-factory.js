@@ -8,13 +8,21 @@ const addressOne = "0x0000000000000000000000000000000000000001";
 describe("StashFactory", function() {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
-
         const setup = await init.initialize(await ethers.getSigners());
-
         await init.getTokens(setup);
+        setup.GaugeController = await init.gaugeController(setup);
+  
+        setup.VoterProxy = await init.getVoterProxyMock(setup);
+      
+        setup.controller = await init.getControllerMock(setup);
+      
+        setup.baseRewardPool = await init.baseRewardPool(setup);
+      
+        setup.rewardFactory = await init.rewardFactory(setup);
+      
+        setup.proxyFactory = await init.proxyFactory(setup);
 
         const stashFactory = await init.stashFactory(setup);
-
         return {
             stashFactory,
             root: setup.roles.root,
@@ -24,7 +32,6 @@ describe("StashFactory", function() {
 
     it("reverts if unauthorized on setImplementation", async function() {
         const { stashFactory, randomUser } = await setupTests();
-
         await expect(
             stashFactory.connect(randomUser).setImplementation(addressOne)
         ).to.be.revertedWith("Unauthorized()");

@@ -17,7 +17,7 @@ interface ICurveGauge {
     function lp_token() external view returns (address);
 }
 
-interface ICurveVoteEscrow {
+interface IBalVoteEscrow {
     function create_lock(uint256, uint256) external;
 
     function increase_amount(uint256) external;
@@ -27,6 +27,10 @@ interface ICurveVoteEscrow {
     function withdraw() external;
 
     function smart_wallet_checker() external view returns (address);
+
+    function balanceOf(address, uint256) external view returns (uint256);
+
+    function balanceOfAt(address, uint256) external view returns (uint256);
 }
 
 interface IWalletChecker {
@@ -80,6 +84,12 @@ interface IRegistry {
 
 interface IStaker {
     function deposit(address, address) external;
+
+    function withdrawWethBal(
+        address,
+        address,
+        uint256
+    ) external returns (bool);
 
     function withdraw(address) external;
 
@@ -244,9 +254,9 @@ interface IRewardFactory {
 
 interface IStashFactory {
     function createStash(
-        uint256 _pid,
-        address _gauge,
-        address _stash
+        uint256,
+        address,
+        address
     ) external returns (address);
 }
 
@@ -255,13 +265,11 @@ interface ITokenFactory {
 }
 
 interface IPools {
-    function addPool(address _lptoken, address _gauge) external returns (bool);
+    function addPool(address, address) external returns (bool);
 
-    function forceAddPool(address _lptoken, address _gauge)
-        external
-        returns (bool);
+    function forceAddPool(address, address) external returns (bool);
 
-    function shutdownPool(uint256 _pid) external returns (bool);
+    function shutdownPool(uint256) external returns (bool);
 
     function poolInfo(uint256)
         external

@@ -9,6 +9,8 @@ const deploy = async () => {
 
     setup.tokens = await init.getTokens(setup);
 
+    setup.GaugeController = await init.gaugeController(setup);
+
     setup.voterProxy = await init.getVoterProxy(setup);
 
     setup.balDepositor = await init.balDepositor(setup);
@@ -41,7 +43,7 @@ describe("Contract: BalDepositor", async () => {
         before("!! setup", async () => {
             setup = await deploy();
             root = setup.roles.root;
-            buyer1 = setup.roles.buyer1;
+            buyer1 = setup.roles.operator;
             buyer2 = setup.roles.buyer2;
             balDepositorContractAddress = await setup.balDepositor.address;
             wethBalContract = await setup.tokens.WethBal;

@@ -14,25 +14,22 @@ contract DepositToken is ERC20 {
     constructor(address _operator, address _lptoken)
         public
         ERC20(
-            string(
-                abi.encodePacked(ERC20(_lptoken).name(),"Convex Deposit")
-            ),
+            string(abi.encodePacked(ERC20(_lptoken).name(), "Convex Deposit")),
             string(abi.encodePacked("cvx", ERC20(_lptoken).symbol()))
         )
     {
-        operator =  _operator;
+        operator = _operator;
     }
-    
+
     function mint(address _to, uint256 _amount) external {
         require(msg.sender == operator, "!authorized");
-        
+
         _mint(_to, _amount);
     }
 
     function burn(address _from, uint256 _amount) external {
         require(msg.sender == operator, "!authorized");
-        
+
         _burn(_from, _amount);
     }
-
 }

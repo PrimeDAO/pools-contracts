@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract Controller {
     using Address for address;
 
-    address public immutable bal;
+    address public immutable wethBal;
     address public constant registry =
         address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
@@ -24,6 +24,7 @@ contract Controller {
     uint256 public platformFees = 1000; //10% //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
+    uint256 public constant lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
 
     address public owner;
     address public feeManager;
@@ -35,8 +36,8 @@ contract Controller {
     address public rewardArbitrator;
     address public voteDelegate;
     address public treasury;
-    address public stakerRewards;
-    address public lockRewards;
+    address public stakerRewards; //bal rewards
+    address public lockRewards; //wethBalBal rewards(bal)
     address public lockFees;
     address public feeDistro;
     address public feeToken;
@@ -61,15 +62,20 @@ contract Controller {
         uint256 indexed poolid,
         uint256 amount
     );
+
     event Withdrawn(
         address indexed user,
         uint256 indexed poolid,
         uint256 amount
     );
 
-    constructor(address _staker, address _feeManager, address _wethBal) public {
+    constructor(
+        address _staker,
+        address _feeManager,
+        address _wethBal
+    ) public {
         isShutdown = false;
-        bal = _wethBal;
+        wethBal = _wethBal;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
@@ -235,7 +241,6 @@ contract Controller {
             _gauge,
             staker
         );
-
         //add the new pool
         poolInfo.push(
             PoolInfo({
@@ -313,7 +318,7 @@ contract Controller {
         //stake
         address gauge = pool.gauge;
         require(gauge != address(0), "!gauge setting");
-        IStaker(staker).deposit(lptoken, gauge);
+        IStaker(staker).deposit(lptoken, gauge); //VoterProxy
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
         address stash = pool.stash;
@@ -321,7 +326,7 @@ contract Controller {
             IStash(stash).stashRewards();
         }
 
-        address token = pool.token;
+        address token = pool.token; //D2DPool token
         if (_stake) {
             //mint here and send to rewards on user behalf
             ITokenMinter(token).mint(address(this), _amount);
@@ -418,6 +423,45 @@ contract Controller {
         return true;
     }
 
+    //withdraw WethBal, which was unlocked after a year of usage
+    function withdrawUnlockedWethBal(uint256 _pid, uint256 _amount)
+        public
+        returns (bool)
+    {
+        PoolInfo storage pool = poolInfo[_pid];
+        address gauge = pool.gauge;
+
+        //pull from gauge if not shutdown
+        // if shutdown tokens will be in this contract
+        if (!pool.shutdown) {
+            IStaker(staker).withdrawWethBal(treasury, gauge, _amount);
+        }
+
+        return true;
+    }
+
+    // restake wethBAL, which was unlocked after a year of usage
+    function restake(uint256 _pid) public returns (bool) {
+        require(!isShutdown, "shutdown");
+        PoolInfo storage pool = poolInfo[_pid];
+        require(pool.shutdown == false, "pool is closed");
+
+        //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
+        address stash = pool.stash;
+
+        if (stash != address(0)) {
+            IStash(stash).stashRewards();
+        }
+
+        address token = pool.token;
+
+        uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
+        IStaker(staker).increaseTime(lockTime);
+
+        emit Deposited(msg.sender, _pid, _amount);
+        return true;
+    }
+
     /// @notice submits votes for proposals
     /// @param _voteId the id of the vote
     /// @param _votingAddress the address placing the vote
@@ -501,15 +545,15 @@ contract Controller {
             IStash(stash).processStash();
         }
 
-        //bal balance
-        uint256 balBal = IERC20(bal).balanceOf(address(this));
+        //wethBalBal balance
+        uint256 wethBalBal = IERC20(wethBal).balanceOf(address(this));
 
-        if (balBal > 0) {
+        if (wethBalBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
-            uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal - _profit;
+            uint256 _profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
+            wethBalBal = wethBalBal - _profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
-            IERC20(bal).transfer(feeManager, _profit);
+            IERC20(wethBal).transfer(feeManager, _profit);
 
             //send treasury
             if (
@@ -518,14 +562,15 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
-                balBal = balBal - _platform;
-                IERC20(bal).transfer(treasury, _platform);
+                uint256 _platform = (wethBalBal * platformFees) /
+                    FEE_DENOMINATOR;
+                wethBalBal = wethBalBal - _platform;
+                IERC20(wethBal).transfer(treasury, _platform);
             }
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
-            IERC20(bal).transfer(rewardContract, balBal);
-            IRewards(rewardContract).queueNewRewards(balBal);
+            IERC20(wethBal).transfer(rewardContract, wethBalBal);
+            IRewards(rewardContract).queueNewRewards(wethBalBal);
         }
     }
 
