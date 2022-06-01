@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./utils/Interfaces.sol";
 
+/// @title ExtraRewardStashV3 contract
+
 contract ExtraRewardStashV3 {
     using Address for address;
 
@@ -54,15 +56,17 @@ contract ExtraRewardStashV3 {
         // bal = _bal;
     }
 
+    /// @notice Returns the name of the contract
     function getName() external pure returns (string memory) {
         return "ExtraRewardStashV3.2";
     }
 
+    /// @notice Returns the length of the tokenList
     function tokenCount() external view returns (uint256) {
         return tokenList.length;
     }
 
-    //try claiming if there are reward tokens registered
+    /// @notice Claims registered reward tokens
     function claimRewards() external returns (bool) {
         require(msg.sender == operator, "!operator");
 
@@ -88,7 +92,7 @@ contract ExtraRewardStashV3 {
         return true;
     }
 
-    //check if gauge rewards have changed
+    /// @notice Checks if the gauge rewards have changed
     function checkForNewRewardTokens() internal {
         for (uint256 i = 0; i < maxRewards; i++) {
             address token = ICurveGauge(gauge).reward_tokens(i);
@@ -102,21 +106,25 @@ contract ExtraRewardStashV3 {
         }
     }
 
-    //register an extra reward token to be handled
-    // (any new incentive that is not directly on curve gauges)
+    /// @notice Registers an extra reward token to be handled
+    /// @param _token The reward token address
+    /// @dev Used for any new incentive that is not directly on curve gauges
     function setExtraReward(address _token) external {
         //owner of booster can set extra rewards
         require(IDeposit(operator).owner() == msg.sender, "!owner");
         setToken(_token);
     }
 
+    /// @notice Sets the reward hook address
+    /// @param _hook The address of the reward hook
     function setRewardHook(address _hook) external {
         //owner of booster can set reward hook
         require(IDeposit(operator).owner() == msg.sender, "!owner");
         rewardHook = _hook;
     }
 
-    //replace a token on token list
+    /// @notice Replaces a token on the token list
+    /// @param _token The address of the token
     function setToken(address _token) internal {
         TokenInfo storage t = tokenInfo[_token];
 
@@ -143,7 +151,7 @@ contract ExtraRewardStashV3 {
         }
     }
 
-    //pull assigned tokens from staker to stash
+    /// @notice Pulls assigned tokens from staker to stash
     function stashRewards() external pure returns (bool) {
         //after depositing/withdrawing, extra incentive tokens are claimed
         //but from v3 this is default to off, and this stash is the reward receiver too.
@@ -151,7 +159,7 @@ contract ExtraRewardStashV3 {
         return true;
     }
 
-    //send all extra rewards to their reward contracts
+    /// @notice Sends all of the extra rewards to the reward contracts
     function processStash() external returns (bool) {
         require(msg.sender == operator, "!operator");
 
