@@ -381,7 +381,12 @@ describe("Contract: Controller", async () => {
         });
         context("» earmarkFees testing", () => {
             it("Calls earmarkFees", async () => {
+                const feeToken = await setup.controller.feeToken(); //setup.tokens.WethBal
+                const balance = await setup.tokens.WethBal.balanceOf(setup.controller.address);
 
+                expect(await setup.controller.earmarkFees());
+                const lockFees = await setup.controller.lockFees();
+                expect(await setup.tokens.WethBal.balanceOf(lockFees)).to.equal(balance);
             });
         });
         context("» deposit testing", () => {
