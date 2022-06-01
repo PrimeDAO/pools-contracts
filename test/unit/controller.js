@@ -12,11 +12,13 @@ const deploy = async () => {
   
   setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
 
+  setup.RegistryMock = await init.getRegistryMock(setup);
+
   setup.controller = await init.controller(setup);
 
-  setup.baseRewardPool = await init.baseRewardPool(setup);
-
   setup.rewardFactory = await init.rewardFactory(setup);
+
+  setup.baseRewardPool = await init.baseRewardPool(setup);
 
   setup.proxyFactory = await init.proxyFactory(setup);
 
@@ -82,9 +84,25 @@ describe("Contract: Controller", async () => {
 
     context("» Testing changed functions", () => {
         context("» setFeeInfo testing", () => {
-            it("Checks feeToken", async () => {
+            it("Sets VoterProxy operator ", async () => {
+                expect(await setup.VoterProxy.connect(root).setOperator(setup.controller.address));
+            });
+            it("Sets factories", async () => {
+                rewardFactory = setup.rewardFactory;
+                stashFactory = setup.stashFactory;
+                tokenFactory = setup.tokenFactory;
+                expect(await setup.controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            });
+            it("Prepare registry and setRewardContracts", async () => {
+                await setup.RegistryMock.add_new_id(setup.tokens.VeBal.address, "description of registry");
+                const lockRewards = setup.baseRewardPool.address; //address of the main reward pool contract --> baseRewardPool
+                const stakerRewards = reward_manager.address; 
+                await setup.controller.setRewardContracts(lockRewards, stakerRewards);
+            });
+            it("Call setFeeInfo", async () => {
                 expect((await setup.controller.feeToken()).toString()).to.equal(zero_address);
-
+                expect(await setup.controller.connect(root).setFeeInfo());
+                expect((await setup.controller.feeToken()).toString()).to.not.equal(zero_address);
             });
         });
         context("» setFees testing", () => {

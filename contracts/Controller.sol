@@ -12,9 +12,8 @@ contract Controller {
     using Address for address;
 
     address public immutable wethBal;
-    address public constant registry =
-        address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
-    uint256 public constant distributionAddressId = 4;
+    address public immutable registry;
+    uint256 public constant distributionAddressId = 1;//4;
     address public constant voteOwnership =
         address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
     address public constant voteParameter =
@@ -37,7 +36,7 @@ contract Controller {
     address public voteDelegate;
     address public treasury;
     address public stakerRewards; //bal rewards
-    address public lockRewards; //wethBalBal rewards(bal)
+    address public lockRewards; //wethBalBal rewards(bal) //address of the main reward pool contract --> baseRewardPool
     address public lockFees;
     address public feeDistro;
     address public feeToken;
@@ -72,10 +71,12 @@ contract Controller {
     constructor(
         address _staker,
         address _feeManager,
-        address _wethBal
+        address _wethBal,
+        address _registry
     ) public {
         isShutdown = false;
         wethBal = _wethBal;
+        registry = _registry;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
