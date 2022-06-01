@@ -387,7 +387,6 @@ describe("Contract: Controller", async () => {
                 expect(await setup.controller.earmarkFees());
                 const lockFees = await setup.controller.lockFees();
                 expect(await feeToken.balanceOf(lockFees)).to.equal(balance);
-
             });
         });
         context("» deposit testing", () => {
