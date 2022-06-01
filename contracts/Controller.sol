@@ -13,7 +13,7 @@ contract Controller {
 
     address public immutable wethBal;
     address public immutable registry;
-    uint256 public constant distributionAddressId = 1;//4;
+    uint256 public constant distributionAddressId = 1; //Note: originally was 4;
     address public constant voteOwnership =
         address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
     address public constant voteParameter =
