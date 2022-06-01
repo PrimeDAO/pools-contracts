@@ -131,7 +131,7 @@ const baseRewardPool = async (setup) => {
   const stakingToken = setup.tokens.D2DBal;
   const rewardToken = setup.tokens.BAL;
   const operator = setup.controller;
-  const rewardManager = setup.rewardFactory;//setup.roles.reward_manager;
+  const rewardManager = setup.rewardFactory;
 
   return await baseRewardPool.deploy(pid, stakingToken.address, rewardToken.address, operator.address, rewardManager.address);
 };

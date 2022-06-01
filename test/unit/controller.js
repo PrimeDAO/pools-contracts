@@ -104,6 +104,17 @@ describe("Contract: Controller", async () => {
                 expect(await setup.controller.connect(root).setFeeInfo());
                 expect((await setup.controller.feeToken()).toString()).to.not.equal(zero_address);
             });
+            it("Can not setFeeInfo if not feeManager", async () => {
+                await expectRevert(
+                    setup.controller
+                        .connect(staker)
+                        .setFeeInfo(),
+                    "!auth"
+                );
+            });
+            it("Can setFeeInfo if feeToken already setted", async () => {
+                expect(await setup.controller.connect(root).setFeeInfo());
+            });
         });
         context("» setFees testing", () => {
             it("Should fail if caller if not feeManager", async () => {
@@ -398,8 +409,7 @@ describe("Contract: Controller", async () => {
               const stake = false;
               expect(await setup.controller.connect(staker).deposit(pid, twentyMillion, stake));
             });
-        });        
-
+        });
         context("» withdrawUnlockedWethBal testing", () => {
             it("Sets VoterProxy depositor", async () => {
               expect(await setup.VoterProxy.connect(root).setDepositor(root.address));
