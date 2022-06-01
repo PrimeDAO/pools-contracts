@@ -38,6 +38,7 @@ contract Controller {
     address public treasury;
     address public stakerRewards; //bal rewards
     address public lockRewards; //wethBalBal rewards(bal)
+    address public lockFees;
     address public feeDistro;
     address public feeToken;
 
@@ -170,6 +171,12 @@ contract Controller {
         feeDistro = IRegistry(registry).get_address(distributionAddressId);
         address _feeToken = IFeeDistro(feeDistro).token();
         if (feeToken != _feeToken) {
+            //create a new reward contract for the new token
+            lockFees = IRewardFactory(rewardFactory).createTokenRewards(
+                _feeToken,
+                lockRewards,
+                address(this)
+            );
             feeToken = _feeToken;
         }
     }
@@ -583,7 +590,7 @@ contract Controller {
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
         //earmarkRewards should send rewards to lockRewards
         IERC20(feeToken).transfer(lockRewards, _balance);
-        IRewards(lockRewards).queueNewRewards(_balance);
+        IRewards(lockFees).queueNewRewards(_balance);
         return true;
     }
 
