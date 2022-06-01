@@ -114,38 +114,5 @@ describe("Contract: BalDepositor", async () => {
 
             await balDepositor.deposit(depositAmount, true, baseRewardPool.address);
         });
-        // it("Transfers Wethbal to Baldepositor contract when lock boolean is false", async () => {
-        //     let lock_false = false;
-        //     let depositTotal = depositAmount + depositAmountTwo;
-
-        //     await wethBalContract.approve(
-        //         balDepositorContractAddress,
-        //         depositAmount
-        //     );
-
-        //     await balDepositor
-        //         .connect(root)
-        //         .deposit(
-        //             depositAmount,
-        //             lock_false,
-        //             baseRewardPool.address
-        //         );
-
-        //     let rewards_Contract_d2dBalance = await d2dBal_Contract.balanceOf(
-        //         baseRewardPool.address
-        //     );
-
-        //     let balDepositor_contract_WethBalBalance = await wethBalContract.balanceOf(
-        //         balDepositorContractAddress
-        //     );
-
-        //     expect(rewards_Contract_d2dBalance.toString()).to.equal(
-        //         depositTotal.toString()
-        //     );
-        //     //Check if the appropriate amount of Wethbal was sent to balDepositor contract
-        //     expect(balDepositor_contract_WethBalBalance.toString()).to.equal(
-        //         depositAmount.toString()
-        //     );
-        // });
     });
 });
