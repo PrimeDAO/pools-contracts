@@ -137,8 +137,7 @@ contract BalDepositor {
             //move tokens here
             IERC20(wethBal).transferFrom(msg.sender, address(this), _amount);
             //defer lock cost to another user
-            uint256 callIncentive = ((_amount * lockIncentive) /
-                FEE_DENOMINATOR);
+            uint256 callIncentive = ((_amount * lockIncentive) / FEE_DENOMINATOR);
             _amount = _amount - callIncentive;
 
             //add to a pool for lock caller

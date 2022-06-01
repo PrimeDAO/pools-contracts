@@ -31,20 +31,13 @@ contract RewardFactory {
 
     /// @notice Get active rewards count
     /// @return uint256 number of active rewards
-    function activeRewardCount(address _reward)
-        external
-        view
-        returns (uint256)
-    {
+    function activeRewardCount(address _reward) external view returns (uint256) {
         return rewardActiveList[_reward].length;
     }
 
     /// @notice Adds a new reward to the active list
     /// @return true on success
-    function addActiveReward(address _reward, uint256 _pid)
-        external
-        returns (bool)
-    {
+    function addActiveReward(address _reward, uint256 _pid) external returns (bool) {
         if (!rewardAccess[msg.sender]) {
             revert Unauthorized();
         }
@@ -63,10 +56,7 @@ contract RewardFactory {
     /// @param _reward The address of the reward contract
     /// @param _pid The pid of the pool
     /// @return true on success
-    function removeActiveReward(address _reward, uint256 _pid)
-        external
-        returns (bool)
-    {
+    function removeActiveReward(address _reward, uint256 _pid) external returns (bool) {
         if (!rewardAccess[msg.sender]) {
             revert Unauthorized();
         }
@@ -76,9 +66,7 @@ contract RewardFactory {
         for (uint256 i = 0; i < activeListMemory.length; i = i.unsafeInc()) {
             if (activeListMemory[i] == pid) {
                 if (i != activeListMemory.length - 1) {
-                    rewardActiveList[_reward][i] = rewardActiveList[_reward][
-                        activeListMemory.length - 1
-                    ];
+                    rewardActiveList[_reward][i] = rewardActiveList[_reward][activeListMemory.length - 1];
                 }
                 rewardActiveList[_reward].pop();
                 emit ExtraRewardRemoved(_reward, _pid);
@@ -102,21 +90,12 @@ contract RewardFactory {
     /// @notice Creates a new Reward pool
     /// @param _pid The pid of the pool
     /// @param _depositToken address of the token
-    function createBalRewards(uint256 _pid, address _depositToken)
-        external
-        returns (address)
-    {
+    function createBalRewards(uint256 _pid, address _depositToken) external returns (address) {
         if (msg.sender != operator) {
             revert Unauthorized();
         }
 
-        BaseRewardPool rewardPool = new BaseRewardPool(
-            _pid,
-            _depositToken,
-            bal,
-            operator,
-            address(this)
-        );
+        BaseRewardPool rewardPool = new BaseRewardPool(_pid, _depositToken, bal, operator, address(this));
         emit BaseRewardPoolCreated(address(rewardPool));
 
         return address(rewardPool);
@@ -138,11 +117,7 @@ contract RewardFactory {
         }
 
         // create new pool, use main pool for balance lookup
-        VirtualBalanceRewardPool rewardPool = new VirtualBalanceRewardPool(
-            _mainRewards,
-            _token,
-            _rewardPoolOwner
-        );
+        VirtualBalanceRewardPool rewardPool = new VirtualBalanceRewardPool(_mainRewards, _token, _rewardPoolOwner);
         emit VirtualBalanceRewardPoolCreated(address(rewardPool));
 
         address rAddress = address(rewardPool);

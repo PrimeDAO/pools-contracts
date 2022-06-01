@@ -1,0 +1,18 @@
+# folders
+artifacts/
+build/
+cache/
+coverage/
+dist/
+lib/
+node_modules/
+contracts/test
+deploy/
+deployments/
+
+# files
+coverage.json
+.eslintrc.json
+.solcover.js
+.solhint.json
+README.md

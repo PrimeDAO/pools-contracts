@@ -10,7 +10,9 @@
     "deploy:contracts:rinkeby": "npx hardhat deploy --network rinkeby --tags Export,$npm_config_tags",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan --tags Export,$npm_config_tags",
     "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet --tags Export,$npm_config_tags",
-    "deploy:contracts:arbitrum": "npx hardhat deploy --network arbitrum --tags Export,$npm_config_tags"
+    "deploy:contracts:arbitrum": "npx hardhat deploy --network arbitrum --tags Export,$npm_config_tags",
+    "prettier": "prettier --config ./.prettierrc --write \"**/*.{js,json,md,sol}\"",
+    "prettier:check": "prettier --check --config ./.prettierrc \"**/*.{js,json,md,sol}\""
   },
   "repository": {
     "type": "git",
@@ -36,7 +38,8 @@
     "hardhat-deploy": "^0.7.0-beta.46",
     "hardhat-gas-reporter": "^1.0.8",
     "openzeppelin-contracts-sol5": "npm:@openzeppelin/contracts@2.5.1",
-    "openzeppelin-contracts-sol8": "npm:@openzeppelin/contracts@4.2.0"
+    "openzeppelin-contracts-sol8": "npm:@openzeppelin/contracts@4.2.0",
+    "prettier-plugin-solidity": "^1.0.0-beta.19"
   },
   "dependencies": {
     "@nomiclabs/hardhat-web3": "^2.0.0",
@@ -44,7 +47,6 @@
     "dotenv": "^16.0.0",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "openzeppelin-solidity": "^4.5.0",
-    "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.7",
     "solhint-plugin-prettier": "0.0.5",
     "solidity-coverage": "^0.7.20"

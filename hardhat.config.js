@@ -7,8 +7,7 @@ require("solidity-coverage");
 require("@nomiclabs/hardhat-web3");
 require("hardhat-gas-reporter");
 
-const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, PK } =
-    process.env;
+const { INFURA_KEY, MNEMONIC, ETHERSCAN_API_KEY, ARBISCAN_API_KEY, PK } = process.env;
 const DEFAULT_MNEMONIC = "hello darkness my old friend";
 
 const sharedNetworkConfig = {};
@@ -16,7 +15,7 @@ if (PK) {
   sharedNetworkConfig.accounts = [PK];
 } else {
   sharedNetworkConfig.accounts = {
-    mnemonic: MNEMONIC || DEFAULT_MNEMONIC,
+    mnemonic: MNEMONIC || DEFAULT_MNEMONIC
   };
 }
 
@@ -26,7 +25,7 @@ module.exports = {
     cache: "build/cache",
     deploy: "deploy",
     sources: "contracts",
-    imports: "imports",
+    imports: "imports"
   },
   defaultNetwork: "hardhat",
   gasReporter: {
@@ -44,45 +43,45 @@ module.exports = {
       ...sharedNetworkConfig,
       blockGasLimit: 100000000,
       gas: 2000000,
-      saveDeployments: false,
+      saveDeployments: false
     },
     hardhat: {
       blockGasLimit: 10000000000000,
       gas: 200000000000,
       saveDeployments: false,
       initialBaseFeePerGas: 0,
-      hardfork: "london",
+      hardfork: "london"
     },
     mainnet: {
       ...sharedNetworkConfig,
       url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
-      saveDeployments: true,
+      saveDeployments: true
     },
     rinkeby: {
       ...sharedNetworkConfig,
       url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
-      saveDeployments: true,
+      saveDeployments: true
     },
     kovan: {
       ...sharedNetworkConfig,
       url: `https://kovan.infura.io/v3/${INFURA_KEY}`,
-      saveDeployments: true,
+      saveDeployments: true
     },
     ganache: {
       ...sharedNetworkConfig,
       url: "http://127.0.0.1:7545",
-      saveDeployments: false,
+      saveDeployments: false
     },
     arbitrumTest: {
       ...sharedNetworkConfig,
       url: "https://rinkeby.arbitrum.io/rpc",
-      saveDeployments: true,
+      saveDeployments: true
     },
     arbitrum: {
       ...sharedNetworkConfig,
       url: "https://arb1.arbitrum.io/rpc",
-      saveDeployments: true,
-    },
+      saveDeployments: true
+    }
   },
   solidity: {
     compilers: [
@@ -92,22 +91,22 @@ module.exports = {
           // viaIR: true, // TODO: experiment with this option
           optimizer: {
             enabled: true,
-            runs: 100000,
-          },
-        },
-      },
-    ],
+            runs: 100000
+          }
+        }
+      }
+    ]
   },
   etherscan: {
     apiKey: {
       mainnet: ETHERSCAN_API_KEY,
-      arbitrumOne: ARBISCAN_API_KEY,
-    },
+      arbitrumOne: ARBISCAN_API_KEY
+    }
   },
   namedAccounts: {
     root: 0,
     prime: 1,
     beneficiary: 2,
-    rewardManager: 3, // BaseRewardPool reward manager
-  }, 
+    rewardManager: 3 // BaseRewardPool reward manager
+  }
 };

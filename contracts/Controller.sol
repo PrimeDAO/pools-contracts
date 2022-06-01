@@ -11,15 +11,11 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract Controller {
     using Address for address;
 
-    address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
-    address public constant registry =
-        address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
+    address public constant bal = address(0xba100000625a3754423978a60c9317c58a424e3D);
+    address public constant registry = address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
     uint256 public constant distributionAddressId = 4;
-    address public constant voteOwnership =
-        address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
-    address public constant voteParameter =
-        address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
+    address public constant voteOwnership = address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
+    address public constant voteParameter = address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
     uint256 public lockIncentive = 1000; //incentive to bal stakers
     uint256 public stakerIncentive = 450; //incentive to native token stakers
@@ -59,16 +55,8 @@ contract Controller {
     PoolInfo[] public poolInfo;
     mapping(address => bool) public gaugeMap;
 
-    event Deposited(
-        address indexed user,
-        uint256 indexed poolid,
-        uint256 amount
-    );
-    event Withdrawn(
-        address indexed user,
-        uint256 indexed poolid,
-        uint256 amount
-    );
+    event Deposited(address indexed user, uint256 indexed poolid, uint256 amount);
+    event Withdrawn(address indexed user, uint256 indexed poolid, uint256 amount);
 
     constructor(address _staker) public {
         isShutdown = false;
@@ -146,9 +134,7 @@ contract Controller {
     /// @notice sets the lockRewards and stakerRewards variables
     /// @param _rewards The address of the rewards contract
     /// @param _stakerRewards The address of the staker rewards contract
-    function setRewardContracts(address _rewards, address _stakerRewards)
-        external
-    {
+    function setRewardContracts(address _rewards, address _stakerRewards) external {
         require(msg.sender == owner, "!auth");
 
         //reward contracts are immutable or else the owner
@@ -168,11 +154,7 @@ contract Controller {
         address _feeToken = IFeeDistro(feeDistro).token();
         if (feeToken != _feeToken) {
             //create a new reward contract for the new token
-            lockFees = IRewardFactory(rewardFactory).createTokenRewards(
-                _feeToken,
-                lockRewards,
-                address(this)
-            );
+            lockFees = IRewardFactory(rewardFactory).createTokenRewards(_feeToken, lockRewards, address(this));
             feeToken = _feeToken;
         }
     }
@@ -235,20 +217,11 @@ contract Controller {
         uint256 pid = poolInfo.length;
 
         //create a tokenized deposit
-        address token = ITokenFactory(tokenFactory).CreateDepositToken(
-            _lptoken
-        );
+        address token = ITokenFactory(tokenFactory).CreateDepositToken(_lptoken);
         //create a reward contract for bal rewards
-        address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(
-            pid,
-            token
-        );
+        address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(pid, token);
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).createStash(
-            pid,
-            _gauge,
-            staker
-        );
+        address stash = IStashFactory(stashFactory).createStash(pid, _gauge, staker);
 
         //add the new pool
         poolInfo.push(
@@ -442,10 +415,7 @@ contract Controller {
         bool _support
     ) external returns (bool) {
         require(msg.sender == voteDelegate, "!auth");
-        require(
-            _votingAddress == voteOwnership || _votingAddress == voteParameter,
-            "!voteAddr"
-        );
+        require(_votingAddress == voteOwnership || _votingAddress == voteParameter, "!voteAddr");
 
         IStaker(staker).vote(_voteId, _votingAddress, _support);
         return true;
@@ -454,10 +424,7 @@ contract Controller {
     /// @notice sets the voteGaugeWeight
     /// @param _gauge array of gauge addresses
     /// @param _weight array of vote weights
-    function voteGaugeWeight(
-        address[] calldata _gauge,
-        uint256[] calldata _weight
-    ) external returns (bool) {
+    function voteGaugeWeight(address[] calldata _gauge, uint256[] calldata _weight) external returns (bool) {
         require(msg.sender == voteDelegate, "!auth");
 
         for (uint256 i = 0; i < _gauge.length; i++) {
@@ -469,10 +436,7 @@ contract Controller {
     /// @notice claims rewards from a specific pool
     /// @param _pid the id of the pool
     /// @param _gauge address of the gauge
-    function claimRewards(uint256 _pid, address _gauge)
-        external
-        returns (bool)
-    {
+    function claimRewards(uint256 _pid, address _gauge) external returns (bool) {
         address stash = poolInfo[_pid].stash;
         require(msg.sender == stash, "!auth");
 
@@ -486,10 +450,7 @@ contract Controller {
         address stash = poolInfo[_pid].stash;
         require(msg.sender == stash, "!auth");
         address gauge = poolInfo[_pid].gauge;
-        bytes memory data = abi.encodeWithSelector(
-            bytes4(keccak256("set_rewards_receiver(address)")),
-            stash
-        );
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
         IStaker(staker).execute(gauge, uint256(0), data);
         return true;
     }
@@ -520,18 +481,12 @@ contract Controller {
         if (balBal > 0) {
             uint256 _lockIncentive = (balBal * lockIncentive) / FEE_DENOMINATOR;
 
-            uint256 _stakerIncentive = (balBal * stakerIncentive) /
-                FEE_DENOMINATOR;
+            uint256 _stakerIncentive = (balBal * stakerIncentive) / FEE_DENOMINATOR;
 
-            uint256 _callIncentive = (balBal * earmarkIncentive) /
-                FEE_DENOMINATOR;
+            uint256 _callIncentive = (balBal * earmarkIncentive) / FEE_DENOMINATOR;
 
             //send treasury
-            if (
-                treasury != address(0) &&
-                treasury != address(this) &&
-                platformFee > 0
-            ) {
+            if (treasury != address(0) && treasury != address(this) && platformFee > 0) {
                 //only subtract after address condition check
                 uint256 _platform = (balBal * platformFee) / FEE_DENOMINATOR;
                 balBal = balBal - _platform;
@@ -539,11 +494,7 @@ contract Controller {
             }
 
             //remove incentives from balance
-            balBal =
-                balBal -
-                _lockIncentive -
-                _callIncentive -
-                _stakerIncentive;
+            balBal = balBal - _lockIncentive - _callIncentive - _stakerIncentive;
 
             //send incentives for calling
             IERC20(bal).transfer(msg.sender, _callIncentive);
@@ -592,10 +543,7 @@ contract Controller {
         uint256 _amount
     ) external returns (bool) {
         address rewardContract = poolInfo[_pid].balRewards;
-        require(
-            msg.sender == rewardContract || msg.sender == lockRewards,
-            "!auth"
-        );
+        require(msg.sender == rewardContract || msg.sender == lockRewards, "!auth");
         return true;
     }
 }

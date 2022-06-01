@@ -10,8 +10,7 @@ import "./utils/Interfaces.sol";
 contract ExtraRewardStashV3 {
     using Address for address;
 
-    address public constant bal =
-        address(0xba100000625a3754423978a60c9317c58a424e3D);
+    address public constant bal = address(0xba100000625a3754423978a60c9317c58a424e3D);
     uint256 private constant maxRewards = 8;
 
     uint256 public pid;
@@ -127,14 +126,12 @@ contract ExtraRewardStashV3 {
             //check if bal
             if (_token != bal) {
                 //create new reward contract (for NON-bal tokens only)
-                (, , , address mainRewardContract, , ) = IDeposit(operator)
-                    .poolInfo(pid);
-                address rewardContract = IRewardFactory(rewardFactory)
-                    .createTokenRewards(
-                        _token,
-                        mainRewardContract,
-                        address(this)
-                    );
+                (, , , address mainRewardContract, , ) = IDeposit(operator).poolInfo(pid);
+                address rewardContract = IRewardFactory(rewardFactory).createTokenRewards(
+                    _token,
+                    mainRewardContract,
+                    address(this)
+                );
 
                 t.rewardAddress = rewardContract;
             }

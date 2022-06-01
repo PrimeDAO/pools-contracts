@@ -72,10 +72,7 @@ interface IRegistry {
 
     function get_lp_token(address) external view returns (address);
 
-    function get_gauges(address)
-        external
-        view
-        returns (address[10] memory, uint128[10] memory);
+    function get_gauges(address) external view returns (address[10] memory, uint128[10] memory);
 }
 
 interface IStaker {
@@ -257,9 +254,7 @@ interface ITokenFactory {
 interface IPools {
     function addPool(address _lptoken, address _gauge) external returns (bool);
 
-    function forceAddPool(address _lptoken, address _gauge)
-        external
-        returns (bool);
+    function forceAddPool(address _lptoken, address _gauge) external returns (bool);
 
     function shutdownPool(uint256 _pid) external returns (bool);
 
@@ -283,9 +278,7 @@ interface IPools {
 }
 
 interface IVestedEscrow {
-    function fund(address[] calldata _recipient, uint256[] calldata _amount)
-        external
-        returns (bool);
+    function fund(address[] calldata _recipient, uint256[] calldata _amount) external returns (bool);
 }
 
 interface GaugeController {

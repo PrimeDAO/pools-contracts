@@ -96,11 +96,7 @@ contract BaseRewardPool {
     /// @dev only `rewardManager` can add extra rewards
     /// @param _reward token address of the reward
     /// @return true on success
-    function addExtraReward(address _reward)
-        external
-        onlyAddress(rewardManager)
-        returns (bool)
-    {
+    function addExtraReward(address _reward) external onlyAddress(rewardManager) returns (bool) {
         require(_reward != address(0), "!reward setting");
         extraRewards.push(_reward);
         return true;
@@ -121,30 +117,20 @@ contract BaseRewardPool {
         }
         return
             rewardPerTokenStored +
-            (((lastTimeRewardApplicable() - lastUpdateTime) *
-                rewardRate *
-                1e18) / totalSupply());
+            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupply());
     }
 
     /// @notice Returns the `account`'s earned rewards
     /// @param account The address of the token holder
     /// @return The `account`'s earned rewards
     function earned(address account) public view returns (uint256) {
-        return
-            (balanceOf(account) *
-                (rewardPerToken() - userRewardPerTokenPaid[account])) /
-            1e18 +
-            rewards[account];
+        return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
     /// @notice Stakes `amount` tokens
     /// @param _amount The amount of tokens user wants to stake
     /// @return true on success
-    function stake(uint256 _amount)
-        public
-        updateReward(msg.sender)
-        returns (bool)
-    {
+    function stake(uint256 _amount) public updateReward(msg.sender) returns (bool) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -171,11 +157,7 @@ contract BaseRewardPool {
     /// @notice Stakes `amount` tokens for `_for`
     /// @param _for Who are we staking for
     /// @param _amount The amount of tokens user wants to stake
-    function stakeFor(address _for, uint256 _amount)
-        public
-        updateReward(_for)
-        returns (bool)
-    {
+    function stakeFor(address _for, uint256 _amount) public updateReward(_for) returns (bool) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -196,11 +178,7 @@ contract BaseRewardPool {
     /// @notice Unstakes `amount` tokens
     /// @param _amount The amount of tokens that the user wants to withdraw
     /// @param _claim Whether or not the user wants to claim their rewards
-    function withdraw(uint256 _amount, bool _claim)
-        public
-        updateReward(msg.sender)
-        returns (bool)
-    {
+    function withdraw(uint256 _amount, bool _claim) public updateReward(msg.sender) returns (bool) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -231,11 +209,7 @@ contract BaseRewardPool {
     /// @notice Withdraw `amount` tokens and unwrap
     /// @param _amount The amount of tokens that the user wants to withdraw
     /// @param _claim Whether or not the user wants to claim their rewards
-    function withdrawAndUnwrap(uint256 _amount, bool _claim)
-        public
-        updateReward(msg.sender)
-        returns (bool)
-    {
+    function withdrawAndUnwrap(uint256 _amount, bool _claim) public updateReward(msg.sender) returns (bool) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -265,11 +239,7 @@ contract BaseRewardPool {
     /// @notice Claims Rewards for `_account`
     /// @param _account The account to claim rewards for
     /// @param _claimExtras Whether or not the user wants to claim extra rewards
-    function getReward(address _account, bool _claimExtras)
-        public
-        updateReward(_account)
-        returns (bool)
-    {
+    function getReward(address _account, bool _claimExtras) public updateReward(_account) returns (bool) {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
@@ -281,11 +251,7 @@ contract BaseRewardPool {
         // also get rewards from linked rewards
         if (_claimExtras) {
             address[] memory extraRewardsMemory = extraRewards;
-            for (
-                uint256 i = 0;
-                i < extraRewardsMemory.length;
-                i = unsafeInc(i)
-            ) {
+            for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
                 IRewards(extraRewardsMemory[i]).getReward(_account);
             }
         }
@@ -312,11 +278,7 @@ contract BaseRewardPool {
     /// @dev Only the operator can queue new rewards
     /// @param _rewards The amount of tokens to queue
     /// @return true on success
-    function queueNewRewards(uint256 _rewards)
-        external
-        onlyAddress(operator)
-        returns (bool)
-    {
+    function queueNewRewards(uint256 _rewards) external onlyAddress(operator) returns (bool) {
         _rewards = _rewards + queuedRewards;
 
         // solhint-disable-next-line
@@ -370,10 +332,7 @@ contract BaseRewardPool {
         }
     }
 
-    function notifyRewardAmount(uint256 reward)
-        internal
-        updateReward(address(0))
-    {
+    function notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {
         historicalRewards = historicalRewards + reward;
         // solhint-disable-next-line
         if (block.timestamp >= periodFinish) {
