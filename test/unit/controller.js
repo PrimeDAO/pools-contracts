@@ -17,7 +17,6 @@ const difference = new BN(28944000); // 1684568938 - 1655624938
 let root;
 let staker;
 let admin;
-let operator;
 let authorizer_adaptor;
 let reward_manager;
 let platformFee;
