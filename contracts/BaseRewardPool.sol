@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -104,12 +104,6 @@ contract BaseRewardPool {
         require(_reward != address(0), "!reward setting");
         extraRewards.push(_reward);
         return true;
-    }
-
-    /// @notice Clears all extra rewards
-    /// @dev only `rewardManager` can clear extra rewards
-    function clearExtraRewards() external onlyAddress(rewardManager) {
-        delete extraRewards;
     }
 
     /// @notice Returns last time reward applicable

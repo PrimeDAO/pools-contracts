@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.13;
 
 interface ICurveGauge {
     function deposit(uint256) external;
@@ -227,9 +227,9 @@ interface ICrvDeposit {
 interface IRewardFactory {
     function setAccess(address, bool) external;
 
-    function CreateBalRewards(uint256, address) external returns (address);
+    function createBalRewards(uint256, address) external returns (address);
 
-    function CreateTokenRewards(
+    function createTokenRewards(
         address,
         address,
         address
@@ -243,11 +243,10 @@ interface IRewardFactory {
 }
 
 interface IStashFactory {
-    function CreateStash(
-        uint256,
-        address,
-        address,
-        uint256
+    function createStash(
+        uint256 _pid,
+        address _gauge,
+        address _stash
     ) external returns (address);
 }
 
@@ -256,17 +255,11 @@ interface ITokenFactory {
 }
 
 interface IPools {
-    function addPool(
-        address _lptoken,
-        address _gauge,
-        uint256 _stashVersion
-    ) external returns (bool);
+    function addPool(address _lptoken, address _gauge) external returns (bool);
 
-    function forceAddPool(
-        address _lptoken,
-        address _gauge,
-        uint256 _stashVersion
-    ) external returns (bool);
+    function forceAddPool(address _lptoken, address _gauge)
+        external
+        returns (bool);
 
     function shutdownPool(uint256 _pid) external returns (bool);
 
@@ -293,6 +286,16 @@ interface IVestedEscrow {
     function fund(address[] calldata _recipient, uint256[] calldata _amount)
         external
         returns (bool);
+}
+
+interface GaugeController {
+    function gauge_types(address _addr) external returns (int128);
+}
+
+interface LiquidityGauge {
+    function integrate_fraction(address _address) external returns (uint256);
+
+    function user_checkpoint(address _address) external returns (bool);
 }
 
 interface IProxyFactory {
