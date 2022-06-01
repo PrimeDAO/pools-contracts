@@ -4,22 +4,22 @@ const { deployments, ethers } = require("hardhat");
 const init = require("../test-init.js");
 
 let setup;
-    let root;
-    let staker;
-    let buyer1;
-    let wethBalAdress;
-    let minter;
-    let balDepositorContractAddress;
-    let wethBalContract;
-    let voterProxyContract;
-    let d2dBal_Contract;
-    let veBalContract;
-    let depositAmount = 20;
-    let depositAmountTwo = 20;
-    let _lock = true;
-    let incentiveInRange = 15;
-    let incentiveOutRange = 45;
-    let insufficentDepositAmount = 0;
+let root;
+let staker;
+let buyer1;
+let wethBalAdress;
+let minter;
+let balDepositorContractAddress;
+let wethBalContract;
+let voterProxyContract;
+let d2dBal_Contract;
+let veBalContract;
+let depositAmount = 20;
+let depositAmountTwo = 20;
+let _lock = true;
+let incentiveInRange = 15;
+let incentiveOutRange = 45;
+let insufficentDepositAmount = 0;
 
 describe("Contract: BalDepositor", async () => {
     const setupTests = deployments.createFixture(async () => {
