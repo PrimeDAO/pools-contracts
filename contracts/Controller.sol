@@ -546,7 +546,7 @@ contract Controller {
             IStash(stash).processStash();
         }
 
-        //wethBalBal balance
+        //wethBal balance
         uint256 wethBalBal = IERC20(wethBal).balanceOf(address(this));
 
         if (wethBalBal > 0) {
