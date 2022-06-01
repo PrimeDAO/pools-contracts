@@ -36,7 +36,7 @@ describe("BaseRewardPool", function() {
             operator,
             rewardToken: BAL,
             stakeToken: D2DBal,
-            extraRewardMock: await init.getExtraRewardMock(),
+            extraRewardMock: await init.getExtraRewardMock(setup),
             root: setup.roles.root,
             rewardManager: setup.roles.reward_manager,
             anotherUser: signers.pop(),
@@ -100,13 +100,6 @@ describe("BaseRewardPool", function() {
                 .connect(rewardManager)
                 .addExtraReward(addressOne);
             expect(await baseRewardPool.extraRewardsLength()).to.equal(ONE);
-        });
-
-        it("clears rewards", async function () {
-            const { baseRewardPool, rewardManager } = await setupTests();
-    
-            await baseRewardPool.connect(rewardManager).clearExtraRewards()
-            expect(await baseRewardPool.extraRewardsLength()).to.equal(0)
         });
     });
 

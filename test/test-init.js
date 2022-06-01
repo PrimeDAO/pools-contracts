@@ -170,7 +170,7 @@ const getControllerMock = async (setup) => {
     return await ControllerMockFactory.deploy();
 };
 
-const getExtraRewardMock = async () => {
+const getExtraRewardMock = async (setup) => {
     const ExtraRewardMockFactory = await ethers.getContractFactory(
         "ExtraRewardMock",
         setup.roles.root
