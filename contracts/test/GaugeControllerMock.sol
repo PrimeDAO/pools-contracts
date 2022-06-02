@@ -1,5 +1,5 @@
 // solium-disable linebreak-style
-pragma solidity 0.8.13;
+pragma solidity 0.8.14;
 
 interface VotingEscrow {
     function get_last_user_slope(address addr) external view returns (uint256);
@@ -537,7 +537,6 @@ contract GaugeControllerMock {
         last_user_vote[msg.sender][_gauge_addr] = block.timestamp;
 
         emit VoteForGauge(block.timestamp, msg.sender, _gauge_addr, _user_weight);
-
     }
 
     /**
