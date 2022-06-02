@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "./utils/Interfaces.sol";
 
 /// @title ExtraRewardStashV3 contract
-
 contract ExtraRewardStashV3 {
     using Address for address;
 
