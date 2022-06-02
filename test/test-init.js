@@ -84,6 +84,13 @@ const getVoterProxyMock = async (setup) => {
   return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
 };
 
+const getRegistryMock = async (setup) => {
+  const RegistryMock = await ethers.getContractFactory("RegistryMock");
+
+  const admin = setup.roles.root;// setup.controller;
+  return await RegistryMock.deploy(admin.address);
+}
+
 const controller = async (setup) => {
   const controller = await ethers.getContractFactory(
     "Controller",
@@ -92,7 +99,8 @@ const controller = async (setup) => {
   const bal = setup.tokens.BAL;
   const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy;
-  return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address, bal.address);
+  const registry = setup.RegistryMock;
+  return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address, bal.address, registry.address);
 };
 
 const tokenFactory = async (setup) => {
@@ -104,20 +112,6 @@ const tokenFactory = async (setup) => {
   return await tokenFactory.deploy(operator.address);
 };
 
-const baseRewardPool = async (setup) => {
-  const baseRewardPool = await ethers.getContractFactory(
-    "BaseRewardPool",
-    setup.roles.root
-  );
-  const pid = 1;
-  const stakingToken = setup.tokens.D2DBal;
-  const rewardToken = setup.tokens.BAL;
-  const operator = setup.controller;
-  const rewardManager = setup.roles.reward_manager;
-
-  return await baseRewardPool.deploy(pid, stakingToken.address, rewardToken.address, operator.address, rewardManager.address);
-};
-
 const rewardFactory = async (setup) => {
   const RewardFactory = await ethers.getContractFactory(
     "RewardFactory",
@@ -127,6 +121,20 @@ const rewardFactory = async (setup) => {
   const operator = setup.controller;
 
   return await RewardFactory.deploy(operator.address, bal.address);
+};
+
+const baseRewardPool = async (setup) => {
+  const baseRewardPool = await ethers.getContractFactory(
+    "BaseRewardPool",
+    setup.roles.root
+  );
+  const pid = 1;
+  const stakingToken = setup.tokens.D2DBal;
+  const rewardToken = setup.tokens.BAL;
+  const operator = setup.controller;
+  const rewardManager = setup.rewardFactory;
+
+  return await baseRewardPool.deploy(pid, stakingToken.address, rewardToken.address, operator.address, rewardManager.address);
 };
 
 const proxyFactory = async (setup) => {
@@ -189,6 +197,7 @@ const getControllerMock = async (setup) => {
 
     return await ControllerMockFactory.deploy();
 };
+
 
 const getExtraRewardMock = async (setup) => {
     const ExtraRewardMockFactory = await ethers.getContractFactory(
@@ -258,4 +267,5 @@ module.exports = {
   gaugeController,
   getControllerMock,
   getRewardFactory,
+  getRegistryMock,
 };

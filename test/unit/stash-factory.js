@@ -16,10 +16,10 @@ describe("StashFactory", function() {
       
         setup.controller = await init.getControllerMock(setup);
       
-        setup.baseRewardPool = await init.baseRewardPool(setup);
-      
         setup.rewardFactory = await init.rewardFactory(setup);
-      
+
+        setup.baseRewardPool = await init.baseRewardPool(setup);
+            
         setup.proxyFactory = await init.proxyFactory(setup);
 
         const stashFactory = await init.stashFactory(setup);
