@@ -27,6 +27,7 @@ let stashFactory;
 let tokenFactory;
 let lptoken;
 let gauge;
+let balInitialBal;
 let balBal;
 let feeManager;
 let treasury;
@@ -255,9 +256,10 @@ describe("Controller", function () {
             ).to.equal(thirtyMillion.toString()); 
         });
         it("Calls earmarkRewards with existing pool number with non-empty balance", async () => {
-            balBal = await tokens.BAL.balanceOf(controller.address);
+            balInitialBal = await tokens.BAL.balanceOf(controller.address);
+            balBal = balInitialBal;
             let profitFees = await controller.profitFees();
-            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
             balBal = balBal - profit; //wethBalForTransfer if no treasury
             let amount_expected = (await tokens.BAL.balanceOf(feeManager.address)).toNumber() + profit;
 
@@ -286,12 +288,13 @@ describe("Controller", function () {
         it("Calls earmarkRewards with existing pool number with non-empty balance and treasury", async () => {
             await tokens.BAL.transfer(controller.address, thirtyMillion);
 
-            balBal = await tokens.BAL.balanceOf(controller.address);
+            balInitialBal = await tokens.BAL.balanceOf(controller.address);
+            balBal = balInitialBal;
             let profitFees = await controller.profitFees();
-            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
             balBal = balBal - profit;
             let platformFees = await controller.platformFees();
-            const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+            const platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
             rewardContract_amount_expected = balBal - platform;
 
             let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
@@ -315,12 +318,13 @@ describe("Controller", function () {
                     .setFees("0", profitFee);            
         });
         it("Calls earmarkRewardsc check 'send treasury' when platformFees = 0", async () => {
-            balBal = await tokens.BAL.balanceOf(controller.address);
+            balInitialBal = await tokens.BAL.balanceOf(controller.address);
+            balBal = balInitialBal;
             let profitFees = await controller.profitFees();
-            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
             balBal = balBal - profit;
             let platformFees = await controller.platformFees();
-            const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+            const platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
             rewardContract_amount_expected = balBal - platform;
 
             let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
@@ -344,12 +348,13 @@ describe("Controller", function () {
             ).to.equal(controller.address.toString());
         });
         it("Calls earmarkRewardsc check 'send treasury' when treasury = controller", async () => {
-            balBal = await tokens.BAL.balanceOf(controller.address);
+            balInitialBal = await tokens.BAL.balanceOf(controller.address);
+            balBal = balInitialBal;
             let profitFees = await controller.profitFees();
-            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
             balBal = balBal - profit;
             let platformFees = await controller.platformFees();
-            const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+            const platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
             rewardContract_amount_expected = balBal - platform;
 
             let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;

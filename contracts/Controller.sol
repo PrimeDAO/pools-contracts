@@ -548,12 +548,14 @@ contract Controller {
             IStash(stash).processStash();
         }
 
+        //bal initial balance
+        uint256 balInitialBal = IERC20(bal).balanceOf(address(this));
         //bal balance
-        uint256 balBal = IERC20(bal).balanceOf(address(this));
-
+        uint256 balBal = balInitialBal;
+        
         if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
-            uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            uint256 _profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
             balBal = balBal - _profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
             IERC20(bal).transfer(feeManager, _profit);
@@ -565,7 +567,7 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
+                uint256 _platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
                 balBal = balBal - _platform;
                 IERC20(bal).transfer(treasury, _platform);
             }
