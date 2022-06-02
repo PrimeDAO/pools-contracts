@@ -27,7 +27,6 @@ let stashFactory;
 let tokenFactory;
 let lptoken;
 let gauge;
-let balInitialBal;
 let balBal;
 let feeManager;
 let treasury;
@@ -256,12 +255,11 @@ describe("Controller", function () {
             ).to.equal(thirtyMillion.toString()); 
         });
         it("Calls earmarkRewards with existing pool number with non-empty balance", async () => {
-            balInitialBal = await tokens.BAL.balanceOf(controller.address);
-            balBal = balInitialBal;
+            balBal = await tokens.BAL.balanceOf(controller.address);
             let profitFees = await controller.profitFees();
-            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal - profit; //wethBalForTransfer if no treasury
+            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
             let amount_expected = (await tokens.BAL.balanceOf(feeManager.address)).toNumber() + profit;
+            balBal = balBal - profit; //balForTransfer if no treasury
 
             const poolInfo = await controller.poolInfo(0);
             balRewards = (poolInfo.balRewards).toString();
@@ -288,13 +286,12 @@ describe("Controller", function () {
         it("Calls earmarkRewards with existing pool number with non-empty balance and treasury", async () => {
             await tokens.BAL.transfer(controller.address, thirtyMillion);
 
-            balInitialBal = await tokens.BAL.balanceOf(controller.address);
-            balBal = balInitialBal;
+            balBal = await tokens.BAL.balanceOf(controller.address);
             let profitFees = await controller.profitFees();
-            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal - profit;
+            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
             let platformFees = await controller.platformFees();
-            const platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
+            const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+            balBal = balBal - profit;
             rewardContract_amount_expected = balBal - platform;
 
             let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
@@ -318,13 +315,12 @@ describe("Controller", function () {
                     .setFees("0", profitFee);            
         });
         it("Calls earmarkRewardsc check 'send treasury' when platformFees = 0", async () => {
-            balInitialBal = await tokens.BAL.balanceOf(controller.address);
-            balBal = balInitialBal;
+            balBal = await tokens.BAL.balanceOf(controller.address);
             let profitFees = await controller.profitFees();
-            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal - profit;
+            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
             let platformFees = await controller.platformFees();
-            const platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
+            const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+            balBal = balBal - profit;
             rewardContract_amount_expected = balBal - platform;
 
             let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
@@ -348,13 +344,12 @@ describe("Controller", function () {
             ).to.equal(controller.address.toString());
         });
         it("Calls earmarkRewardsc check 'send treasury' when treasury = controller", async () => {
-            balInitialBal = await tokens.BAL.balanceOf(controller.address);
-            balBal = balInitialBal;
+            balBal = await tokens.BAL.balanceOf(controller.address);
             let profitFees = await controller.profitFees();
-            const profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal - profit;
+            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
             let platformFees = await controller.platformFees();
-            const platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
+            const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+            balBal = balBal - profit;
             rewardContract_amount_expected = balBal - platform;
 
             let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
