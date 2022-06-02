@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract Controller {
     using Address for address;
 
+    address public immutable bal;
     address public immutable wethBal;
     address public immutable registry;
     uint256 public constant distributionAddressId = 1; //Note: originally was 4;
@@ -36,7 +37,7 @@ contract Controller {
     address public voteDelegate;
     address public treasury;
     address public stakerRewards; //bal rewards
-    address public lockRewards; //wethBalBal rewards(bal) //address of the main reward pool contract --> baseRewardPool
+    address public lockRewards;
     address public lockFees;
     address public feeDistro;
     address public feeToken;
@@ -72,10 +73,12 @@ contract Controller {
         address _staker,
         address _feeManager,
         address _wethBal,
+        address _bal,
         address _registry
     ) public {
         isShutdown = false;
         wethBal = _wethBal;
+        bal = _bal;
         registry = _registry;
         staker = _staker;
         owner = msg.sender;
@@ -546,15 +549,15 @@ contract Controller {
             IStash(stash).processStash();
         }
 
-        //wethBal balance
-        uint256 wethBalBal = IERC20(wethBal).balanceOf(address(this));
-
-        if (wethBalBal > 0) {
+        //bal balance
+        uint256 balBal = IERC20(bal).balanceOf(address(this));
+        
+        if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
-            uint256 _profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
-            wethBalBal = wethBalBal - _profit;
+            uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            balBal = balBal - _profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
-            IERC20(wethBal).transfer(feeManager, _profit);
+            IERC20(bal).transfer(feeManager, _profit);
 
             //send treasury
             if (
@@ -563,15 +566,14 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (wethBalBal * platformFees) /
-                    FEE_DENOMINATOR;
-                wethBalBal = wethBalBal - _platform;
-                IERC20(wethBal).transfer(treasury, _platform);
+                uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
+                balBal = balBal - _platform;
+                IERC20(bal).transfer(treasury, _platform);
             }
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
-            IERC20(wethBal).transfer(rewardContract, wethBalBal);
-            IRewards(rewardContract).queueNewRewards(wethBalBal);
+            IERC20(bal).transfer(rewardContract, balBal);
+            IRewards(rewardContract).queueNewRewards(balBal);
         }
     }
 
