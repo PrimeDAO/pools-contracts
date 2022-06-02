@@ -551,7 +551,7 @@ contract Controller {
 
         //bal balance
         uint256 balBal = IERC20(bal).balanceOf(address(this));
-        
+
         if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
             uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
