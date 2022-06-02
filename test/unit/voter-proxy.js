@@ -5,6 +5,8 @@ const init = require("../test-init.js");
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
 const { getFutureTimestamp } = require('../helpers/helpers')
 
+const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+
 describe("VoterProxy", function () {
     let voterProxy, mintr, operator, gauge, distro, gaugeController, externalContract, root, bal, veBal, wethBal, votingMock, B50WBTC50WETH, anotherUser, stash;
 
@@ -25,6 +27,8 @@ describe("VoterProxy", function () {
         await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).commit_smart_wallet_checker(smartWalletChecker.address);
         await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).apply_smart_wallet_checker();
         await smartWalletChecker.allow(voterProxy.address);
+        await gaugeControllerMock.add_type('Ethereum', 0);
+        await gaugeControllerMock.add_gauge(gaugeMock.address, 0, 0);
     
         return {
             voterProxy,
@@ -261,7 +265,20 @@ describe("VoterProxy", function () {
 
     it('votes on gauge weight', async function () {
         await changeOperator(voterProxy, anotherUser.address);
-        await voterProxy.connect(anotherUser).voteGaugeWeight(ZERO_ADDRESS, 1);
+        await voterProxy.setDepositor(anotherUser.address)
+
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(100))
+
+        // manipulate future timestamp
+        const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
+        await network.provider.send("evm_setNextBlockTimestamp", [
+            nextBlockTimestamp,
+        ]);
+        
+        const weight = 1000;
+        await expect(voterProxy.connect(anotherUser).voteGaugeWeight(gauge.address, weight))
+            .to.emit(gaugeController, 'VoteForGauge')
+            .withArgs(nextBlockTimestamp, voterProxy.address, gauge.address, weight);
     });
 
 
@@ -273,7 +290,21 @@ describe("VoterProxy", function () {
 
     it('votes on voteMultipleGauges', async function () {
         await changeOperator(voterProxy, anotherUser.address);
-        await voterProxy.connect(anotherUser).voteMultipleGauges([ZERO_ADDRESS], [1]);
+        await voterProxy.setDepositor(anotherUser.address)
+
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(100))
+
+        // manipulate future timestamp
+        const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
+        await network.provider.send("evm_setNextBlockTimestamp", [
+            nextBlockTimestamp,
+        ]);
+
+        const weight = 500;
+
+        await expect(voterProxy.connect(anotherUser).voteMultipleGauges([gauge.address], [weight]))
+            .to.emit(gaugeController, 'VoteForGauge')
+            .withArgs(nextBlockTimestamp, voterProxy.address, gauge.address, weight);
     });
 
     it('claims bal', async function () {

@@ -470,7 +470,74 @@ contract GaugeControllerMock {
     @param _gauge_addr Gauge which `msg.sender` votes for
     @param _user_weight Weight for a gauge in bps (units of 0.01%). Minimal is 0.01%. Ignored if 0
     */
-    function vote_for_gauge_weights(address _gauge_addr, uint256 _user_weight) external {}
+    function vote_for_gauge_weights(address _gauge_addr, uint256 _user_weight) external {
+        escrow = voting_escrow;
+        slope = uint256(VotingEscrow(escrow).get_last_user_slope(msg.sender));
+         lock_end = VotingEscrow(escrow).locked__end(msg.sender);
+        _n_gauges = n_gauges;
+        uint256 next_time = (block.timestamp + WEEK) / WEEK * WEEK;
+        require (lock_end > next_time, "Your token lock expires too soon");
+        require ((_user_weight >= 0) && (_user_weight <= 10000), "You used all your voting power");
+        require (block.timestamp >= last_user_vote[msg.sender][_gauge_addr] + WEIGHT_VOTE_DELAY, "Cannot vote so often");
+
+        gauge_type = gauge_types_[_gauge_addr] - 1;
+        require (gauge_type >= 0, "Gauge not added");
+        // Prepare slopes and biases in memory;
+        VotedSlope memory old_slope = vote_user_slopes[msg.sender][_gauge_addr];
+        old_dt = 0;
+        if (old_slope.end > next_time) {
+            old_dt = old_slope.end - next_time;
+        }
+        uint256 old_bias = old_slope.slope * old_dt;
+        VotedSlope memory new_slope = VotedSlope({
+            slope: slope * _user_weight / 10000,
+            end: lock_end,
+            power: _user_weight
+        });
+        uint256 new_dt = lock_end - next_time;  // dev: raises when expired
+        uint256 new_bias = new_slope.slope * new_dt;
+
+        // Check and update powers (weights) used
+        uint256 power_used = vote_user_power[msg.sender];
+        power_used = power_used + new_slope.power - old_slope.power;
+        vote_user_power[msg.sender] = power_used;
+        require ((power_used >= 0) && (power_used <= 10000), "Used too much power");
+
+        // Remove old and schedule new slope changes
+        // Remove slope changes for old slopes
+        // Schedule recording of initial slope for next_time
+        uint256 old_weight_bias = _get_weight(_gauge_addr);
+        uint256 old_weight_slope = points_weight[_gauge_addr][next_time].slope;
+        uint256 old_sum_bias = _get_sum(gauge_type);
+        uint256 old_sum_slope = points_sum[gauge_type][next_time].slope;
+
+        points_weight[_gauge_addr][next_time].bias = max(old_weight_bias + new_bias, old_bias) - old_bias;
+        points_sum[gauge_type][next_time].bias = max(old_sum_bias + new_bias, old_bias) - old_bias;
+        if (old_slope.end > next_time) {
+            points_weight[_gauge_addr][next_time].slope = max(old_weight_slope + new_slope.slope, old_slope.slope) - old_slope.slope;
+            points_sum[gauge_type][next_time].slope = max(old_sum_slope + new_slope.slope, old_slope.slope) - old_slope.slope;
+        } else {
+            points_weight[_gauge_addr][next_time].slope += new_slope.slope;
+            points_sum[gauge_type][next_time].slope += new_slope.slope;
+        }
+        if (old_slope.end > block.timestamp) {
+            // Cancel old slope changes if they still didn't happen;
+            changes_weight[_gauge_addr][old_slope.end] -= old_slope.slope;
+            changes_sum[gauge_type][old_slope.end] -= old_slope.slope;
+        }
+        // Add slope changes for new slopes
+        changes_weight[_gauge_addr][new_slope.end] += new_slope.slope;
+        changes_sum[gauge_type][new_slope.end] += new_slope.slope;
+
+        _get_total();
+
+        vote_user_slopes[msg.sender][_gauge_addr] = new_slope;
+
+        // Record last action time;
+        last_user_vote[msg.sender][_gauge_addr] = block.timestamp;
+
+        emit VoteForGauge(block.timestamp, msg.sender, _gauge_addr, _user_weight);
+    }
 
     /**
     @notice Get current gauge weight
