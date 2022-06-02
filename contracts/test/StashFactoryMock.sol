@@ -49,7 +49,7 @@ contract StashFactoryMock {
         address _staker
     ) external returns (address) {
         require(msg.sender == operator, "!authorized");
-        return address(this);
+        return address(0);
     }
 
     function IsV1(address _gauge) private returns (bool) {

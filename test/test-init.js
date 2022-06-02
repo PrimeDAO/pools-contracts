@@ -37,7 +37,7 @@ const getTokens = async (setup) => {
         "Balancer80BAL20WETH"
     );
     const BAL = await ERC20Factory.deploy("Bal", "BAL");
-    const D2DBal = await D2DBalFactory.deploy();//"D2DBal", "D2DBAL");
+    const D2DBal = await D2DBalFactory.deploy();
     const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
     const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL");
     const VeBal = await VeBalFactory.deploy(
