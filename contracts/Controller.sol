@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity 0.8.14;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -503,7 +503,7 @@ contract Controller {
         address gauge = pool.gauge;
 
         //claim bal
-        IStaker(staker).claimCrv(gauge);
+        IStaker(staker).claimBal(gauge);
 
         //check if there are extra rewards
         address stash = pool.stash;

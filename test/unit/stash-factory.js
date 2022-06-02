@@ -2,10 +2,10 @@ const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const init = require("../test-init.js");
+const { ONE_ADDRESS } = require('../helpers/constants')
 
-const addressOne = "0x0000000000000000000000000000000000000001";
+describe("StashFactory", function () {
 
-describe("StashFactory", function() {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
 
@@ -22,15 +22,14 @@ describe("StashFactory", function() {
         };
     });
 
-    it("reverts if unauthorized on setImplementation", async function() {
+    it("reverts if unauthorized on setImplementation", async function () {
         const { stashFactory, randomUser } = await setupTests();
 
-        await expect(
-            stashFactory.connect(randomUser).setImplementation(addressOne)
-        ).to.be.revertedWith("Unauthorized()");
+        await expect(stashFactory.connect(randomUser).setImplementation(ONE_ADDRESS))
+            .to.be.revertedWith('Unauthorized()')
     });
 
-    it("set implementation and create stash works", async function() {
+    it("set implementation and create stash works", async function () {
         const { stashFactory, root } = await setupTests();
 
         // We need to do it this way because previous test is calling operator.owner() so we can't use EOA
@@ -62,7 +61,7 @@ describe("StashFactory", function() {
         );
     });
 
-    it("reverts if unauthorized on createStash", async function() {
+    it("reverts if unauthorized on createStash", async function () {
         const { stashFactory, randomUser } = await setupTests();
 
         await expect(
