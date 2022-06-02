@@ -224,18 +224,18 @@ describe("Contract: Controller", async () => {
             });            
             it("Add balance to feeManager", async () => { 
                 feeManager = reward_manager;               
-                balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                balBal = await setup.tokens.BAL.balanceOf(setup.controller.address);
 
-                await setup.tokens.WethBal.transfer(feeManager.address, twentyMillion);
+                await setup.tokens.BAL.transfer(feeManager.address, twentyMillion);
 
                 expect(
-                    (await setup.tokens.WethBal.balanceOf(feeManager.address)).toString()
+                    (await setup.tokens.BAL.balanceOf(feeManager.address)).toString()
                 ).to.equal(twentyMillion.toString()); 
             });
             it("Add bal to Controller address", async () => {           
-                expect(await setup.tokens.WethBal.transfer(setup.controller.address, thirtyMillion));
+                expect(await setup.tokens.BAL.transfer(setup.controller.address, thirtyMillion));
                 expect(
-                    (await setup.tokens.WethBal.balanceOf(setup.controller.address)).toString()
+                    (await setup.tokens.BAL.balanceOf(setup.controller.address)).toString()
                 ).to.equal(thirtyMillion.toString()); 
             });
             it("Calls earmarkRewards with existing pool number with non-empty balance", async () => {
@@ -270,7 +270,7 @@ describe("Contract: Controller", async () => {
             it("Calls earmarkRewards with existing pool number with non-empty balance and treasury", async () => {
                 await setup.tokens.BAL.transfer(setup.controller.address, thirtyMillion);
 
-                balBal = await setup.tokens.WethBal.balanceOf(setup.controller.address);
+                balBal = await setup.tokens.BAL.balanceOf(setup.controller.address);
                 let profitFees = await setup.controller.profitFees();
                 const profit = (balBal * profitFees) / FEE_DENOMINATOR;
                 balBal = balBal - profit;
