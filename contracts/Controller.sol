@@ -552,7 +552,7 @@ contract Controller {
         uint256 balInitialBal = IERC20(bal).balanceOf(address(this));
         //bal balance
         uint256 balBal = balInitialBal;
-        
+
         if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
             uint256 _profit = (balInitialBal * profitFees) / FEE_DENOMINATOR;
@@ -567,7 +567,8 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (balInitialBal * platformFees) / FEE_DENOMINATOR;
+                uint256 _platform = (balInitialBal * platformFees) /
+                    FEE_DENOMINATOR;
                 balBal = balBal - _platform;
                 IERC20(bal).transfer(treasury, _platform);
             }
