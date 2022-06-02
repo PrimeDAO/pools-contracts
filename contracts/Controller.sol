@@ -565,8 +565,7 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (balBal * platformFees) /
-                    FEE_DENOMINATOR;
+                uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
                 balBal = balBal - _platform;
                 IERC20(bal).transfer(treasury, _platform);
             }
