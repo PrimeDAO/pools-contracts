@@ -38,7 +38,7 @@ contract Controller {
     address public voteDelegate;
     address public treasury;
     address public stakerRewards; //bal rewards
-    address public lockRewards; //wethBalBal rewards(bal)
+    address public lockRewards;
     address public lockFees;
     address public feeDistro;
     address public feeToken;
