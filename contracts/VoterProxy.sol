@@ -173,7 +173,7 @@ contract VoterProxy {
         require(msg.sender == operator, "!auth");
         IBalVoteEscrow(veBal).withdraw();
         uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-        IERC20(veBal).transfer(_to, _balance);
+        IERC20(wethBal).transfer(_to, _balance);
         return true;
     }
 
