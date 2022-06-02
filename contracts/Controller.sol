@@ -590,8 +590,7 @@ contract Controller {
         IStaker(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = IERC20(feeToken).balanceOf(address(this));
-        //earmarkRewards should send rewards to lockRewards
-        IERC20(feeToken).transfer(lockRewards, _balance);
+        IERC20(feeToken).transfer(lockFees, _balance);
         IRewards(lockFees).queueNewRewards(_balance);
         return true;
     }

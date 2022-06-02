@@ -39,6 +39,7 @@ describe("Contract: BalDepositor", async () => {
     let incentiveInRange = 15;
     let incentiveOutRange = 45;
     let insufficentDepositAmount = 0;
+
     context("» first test", () => {
         before("!! setup", async () => {
             setup = await deploy();
@@ -121,7 +122,8 @@ describe("Contract: BalDepositor", async () => {
             ).to.be.revertedWith("!>0");
         });
         it("allows deposits, transfers Wethbal to veBal contract, mints D2DToken, and stakes D2DTokens in Rewards contract", async () => {
-            await wethBalContract.approve(
+            await wethBalContract.mint(root.address, depositAmount);
+            await wethBalContract.connect(root).approve(
                 balDepositorContractAddress,
                 depositAmount
             );
