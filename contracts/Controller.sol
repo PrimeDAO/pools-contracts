@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract Controller {
     using Address for address;
 
+    address public immutable bal;
     address public immutable wethBal;
     address public constant registry =
         address(0x0000000022D53366457F9d5E68Ec105046FC4383); //Note: Did not change this
@@ -72,10 +73,12 @@ contract Controller {
     constructor(
         address _staker,
         address _feeManager,
-        address _wethBal
+        address _wethBal,
+        address _bal
     ) public {
         isShutdown = false;
         wethBal = _wethBal;
+        bal = _bal;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
@@ -545,15 +548,15 @@ contract Controller {
             IStash(stash).processStash();
         }
 
-        //wethBalBal balance
-        uint256 wethBalBal = IERC20(wethBal).balanceOf(address(this));
+        //bal balance
+        uint256 balBal = IERC20(bal).balanceOf(address(this));
 
-        if (wethBalBal > 0) {
+        if (balBal > 0) {
             //Profit fees are taken on the rewards together with platform fees.
-            uint256 _profit = (wethBalBal * profitFees) / FEE_DENOMINATOR;
-            wethBalBal = wethBalBal - _profit;
+            uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            balBal = balBal - _profit;
             //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
-            IERC20(wethBal).transfer(feeManager, _profit);
+            IERC20(bal).transfer(feeManager, _profit);
 
             //send treasury
             if (
@@ -562,15 +565,15 @@ contract Controller {
                 platformFees > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (wethBalBal * platformFees) /
+                uint256 _platform = (balBal * platformFees) /
                     FEE_DENOMINATOR;
-                wethBalBal = wethBalBal - _platform;
-                IERC20(wethBal).transfer(treasury, _platform);
+                balBal = balBal - _platform;
+                IERC20(bal).transfer(treasury, _platform);
             }
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
-            IERC20(wethBal).transfer(rewardContract, wethBalBal);
-            IRewards(rewardContract).queueNewRewards(wethBalBal);
+            IERC20(bal).transfer(rewardContract, balBal);
+            IRewards(rewardContract).queueNewRewards(balBal);
         }
     }
 
