@@ -68,10 +68,22 @@ const controller = async (setup) => {
     "Controller",
     setup.roles.root
   );
-  const staker = await ethers.getContract("ERC20Mock");
-  const minter = staker;
-
-  return await controller.deploy(setup.roles.root.address, staker.address, minter.address);
+  const bal = setup.tokens.BAL;
+  const wethBal = setup.tokens.WethBal;
+  const staker = setup.VoterProxy;
+  const registry = setup.RegistryMock;
+  const voteOwnership = staker;
+  const voteParameter = staker;
+  const distributionAddressId = 1;
+  return await controller.deploy(
+      staker.address, 
+      setup.roles.root.address, 
+      wethBal.address, 
+      bal.address, 
+      registry.address,
+      voteOwnership.address,
+      voteParameter.address,
+      distributionAddressId);
 };
 
 const rewardFactory = async (setup) => {
