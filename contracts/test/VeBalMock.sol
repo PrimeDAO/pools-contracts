@@ -124,15 +124,14 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     
     function assert_not_contract(address addr) internal {
         if (addr != tx.origin) {
-            uint8 checkExeption = 0;
             address checker = smart_wallet_checker;
             if (checker != ZERO_ADDRESS) {
-                checkExeption = 1;
-                return;
+                if (SmartWalletChecker(checker).check(addr)) {
+                    return;
+                }
             }
-            require(checkExeption == 1, "Smart contract depositors not allowed");
-            // raise "Smart contract depositors not allowed";
         }
+        revert("Smart contract depositors not allowed");
     }    
     function get_last_user_slope(address addr) external view returns (int128){
         uint256 uepoch = user_point_epoch[addr];
@@ -312,7 +311,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     }
 
     function create_lock(uint256 _value, uint256 _unlock_time) external nonReentrant {
-        // assert_not_contract(msg.sender); commented because we will be whitelisted
+        assert_not_contract(msg.sender);
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
         LockedBalance memory _locked = locked[msg.sender]; 
         require(_value > 0); // dev: need non-zero value
@@ -324,7 +323,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
     }
 
     function increase_amount(uint256 _value) external nonReentrant {
-        // assert_not_contract(msg.sender); commented because we will be whitelisted
+        assert_not_contract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
         require(_value > 0); // dev: need non-zero value
         require(_locked.amount > 0, "No existing lock found");
@@ -332,7 +331,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         _deposit_for(msg.sender, _value, 0, _locked, ActionType.INCREASE_LOCK_AMOUNT);
     }
     function increase_unlock_time(uint256 _unlock_time) external nonReentrant {
-        // assert_not_contract(msg.sender); commented because we will be whitelisted
+        assert_not_contract(msg.sender);
         LockedBalance memory _locked = locked[msg.sender];
         uint256 unlock_time = (_unlock_time / WEEK) * WEEK; // Locktime is rounded down to weeks
         _deposit_for(msg.sender, 0, unlock_time, _locked, ActionType.INCREASE_UNLOCK_TIME);

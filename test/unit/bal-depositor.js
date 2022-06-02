@@ -15,6 +15,12 @@ describe("Contract: BalDepositor", async () => {
         const balDepositor = await init.balDepositor(setup, voterProxy);
         const baseRewardPool = await init.getBaseRewardPool(setup);
 
+        // We need to whitelist voterProxy on veBal
+        const smartWalletChecker = await init.getSmartWalletCheckerMock(setup);
+        await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).commit_smart_wallet_checker(smartWalletChecker.address);
+        await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).apply_smart_wallet_checker();
+        await smartWalletChecker.allow(voterProxy.address);
+
         // Set depositor on voter proxy
         await voterProxy.setDepositor(balDepositor.address)
 

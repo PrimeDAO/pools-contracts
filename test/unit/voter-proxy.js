@@ -12,18 +12,19 @@ describe("VoterProxy", function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
-    
         const gaugeControllerMock = await init.gaugeControllerMock(setup);
         const mintr = await init.getMintrMock(setup);
         const voterProxy = await init.getVoterProxy(setup, gaugeControllerMock, mintr);
         const controllerMock = await init.getControllerMock(setup)
         const distroMock = await init.getDistroMock(setup);
         const externalContractMock = await init.getExternalContractMock(setup);
-    
         const B50WBTC50WETH = setup.tokens.B50WBTC50WETH;
         const gaugeMock = await init.getGaugeMock(setup, B50WBTC50WETH.address);
-    
         await setup.tokens.WethBal.mint(voterProxy.address, ONE_HUNDRED_ETHER.mul(5));
+        const smartWalletChecker = await init.getSmartWalletCheckerMock(setup);
+        await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).commit_smart_wallet_checker(smartWalletChecker.address);
+        await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).apply_smart_wallet_checker();
+        await smartWalletChecker.allow(voterProxy.address);
     
         return {
             voterProxy,

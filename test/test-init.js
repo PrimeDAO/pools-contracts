@@ -215,6 +215,15 @@ const getRewardFactory = async (setup) => {
   );
 };
 
+const getSmartWalletCheckerMock = async (setup) => {
+  const SmartWalletCheckerFactory = await ethers.getContractFactory(
+    "SmartWalletCheckerMock",
+    setup.roles.root
+  );
+
+  return await SmartWalletCheckerFactory.deploy();
+};
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -234,4 +243,5 @@ module.exports = {
   getVotingMock,
   getDistroMock,
   getExternalContractMock,
+  getSmartWalletCheckerMock,
 };
