@@ -63,7 +63,7 @@ contract VoterProxy is IStaker {
     }
 
     modifier onlyDepositor() {
-        if (msg.sender != depositor) {
+        if (msg.sender != depositor || msg.sender != operator) {
             revert Unauthorized();
         }
         _;
@@ -150,51 +150,46 @@ contract VoterProxy is IStaker {
             IBalGauge(_gauge).withdraw(_amount - _balance);
         }
         IERC20(_token).transfer(msg.sender, _amount);
-        return true;
     }
 
-    function withdrawAll(address _token, address _gauge)
-        external
-        returns (bool)
-    {
-        require(msg.sender == operator, "!auth");
-        uint256 amount = balanceOfPool(_gauge) +
-            (IERC20(_token).balanceOf(address(this)));
-        withdraw(_token, _gauge, amount);
-        return true;
-    }
+    // function withdrawAll(address _token, address _gauge)
+    //     external
+    //     returns (bool)
+    // {
+    //     require(msg.sender == operator, "!auth");
+    //     uint256 amount = balanceOfPool(_gauge) +
+    //         (IERC20(_token).balanceOf(address(this)));
+    //     withdraw(_token, _gauge, amount);
+    //     return true;
+    // }
 
     function _withdrawSome(address _gauge, uint256 _amount)
         internal
         returns (uint256)
     {
-        ICurveGauge(_gauge).withdraw(_amount);
+        IBalGauge(_gauge).withdraw(_amount);
         return _amount;
     }
 
-    function createLock(uint256 _value, uint256 _unlockTime)
-        external
-        returns (bool)
-    {
-        require(msg.sender == depositor, "!auth");
-        IERC20(wethBal).approve(veBal, 0);
-        IERC20(wethBal).approve(veBal, _value);
-        IBalVoteEscrow(veBal).create_lock(_value, _unlockTime);
-        return true;
-    }
+    // function createLock(uint256 _value, uint256 _unlockTime)
+    //     external
+    // {
+    //     require(msg.sender == depositor, "!auth");
+    //     IERC20(wethBal).approve(veBal, 0);
+    //     IERC20(wethBal).approve(veBal, _value);
+    //     IBalVoteEscrow(veBal).create_lock(_value, _unlockTime);
+    // }
 
-    function increaseAmount(uint256 _value) external returns (bool) {
-        require(msg.sender == depositor, "!auth");
-        IERC20(wethBal).approve(veBal, 0);
-        IERC20(wethBal).approve(veBal, _value);
-        IBalVoteEscrow(veBal).increase_amount(_value);
-        return true;
-    }
+    // function increaseAmount(uint256 _value) external {
+    //     require(msg.sender == depositor, "!auth");
+    //     IERC20(wethBal).approve(veBal, 0);
+    //     IERC20(wethBal).approve(veBal, _value);
+    //     IBalVoteEscrow(veBal).increase_amount(_value);
+    // }
 
-    function increaseTime(uint256 _value) external returns (bool) {
+    function increaseTime(uint256 _value) external {
         require(msg.sender == depositor, "!auth");
         IBalVoteEscrow(veBal).increase_unlock_time(_value);
-        return true;
     }
 
     function withdrawWethBal(
@@ -316,9 +311,9 @@ contract VoterProxy is IStaker {
 
     /// @notice Extend the unlock time
     /// @param _value New epoch time for unlocking
-    function increaseTime(uint256 _value) external onlyDepositor {
-        IBalVoteEscrow(veBal).increase_unlock_time(_value);
-    }
+    // function increaseTime(uint256 _value) external onlyDepositor {
+    //     IBalVoteEscrow(veBal).increase_unlock_time(_value);
+    // }
 
     /// @notice Redeems veBal tokens
     /// @dev Only possible if the lock has expired
