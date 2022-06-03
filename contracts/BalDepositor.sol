@@ -169,8 +169,10 @@ contract BalDepositor {
         // solhint-disable-next-line
         uint256 newUnlockAt = block.timestamp + MAXTIME;
 
+        // We always want to have max voting power on each vote
+        // Bal voting is a weekly event, and we want to increase time every week
         // solhint-disable-next-line
-        if ((unlockTime - block.timestamp) < (2 * WEEK)) {
+        if ((unlockTime - block.timestamp) < (358 * 1 days)) {
             IStaker(stakerMemory).increaseTime(newUnlockAt);
             // solhint-disable-next-line
             unlockTime = newUnlockAt;

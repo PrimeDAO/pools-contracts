@@ -6,7 +6,7 @@ const { getCurrentBlockTimestamp } = require("../helpers/helpers.js");
 
 describe("Contract: BalDepositor", async () => {
 
-    let voterProxy, balDepositor, baseRewardPool, wethBal, D2DBal, root, buyer2;
+    let voterProxy, balDepositor, baseRewardPool, wethBal, D2DBal, root, buyer2, veBal;
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -39,6 +39,7 @@ describe("Contract: BalDepositor", async () => {
             balDepositor,
             baseRewardPool,
             wethBal,
+            veBal: setup.tokens.VeBal,
             D2DBal: setup.tokens.D2DBal,
             tokens: setup.tokens,
             root: setup.roles.root,
@@ -56,6 +57,7 @@ describe("Contract: BalDepositor", async () => {
         balDepositor = setup.balDepositor;
         baseRewardPool = setup.baseRewardPool;
         wethBal = setup.wethBal;
+        veBal = setup.veBal;
         D2DBal = setup.D2DBal;
         tokens = setup.tokens;
         root = setup.root;
@@ -161,13 +163,16 @@ describe("Contract: BalDepositor", async () => {
 
             const timestampBefore = await getCurrentBlockTimestamp();
 
-            const nextBlockTimestamp = timestampBefore + 60 * 60 * 24 * 352 ; // 13 days befor expiration
+            // move block time to 7 days and 1 second
+            // we want to keep relocking veBal to max time to have max voting power
+            const nextBlockTimestamp = timestampBefore + (60 * 60 * 24 * 7) + 1 ; // 1 week before expiration
 
             await network.provider.send("evm_setNextBlockTimestamp", [
                 nextBlockTimestamp,
             ]);
-            
-            await balDepositor.deposit(depositAmount, true, baseRewardPool.address);
+
+            // if it extends lock time it should emit event on veBal
+            await expect(balDepositor.deposit(depositAmount, true, baseRewardPool.address)).to.emit(veBal, 'Supply');
         });
     });
 });
