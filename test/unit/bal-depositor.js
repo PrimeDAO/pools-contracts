@@ -111,13 +111,10 @@ describe("Contract: BalDepositor", async () => {
             ).to.be.revertedWith("!>0");
         });
         it("deposits wethBal", async () => {
-            const { voterProxy, balDepositor, wethBal, baseRewardPool, tokens } = await setupTests();
+            const { balDepositor, wethBal, baseRewardPool } = await setupTests();
 
             await wethBal.approve(balDepositor.address, ONE_HUNDRED_ETHER);
 
-            await wethBal.mint(tokens.VeBal.address, ONE_HUNDRED_ETHER);
-            await wethBal.mint(voterProxy.address, ONE_HUNDRED_ETHER);
-  
             // initial lock is necessary for deposit to work
             await balDepositor.initialLock();
 

@@ -149,59 +149,8 @@ contract VoterProxy is IStaker {
         if (_balance < _amount) {
             IBalGauge(_gauge).withdraw(_amount - _balance);
         }
+
         IERC20(_token).transfer(msg.sender, _amount);
-    }
-
-    // function withdrawAll(address _token, address _gauge)
-    //     external
-    //     returns (bool)
-    // {
-    //     require(msg.sender == operator, "!auth");
-    //     uint256 amount = balanceOfPool(_gauge) +
-    //         (IERC20(_token).balanceOf(address(this)));
-    //     withdraw(_token, _gauge, amount);
-    //     return true;
-    // }
-
-    function _withdrawSome(address _gauge, uint256 _amount)
-        internal
-        returns (uint256)
-    {
-        IBalGauge(_gauge).withdraw(_amount);
-        return _amount;
-    }
-
-    // function createLock(uint256 _value, uint256 _unlockTime)
-    //     external
-    // {
-    //     require(msg.sender == depositor, "!auth");
-    //     IERC20(wethBal).approve(veBal, 0);
-    //     IERC20(wethBal).approve(veBal, _value);
-    //     IBalVoteEscrow(veBal).create_lock(_value, _unlockTime);
-    // }
-
-    // function increaseAmount(uint256 _value) external {
-    //     require(msg.sender == depositor, "!auth");
-    //     IERC20(wethBal).approve(veBal, 0);
-    //     IERC20(wethBal).approve(veBal, _value);
-    //     IBalVoteEscrow(veBal).increase_amount(_value);
-    // }
-
-    // function increaseTime(uint256 _value) external {
-    //     require(msg.sender == depositor, "!auth");
-    //     IBalVoteEscrow(veBal).increase_unlock_time(_value);
-    // }
-
-    function withdrawWethBal(
-        address _to, //treasury
-        address _gauge,
-        uint256 _amount
-    ) public returns (bool) {
-        require(msg.sender == operator, "!auth");
-        IBalVoteEscrow(veBal).withdraw();
-        uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-        IERC20(wethBal).transfer(_to, _balance);
-        return true;
     }
 
     function vote(
@@ -347,5 +296,17 @@ contract VoterProxy is IStaker {
         uint256 amount = balanceOfPool(_gauge) +
             (IERC20(_token).balanceOf(address(this)));
         withdraw(_token, _gauge, amount);
+    }
+
+    function withdrawWethBal(
+        address _to, //treasury
+        address _gauge,
+        uint256 _amount
+    ) public returns (bool) {
+        require(msg.sender == operator, "!auth");
+        IBalVoteEscrow(veBal).withdraw();
+        uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
+        IERC20(wethBal).transfer(_to, _balance);
+        return true;
     }
 }

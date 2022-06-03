@@ -17,11 +17,6 @@ const initialize = async (accounts) => {
 };
 
 const getTokens = async (setup) => {
-    const D2DBalFactory = await ethers.getContractFactory(
-      "D2DBal",
-      setup.roles.root
-    );
-
     const ERC20Factory = await ethers.getContractFactory(
       "ERC20Mock",
       setup.roles.root
@@ -34,8 +29,7 @@ const getTokens = async (setup) => {
 
     const B50WBTC50WETH = await ERC20Factory.deploy("Balancer 50 WBTC 50 WETH", "B-50WBTC-50WETH"); // LP token
     const BAL = await ERC20Factory.deploy("Bal", "BAL");
-    // const D2DBal = await ERC20Factory.deploy("D2DBal", "D2DBAL");
-    const D2DBal = await D2DBalFactory.deploy();
+    const D2DBal = await ERC20Factory.deploy("D2DBal", "D2DBAL");
     const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
     const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL"); // Balancer80BAL20WETH LP token
     const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
@@ -59,20 +53,6 @@ const getTokens = async (setup) => {
     setup.tokens = tokens;
     return tokens;
 };
-// const balDepositor = async (setup) => {
-//     const balDepositor = await ethers.getContractFactory(
-//         "BalDepositor",
-//         setup.roles.root
-//     );
-
-//     const staker = setup.voterProxy;
-
-//     return await balDepositor.deploy(
-//         setup.tokens.WethBal.address,
-//         staker.address,
-//         setup.tokens.D2DBal.address
-//     );
-// };
 
 const getVoterProxyMock = async (setup) => {
   const VoterProxyMockFactory = await ethers.getContractFactory("VoterProxyMock", setup.roles.root);
@@ -210,12 +190,6 @@ const getBaseRewardPool = async (setup) => {
     setup.roles.reward_manager.address
   );
 };
-
-// const getVoterProxy = async (setup, gaugeController, mintr) => {
-//   const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
-
-//   return await VoterProxy.deploy(mintr.address, setup.tokens.BAL.address, setup.tokens.WethBal.address, setup.tokens.VeBal.address, gaugeController.address);
-// };
 
 const getControllerMock = async (setup) => {
   const ControllerMockFactory = await ethers.getContractFactory(
