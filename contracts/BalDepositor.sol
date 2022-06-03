@@ -77,7 +77,7 @@ contract BalDepositor {
             // create new lock
             uint256 wethBalBalanceStaker = IERC20(wethBal).balanceOf(staker);
             IStaker(staker).createLock(wethBalBalanceStaker, unlockAt);
-            unlockTime = unlockAt;
+            unlockTime = (unlockAt / WEEK) * WEEK;
         }
     }
 
@@ -168,11 +168,12 @@ contract BalDepositor {
 
         // solhint-disable-next-line
         uint256 newUnlockAt = block.timestamp + MAXTIME;
+        uint256 unlockInWeeks = (newUnlockAt / WEEK) * WEEK;
 
         // We always want to have max voting power on each vote
         // Bal voting is a weekly event, and we want to increase time every week
         // solhint-disable-next-line
-        if ((unlockTime - block.timestamp) < (358 * 1 days)) {
+        if ((unlockInWeeks - unlockTime) > 1) {
             IStaker(stakerMemory).increaseTime(newUnlockAt);
             // solhint-disable-next-line
             unlockTime = newUnlockAt;
