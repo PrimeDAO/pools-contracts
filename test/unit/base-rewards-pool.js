@@ -36,7 +36,7 @@ describe("BaseRewardPool", function() {
             operator,
             rewardToken: BAL,
             stakeToken: D2DBal,
-            extraRewardMock: await init.getExtraRewardMock(),
+            extraRewardMock: await init.getExtraRewardMock(setup),
             root: setup.roles.root,
             rewardManager: setup.roles.reward_manager,
             anotherUser: signers.pop(),

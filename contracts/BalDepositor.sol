@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity 0.8.14;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -12,8 +12,9 @@ contract BalDepositor {
     using Address for address;
 
     address public immutable wethBal;
+    address public immutable veBal;
 
-    uint256 private constant MAXTIME = 4 * 364 days;
+    uint256 private constant MAXTIME = 365 days;
     uint256 private constant WEEK = 1 weeks;
 
     uint256 public lockIncentive = 10; //incentive to users who spend gas to lock bal
@@ -27,12 +28,14 @@ contract BalDepositor {
 
     constructor(
         address _wethBal,
+        address _veBal,
         address _staker,
         address _minter
-    ) public {
+    ) {
         wethBal = _wethBal;
         staker = _staker;
         minter = _minter;
+        veBal = _veBal;
         feeManager = msg.sender;
     }
 
@@ -57,8 +60,10 @@ contract BalDepositor {
     function initialLock() external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 wethBalBalance = IERC20(wethBal).balanceOf(staker);
-        if (wethBalBalance == 0) {
+        uint256 veBalance = IERC20(veBal).balanceOf(staker);
+
+        if (veBalance == 0) {
+            // solhint-disable-next-line
             uint256 unlockAt = block.timestamp + MAXTIME;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
@@ -88,6 +93,7 @@ contract BalDepositor {
         //increase amount
         IStaker(staker).increaseAmount(wethBalBalanceStaker);
 
+        // solhint-disable-next-line
         uint256 unlockAt = block.timestamp + MAXTIME;
         uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
@@ -147,7 +153,6 @@ contract BalDepositor {
         //mint here
         ITokenMinter(minter).mint(address(this), _amount);
         //stake for msg.sender
-        IERC20(minter).approve(_stakeAddress, 0);
         IERC20(minter).approve(_stakeAddress, _amount);
         IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
     }
