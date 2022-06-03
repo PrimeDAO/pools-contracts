@@ -63,7 +63,7 @@ contract VoterProxy is IStaker {
     }
 
     modifier onlyDepositor() {
-        if (msg.sender != depositor || msg.sender != operator) {
+        if (msg.sender != depositor) {
             revert Unauthorized();
         }
         _;
@@ -187,10 +187,10 @@ contract VoterProxy is IStaker {
     //     IBalVoteEscrow(veBal).increase_amount(_value);
     // }
 
-    function increaseTime(uint256 _value) external {
-        require(msg.sender == depositor, "!auth");
-        IBalVoteEscrow(veBal).increase_unlock_time(_value);
-    }
+    // function increaseTime(uint256 _value) external {
+    //     require(msg.sender == depositor, "!auth");
+    //     IBalVoteEscrow(veBal).increase_unlock_time(_value);
+    // }
 
     function withdrawWethBal(
         address _to, //treasury
@@ -311,9 +311,9 @@ contract VoterProxy is IStaker {
 
     /// @notice Extend the unlock time
     /// @param _value New epoch time for unlocking
-    // function increaseTime(uint256 _value) external onlyDepositor {
-    //     IBalVoteEscrow(veBal).increase_unlock_time(_value);
-    // }
+    function increaseTime(uint256 _value) external onlyDepositor {
+        IBalVoteEscrow(veBal).increase_unlock_time(_value);
+    }
 
     /// @notice Redeems veBal tokens
     /// @dev Only possible if the lock has expired

@@ -14,7 +14,7 @@ describe("VoterProxy", function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
-        const gaugeControllerMock = await init.gaugeControllerMock(setup);
+        const gaugeControllerMock = await init.gaugeController(setup);
         const mintr = await init.getMintrMock(setup);
         const voterProxy = await init.getVoterProxy(setup, gaugeControllerMock, mintr);
         const controllerMock = await init.getControllerMock(setup)
