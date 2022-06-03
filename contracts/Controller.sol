@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity 0.8.14;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -24,7 +24,6 @@ contract Controller {
     uint256 public platformFee = 0; //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
-    uint256 public constant lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
 
     address public owner;
     address public feeManager;
@@ -37,8 +36,8 @@ contract Controller {
     address public voteDelegate;
     address public treasury;
     address public stakerRewards; //bal rewards
-    address public lockRewards;
-    address public lockFees;
+    address public lockRewards; //balBal rewards(bal)
+    address public lockFees; //cvxCrv vecrv fees -> What is Bal equivalent?
     address public feeDistro;
     address public feeToken;
 
@@ -62,7 +61,6 @@ contract Controller {
         uint256 indexed poolid,
         uint256 amount
     );
-
     event Withdrawn(
         address indexed user,
         uint256 indexed poolid,
@@ -89,6 +87,7 @@ contract Controller {
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
+        feeManager = msg.sender;
         feeManager = _feeManager;
         poolManager = msg.sender;
         feeDistro = address(0);
@@ -511,14 +510,13 @@ contract Controller {
     /// @notice internal function that claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held
     function _earmarkRewards(uint256 _pid) internal {
-        require(poolInfo.length != 0, "Controller: pool is not exists");
         PoolInfo storage pool = poolInfo[_pid];
         require(pool.shutdown == false, "pool is closed");
 
         address gauge = pool.gauge;
 
         //claim bal
-        IStaker(staker).claimCrv(gauge);
+        IStaker(staker).claimBal(gauge);
 
         //check if there are extra rewards
         address stash = pool.stash;
@@ -533,27 +531,48 @@ contract Controller {
         uint256 balBal = IERC20(bal).balanceOf(address(this));
 
         if (balBal > 0) {
-            //Profit fees are taken on the rewards together with platform fees.
-            uint256 _profit = (balBal * profitFees) / FEE_DENOMINATOR;
-            balBal = balBal - _profit;
-            //profit fees are distributed to the gnosisSafe, which owned by Prime; which is here feeManager
-            IERC20(bal).transfer(feeManager, _profit);
+            uint256 _lockIncentive = (balBal * lockIncentive) / FEE_DENOMINATOR;
+
+            uint256 _stakerIncentive = (balBal * stakerIncentive) /
+                FEE_DENOMINATOR;
+
+            uint256 _callIncentive = (balBal * earmarkIncentive) /
+                FEE_DENOMINATOR;
 
             //send treasury
             if (
                 treasury != address(0) &&
                 treasury != address(this) &&
-                platformFees > 0
+                platformFee > 0
             ) {
                 //only subtract after address condition check
-                uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
+                uint256 _platform = (balBal * platformFee) / FEE_DENOMINATOR;
                 balBal = balBal - _platform;
                 IERC20(bal).transfer(treasury, _platform);
             }
+
+            //remove incentives from balance
+            balBal =
+                balBal -
+                _lockIncentive -
+                _callIncentive -
+                _stakerIncentive;
+
+            //send incentives for calling
+            IERC20(bal).transfer(msg.sender, _callIncentive);
+
             //send bal to lp provider reward contract
             address rewardContract = pool.balRewards;
             IERC20(bal).transfer(rewardContract, balBal);
             IRewards(rewardContract).queueNewRewards(balBal);
+
+            //send lockers' share of bal to reward contract
+            IERC20(bal).transfer(lockRewards, _lockIncentive);
+            IRewards(lockRewards).queueNewRewards(_lockIncentive);
+
+            //send stakers's share of bal to reward contract
+            IERC20(bal).transfer(stakerRewards, _stakerIncentive);
+            IRewards(stakerRewards).queueNewRewards(_stakerIncentive);
         }
     }
 
