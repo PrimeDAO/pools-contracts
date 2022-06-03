@@ -18,8 +18,10 @@ contract Controller {
     address public immutable voteOwnership; // 0xE478de485ad2fe566d49342Cbd03E49ed7DB3356
     address public immutable voteParameter; // 0xBCfF8B0b9419b9A88c44546519b1e909cF330399
 
-    uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
-    uint256 public platformFees = 1000; //10% //possible fee to build treasury
+    uint256 public lockIncentive = 1000; //incentive to bal stakers
+    uint256 public stakerIncentive = 450; //incentive to native token stakers
+    uint256 public earmarkIncentive = 50; //incentive to users who spend gas to make calls
+    uint256 public platformFee = 0; //possible fee to build treasury
     uint256 public constant MaxFees = 2000;
     uint256 public constant FEE_DENOMINATOR = 10000;
     uint256 public constant lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
@@ -189,25 +191,36 @@ contract Controller {
         }
     }
 
-    /// @notice sets the lock, staker, caller, platform fees and profit fees
-    /// @param _profitFee The amount to set for the profit fees
-    /// @param _platformFee The amount to set for the platform fees
-    function setFees(uint256 _platformFee, uint256 _profitFee) external {
+    /// @notice sets the lock, staker, caller, and platform fees
+    /// @param _lockFees The amount to set for the lock fees
+    /// @param _stakerFees The amount to set for the staker fees
+    /// @param _callerFees The amount to set for the caller fees
+    /// @param _platform The amount to set for the platform fees
+    function setFees(
+        uint256 _lockFees,
+        uint256 _stakerFees,
+        uint256 _callerFees,
+        uint256 _platform
+    ) external {
         require(msg.sender == feeManager, "!auth");
 
-        uint256 total = _profitFee + _platformFee;
-
+        uint256 total = _lockFees + _stakerFees + _callerFees + _platform;
         require(total <= MaxFees, ">MaxFees");
 
         //values must be within certain ranges
         if (
-            _platformFee >= 500 && //5%
-            _platformFee <= 2000 && //20%
-            _profitFee >= 100 &&
-            _profitFee <= 500
+            _lockFees >= 1000 &&
+            _lockFees <= 1500 &&
+            _stakerFees >= 300 &&
+            _stakerFees <= 600 &&
+            _callerFees >= 10 &&
+            _callerFees <= 100 &&
+            _platform <= 200
         ) {
-            platformFees = _platformFee;
-            profitFees = _profitFee;
+            lockIncentive = _lockFees;
+            stakerIncentive = _stakerFees;
+            earmarkIncentive = _callerFees;
+            platformFee = _platform;
         }
     }
 
