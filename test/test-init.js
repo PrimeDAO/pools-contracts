@@ -217,12 +217,6 @@ const gaugeController = async (setup) => {
   return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
 }; 
 
-// const getVoterProxy = async (setup, gaugeController, mintr) => {
-//   const VoterProxy = await ethers.getContractFactory("VoterProxy", setup.roles.root);
-
-//   return await VoterProxy.deploy(mintr.address, setup.tokens.BAL.address, setup.tokens.WethBal.address, setup.tokens.VeBal.address, gaugeController.address);
-// };
-
 const getVoterProxy = async (setup, gaugeController, mintr) => {
     const VoterProxy = await ethers.getContractFactory(
         "VoterProxy",
