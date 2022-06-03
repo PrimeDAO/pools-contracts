@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { BigNumber, constants } = require("ethers");
 const { ethers } = require("hardhat");
+
 const init = require("../test-init.js");
 
 const addressOne = "0x0000000000000000000000000000000000000001";
@@ -258,6 +259,7 @@ describe("BaseRewardPool", function() {
         // in this case we have 1 reward token per second
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
+
         const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,

@@ -6,7 +6,6 @@ const init = require("../test-init.js");
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
 const { getFutureTimestamp } = require('../helpers/helpers')
 
-const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 const lockTime = time.duration.days(365);
 const smallLockTime = time.duration.days(100);
 
