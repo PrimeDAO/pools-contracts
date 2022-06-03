@@ -1,9 +1,12 @@
 const { assert, expect } = require("chai");
 const { ethers } = require("hardhat");
-const { ONE_HUNDRED_ETHER } = require("../helpers/constants.js");
 const init = require("../test-init.js");
+const { ONE_HUNDRED_ETHER, MOCK_INITIAL_SUPPLY } = require('../helpers/constants');
+const { getCurrentBlockTimestamp } = require("../helpers/helpers.js");
 
 describe("Contract: BalDepositor", async () => {
+
+    let voterProxy, balDepositor, baseRewardPool, wethBal, D2DBal, root, buyer1, buyer2;
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -28,6 +31,9 @@ describe("Contract: BalDepositor", async () => {
 
         await wethBal.mint(voterProxy.address, ONE_HUNDRED_ETHER);
 
+        // root is default signer, and he already has some tokens
+        await wethBal.approve(balDepositor.address, MOCK_INITIAL_SUPPLY);
+
         return {
             voterProxy,
             balDepositor,
@@ -43,12 +49,23 @@ describe("Contract: BalDepositor", async () => {
 
     const incentiveInRange = 15;
     const incentiveOutRange = 45;
-    const depositAmount = 20;
+    const depositAmount = ethers.utils.parseEther('20');
+
+    beforeEach(async function () {
+        const setup = await setupTests();
+        voterProxy = setup.voterProxy;
+        balDepositor = setup.balDepositor;
+        baseRewardPool = setup.baseRewardPool;
+        wethBal = setup.wethBal;
+        D2DBal = setup.D2DBal;
+        tokens = setup.tokens;
+        root = setup.root;
+        buyer1 = setup.buyer1;
+        buyer2 = setup.buyer2;
+    });
 
     context("» first test", () => {
         it("checks BalDepositor constructor", async () => {
-            const { balDepositor, wethBal, voterProxy, D2DBal } = await setupTests();
-
             assert(await balDepositor.wethBal() == wethBal.address);
             assert(await balDepositor.staker() == voterProxy.address);
             assert(await balDepositor.minter() == D2DBal.address);
@@ -56,40 +73,30 @@ describe("Contract: BalDepositor", async () => {
     });
     context("» setFeeManager testing", () => {
         it("sets the fee manager", async () => {
-            const { balDepositor, root } = await setupTests();
-
             await balDepositor.setFeeManager(root.address);
             expect(await balDepositor.feeManager()).to.equal(
                 root.address
             );
         });
         it("fails if caller is not the fee manager", async () => {
-            const { balDepositor, buyer1, root } = await setupTests();
-
             await expect(
                 balDepositor.connect(buyer1).setFeeManager(root.address)
-            ).to.be.revertedWith("!auth");
+            ).to.be.revertedWith("Unauthorized()");
         });
     });
     context("» setFees testing", () => {
         it("fails if caller is not the feeManager", async () => {
-            const { balDepositor, buyer1 } = await setupTests();
-
             await expect(
                 balDepositor.connect(buyer1).setFees(incentiveInRange)
-            ).to.be.revertedWith("!auth");
+            ).to.be.revertedWith("Unauthorized()");
         });
         it("allows feeManager to set a new lockIncentive", async () => {
-            const { balDepositor } = await setupTests();
-
             await balDepositor.setFees(incentiveInRange);
             expect(await balDepositor.lockIncentive()).to.equal(
                 incentiveInRange
             );
         });
         it("does not update lockIncentive if lockIncentive proposed is outside of the range", async () => {
-            const { balDepositor } = await setupTests();
-
             await balDepositor.setFees(incentiveOutRange);
             expect(await balDepositor.lockIncentive()).to.equal(
                 10 // default value
@@ -98,8 +105,6 @@ describe("Contract: BalDepositor", async () => {
     });
     context("» deposit testing", () => {
         it("fails if deposit amount is too small", async () => {
-            const { voterProxy, balDepositor } = await setupTests();
-
             await voterProxy.setDepositor(balDepositor.address);
 
             await expect(
@@ -108,16 +113,71 @@ describe("Contract: BalDepositor", async () => {
                     true,
                     voterProxy.address
                 )
-            ).to.be.revertedWith("!>0");
+            ).to.be.revertedWith("InvalidAmount()");
         });
-        it("deposits wethBal", async () => {
-            const { balDepositor, wethBal, baseRewardPool } = await setupTests();
 
-            await wethBal.approve(balDepositor.address, ONE_HUNDRED_ETHER);
-
+        it('deposits incentive bal and resets it to 0 when we deposit and lock', async function () {
             // initial lock is necessary for deposit to work
             await balDepositor.initialLock();
 
+            expect(await wethBal.balanceOf(balDepositor.address)).to.equals(0)
+            expect(await balDepositor.incentiveBal()).to.equals(0)
+
+            // deposit without lock
+            await balDepositor.deposit(depositAmount, false, baseRewardPool.address);
+
+            expect(await wethBal.balanceOf(balDepositor.address)).to.equals(depositAmount)
+
+            const lockIncentive = await balDepositor.lockIncentive();
+            const feeDenominator = await balDepositor.FEE_DENOMINATOR();
+
+            // formula from code is: deposit amount * lockIncentive / feeDenominator
+            const incentiveBal = depositAmount.mul(lockIncentive).div(feeDenominator)
+            expect(await balDepositor.incentiveBal()).to.equals(incentiveBal)
+
+            // deposit and lock
+            await balDepositor.deposit(depositAmount, true, baseRewardPool.address);
+
+            // lock resets incentive bal
+            expect(await balDepositor.incentiveBal()).to.equals(0)
+        });
+        it("deposits all", async () => {
+            // initial lock is necessary for deposit to work
+            await balDepositor.initialLock();
+
+            expect(await wethBal.balanceOf(root.address)).to.equals(ethers.utils.parseEther('100000'))
+
+            await balDepositor.depositAll(true, baseRewardPool.address);
+
+            expect(await wethBal.balanceOf(root.address)).to.equals(0)
+        });
+        it("locks balancer", async () => {
+            // initial lock is necessary for deposit to work
+            await balDepositor.initialLock();
+
+            // deposit incentive
+            await balDepositor.deposit(depositAmount, false, baseRewardPool.address);
+
+            await balDepositor.lockBalancer();
+        });
+        it("reverts if unauthorized", async () => {
+            await expect(balDepositor.connect(buyer2).initialLock()).to.be.revertedWith('Unauthorized()');
+        });
+        it("return early scenario in _lockBalancer", async () => {
+            await wethBal.burnAll(voterProxy.address);
+            await balDepositor.lockBalancer();
+        });
+        it("unlock time buffer", async () => {
+            await balDepositor.initialLock();
+
+            const timestampBefore = await getCurrentBlockTimestamp();
+
+            const nextBlockTimestamp = timestampBefore + 60 * 60 * 24 * 352 ; // 13 days befor expiration
+
+            await network.provider.send("evm_setNextBlockTimestamp", [
+                nextBlockTimestamp,
+            ]);
+            
             await balDepositor.deposit(depositAmount, true, baseRewardPool.address);
         });
     });
