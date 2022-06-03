@@ -277,7 +277,7 @@ describe("VoterProxy", function () {
         await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
 
         // manipulate future timestamp
-        const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
+        const nextBlockTimestamp = (await time.latest()).toNumber() + 1000; // current timestamp + 1000 seconds
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);
@@ -299,12 +299,11 @@ describe("VoterProxy", function () {
         await changeOperator(voterProxy, anotherUser.address);
         await voterProxy.setDepositor(anotherUser.address)
         
-        // let unlockTime = ((await time.latest()).add(smallLockTime)).toNumber();
-        // await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(100))
+        let unlockTime = ((await time.latest()).add(smallLockTime)).toNumber();
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
 
         // manipulate future timestamp
-        const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
+        const nextBlockTimestamp = (await time.latest()).toNumber() + 1000; // current timestamp + 1000 seconds
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);
