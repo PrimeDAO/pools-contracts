@@ -43,23 +43,21 @@ contract BalDepositor {
         feeManager = msg.sender;
     }
 
+    modifier onlyFeeManager() {
+        if (msg.sender != feeManager) revert Unauthorized();
+        _;
+    }
+
     /// @notice Sets the contracts feeManager variable
     /// @param _feeManager The address of the fee manager
-    function setFeeManager(address _feeManager) external {
-        if (msg.sender != feeManager) {
-            revert Unauthorized();
-        }
+    function setFeeManager(address _feeManager) external onlyFeeManager {
         feeManager = _feeManager;
         emit FeeManagerChanged(_feeManager);
     }
 
     /// @notice Sets the lock incentive variable
     /// @param _lockIncentive Time to lock tokens
-    function setFees(uint256 _lockIncentive) external {
-        if (msg.sender != feeManager) {
-            revert Unauthorized();
-        }
-
+    function setFees(uint256 _lockIncentive) external onlyFeeManager {
         if (_lockIncentive >= 0 && _lockIncentive <= 30) {
             lockIncentive = _lockIncentive;
             emit LockIncentiveChanged(_lockIncentive);
@@ -67,11 +65,7 @@ contract BalDepositor {
     }
 
     /// @notice Locks initial Weth/Bal balance in veBal contract via voterProxy contract
-    function initialLock() external {
-        if (msg.sender != feeManager) {
-            revert Unauthorized();
-        }
-
+    function initialLock() external onlyFeeManager {
         uint256 veBalance = IERC20(veBal).balanceOf(staker);
 
         if (veBalance == 0) {

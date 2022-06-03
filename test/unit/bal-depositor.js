@@ -6,7 +6,7 @@ const { getCurrentBlockTimestamp } = require("../helpers/helpers.js");
 
 describe("Contract: BalDepositor", async () => {
 
-    let voterProxy, balDepositor, baseRewardPool, wethBal, D2DBal, root, buyer1, buyer2;
+    let voterProxy, balDepositor, baseRewardPool, wethBal, D2DBal, root, buyer2;
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -42,7 +42,6 @@ describe("Contract: BalDepositor", async () => {
             D2DBal: setup.tokens.D2DBal,
             tokens: setup.tokens,
             root: setup.roles.root,
-            buyer1: setup.roles.buyer1,
             buyer2: setup.roles.buyer2,
         }
     });
@@ -78,18 +77,8 @@ describe("Contract: BalDepositor", async () => {
                 root.address
             );
         });
-        it("fails if caller is not the fee manager", async () => {
-            await expect(
-                balDepositor.connect(buyer1).setFeeManager(root.address)
-            ).to.be.revertedWith("Unauthorized()");
-        });
     });
     context("» setFees testing", () => {
-        it("fails if caller is not the feeManager", async () => {
-            await expect(
-                balDepositor.connect(buyer1).setFees(incentiveInRange)
-            ).to.be.revertedWith("Unauthorized()");
-        });
         it("allows feeManager to set a new lockIncentive", async () => {
             await balDepositor.setFees(incentiveInRange);
             expect(await balDepositor.lockIncentive()).to.equal(
