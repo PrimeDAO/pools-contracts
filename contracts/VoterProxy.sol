@@ -217,7 +217,7 @@ contract VoterProxy is IStaker {
     /// @return uint256 amaunt claimed
     function claimFees(address _distroContract, address _token)
         external
-        // onlyOperator
+        onlyOperator
         returns (uint256)
     {
         IFeeDistro(_distroContract).claim();
