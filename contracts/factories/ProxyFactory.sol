@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // solium-disable linebreak-style
-pragma solidity 0.8.13;
+pragma solidity 0.8.14;
 
 contract ProxyFactory {
     function clone(address target) external returns (address result) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // solium-disable linebreak-style
-pragma solidity 0.8.13;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -49,7 +49,7 @@ contract StashFactoryMock {
         address _staker
     ) external returns (address) {
         require(msg.sender == operator, "!authorized");
-        return address(this);
+        return address(0);
     }
 
     function IsV1(address _gauge) private returns (bool) {
