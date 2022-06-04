@@ -581,6 +581,9 @@ describe("Controller", function () {
             gauge = gaugeMock;
             await controller.connect(root).addPool(lptoken.address, gauge.address);
 
+            await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy.address);
+            await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
+
             rewards = rewardFactory;
             stakerRewards = stashFactory;
             expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
