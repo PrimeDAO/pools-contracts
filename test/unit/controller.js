@@ -36,6 +36,7 @@ let controller;
 let GaugeController;
 let gaugeMock;
 let RegistryMock;
+let smartWalletCheckerMock;
 let baseRewardPool;
 let tokens;
 
@@ -75,6 +76,7 @@ describe("Controller", function () {
 
         setup.distroMock = await init.getDistro(setup);//getDistroMock(setup);
 
+        setup.smartWalletCheckerMock = await init.getSmartWalletCheckerMock(setup);
       
         platformFee = 500;
         profitFee = 100;
@@ -91,7 +93,8 @@ describe("Controller", function () {
             proxyFactory_: setup.proxyFactory,
             stashFactory_: setup.stashFactory ,
             tokenFactory_: setup.tokenFactory,
-            stashFactoryMock_ : setup.stashFactoryMock,
+            stashFactoryMock_: setup.stashFactoryMock,
+            smartWalletCheckerMock_: setup.smartWalletCheckerMock,
             distro_: setup.distroMock,
             root_: setup.roles.root,
             staker_: setup.roles.staker,
@@ -105,11 +108,12 @@ describe("Controller", function () {
     });
 
     before('>>> setup', async function() {
-        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, gaugeMock_, distro_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
+        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, gaugeMock_, distro_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
         VoterProxy = VoterProxy_; 
         rewardFactory = rewardFactory_;
         stashFactory = stashFactory_;
         stashFactoryMock = stashFactoryMock_;
+        smartWalletCheckerMock = smartWalletCheckerMock_;
         tokenFactory = tokenFactory_; 
         GaugeController = GaugeController_;
         gaugeMock = gaugeMock_;
@@ -550,13 +554,14 @@ describe("Controller", function () {
     });
     context("» restake testing", () => {
         before('>>> setup', async function() {
-            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, tokens_, roles, randomUser } = await setupTests();
+            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, tokens_, roles, randomUser } = await setupTests();
             VoterProxy = VoterProxy_; 
             rewardFactory = rewardFactory_;
             stashFactory = stashFactory_;
             stashFactoryMock = stashFactoryMock_;
             tokenFactory = tokenFactory_; 
             GaugeController = GaugeController_;
+            smartWalletCheckerMock = smartWalletCheckerMock_;
             tokens = tokens_;
             controller = controller_;
             root = roles.root;
@@ -581,7 +586,8 @@ describe("Controller", function () {
             gauge = gaugeMock;
             await controller.connect(root).addPool(lptoken.address, gauge.address);
 
-            await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy.address);
+            await smartWalletCheckerMock.allow(VoterProxy.address);
+            await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(smartWalletCheckerMock.address);
             await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
             rewards = rewardFactory;

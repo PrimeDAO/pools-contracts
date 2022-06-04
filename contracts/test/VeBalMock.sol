@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 // When new types are added - the whole contract is changed
 // The check() method is modifying to be able to use caching
 // for individual wallet addresses 
-interface SmartWalletChecker {
+interface SmartWalletChecker { //0x7869296efd0a76872fee62a058c8fbca5c1c826c
     function check(address addr) external returns (bool);//nonpayable
 }   
 
