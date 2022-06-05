@@ -383,7 +383,7 @@ describe("Controller", function () {
             const implementationAddress = await ethers.getContractFactory('StashMock')
                 .then(x => x.deploy())
                 .then(x => x.address)
-        
+
             // Set implementation contract
             await expect(stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
@@ -768,5 +768,40 @@ describe("Controller", function () {
             "shutdown"
           );
         });
+    });
+
+    context("» voteGaugeWeight testing", () => {
+        it("Calls voteGaugeWeight", async () => {
+            expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
+        });
+    });
+    context("» claimRewards testing", () => {
+        it("Calls claimRewards", async () => {
+            // need to call from StashMock contract directly
+            expect(await controller.connect(implementationAddress).claimRewards(pid, gauge.address));
+        });
+    });
+    context("» setGaugeRedirect testing", () => {
+        it("Calls setGaugeRedirect", async () => {
+            // need to call from StashMock contract directly
+            expect(await controller.connect(implementationAddress).setGaugeRedirect(pid));
+        });
+    });
+    context("» rewardClaimed testing", () => {
+        it('Should call rewardClaimed if not auth', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .rewardClaimed(pid, staker.address, tenMillion),
+                "!auth"
+            );     
+        });
+        // it("Calls rewardClaimed", async () => {
+        //         // require(
+        //         //     msg.sender == rewardContract || msg.sender == lockRewards,
+        //         //     "!auth"
+        //         // );
+        //     expect(await controller.rewardClaimed(pid, staker.address, tenMillion));
+        // });
     });
 });
