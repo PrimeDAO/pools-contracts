@@ -146,7 +146,7 @@ describe("Controller", function () {
             expect(await controller.connect(root).setOwner(admin.address));
             expect(await controller.owner()).to.equals(admin.address);
         });
-        it('Should fail set owner', async function () {
+        it('Should fail set owner if not auth', async function () {
             await expectRevert(
                 controller
                     .connect(staker)
@@ -158,7 +158,7 @@ describe("Controller", function () {
             expect(await controller.connect(root).setFeeManager(admin.address));
             expect(await controller.owner()).to.equals(admin.address);
         });
-        it('Should fail set feeManager', async function () {
+        it('Should fail set feeManager if not auth', async function () {
             await expectRevert(
                 controller
                     .connect(staker)
@@ -170,7 +170,7 @@ describe("Controller", function () {
             expect(await controller.connect(root).setPoolManager(admin.address));
             expect(await controller.poolManager()).to.equals(admin.address);
         });
-        it('Should fail set poolManager', async function () {
+        it('Should fail set poolManager if not auth', async function () {
             await expectRevert(
                 controller
                     .connect(staker)
@@ -178,15 +178,27 @@ describe("Controller", function () {
                 "!auth"
             );     
         });
-
-
-
-
+        it('Should fail set setFactories if not auth', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setFactories(staker.address, staker.address, staker.address),
+                "!auth"
+            );     
+        });
+        it('Should fail set setRewardContracts if not auth', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setRewardContracts(staker.address, staker.address),
+                "!auth"
+            );     
+        });
         it('Should set setArbitrator', async function () {
             expect(await controller.connect(admin).setArbitrator(admin.address));
             expect(await controller.rewardArbitrator()).to.equals(admin.address);
         });
-        it('Should fail set setArbitrator', async function () {
+        it('Should fail set setArbitrator if not auth', async function () {
             await expectRevert(
                 controller
                     .connect(staker)
@@ -198,11 +210,53 @@ describe("Controller", function () {
             expect(await controller.connect(root).setVoteDelegate(admin.address));
             expect(await controller.voteDelegate()).to.equals(admin.address);
         });
-        it('Should fail set voteDelegate', async function () {
+        it('Should fail set voteDelegate if not auth', async function () {
             await expectRevert(
                 controller
                     .connect(staker)
                     .setVoteDelegate(staker.address),
+                "!auth"
+            );     
+        });
+        it('Should fail set treasury if not auth', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setTreasury(staker.address),
+                "!auth"
+            );     
+        });
+
+
+        it('Should fail add Pool if lptoken or gauge is address(0)', async function () {
+            await expectRevert(
+                controller
+                    .connect(admin)
+                    .addPool(zero_address, zero_address),
+                "!param"
+            );     
+        });
+        it('Should fail add Pool if not auth or isShutdown', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .addPool(tokens.B50WBTC50WETH.address, gaugeMock.address),
+                "!add"
+            );     
+        });
+        it('Should fail shutdown Pool if not auth', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .shutdownPool(1),
+                "!auth"
+            );     
+        });
+        it('Should fail shutdown System if not auth', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .shutdownSystem(),
                 "!auth"
             );     
         });
