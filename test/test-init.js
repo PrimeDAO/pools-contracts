@@ -40,12 +40,6 @@ const getTokens = async (setup) => {
     ); 
     const StashMock = StashMockFactory.deploy();
 
-    const StashFactory = await ethers.getContractFactory(
-      "ExtraRewardStashV3",
-      setup.roles.root
-    ); 
-    const Stash = StashFactory.deploy();
-
     const tokens = {
       BAL,
       D2DBal,
@@ -54,7 +48,6 @@ const getTokens = async (setup) => {
       VeBal,
       B50WBTC50WETH,
       StashMock,
-      Stash
     };
 
     setup.tokens = tokens;
@@ -78,14 +71,22 @@ const getRegistryMock = async (setup) => {
   return await RegistryMock.deploy(admin.address);
 }
 
-const controller = async (setup) => {
+const getStashMock = async (setup) => {
+  const Stash = await ethers.getContractFactory(
+    "ExtraRewardStashV3",
+    setup.roles.root
+  ); 
+  return await Stash.deploy();
+}
+
+const controller = async (setup, voterProxy) => {
   const controller = await ethers.getContractFactory(
     "Controller",
     setup.roles.root
   );
   const bal = setup.tokens.BAL;
   const wethBal = setup.tokens.WethBal;
-  const staker = setup.VoterProxy;
+  const staker = voterProxy;//setup.VoterProxy;
   const registry = setup.RegistryMock;
   return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address, bal.address, registry.address);
 };
@@ -337,4 +338,5 @@ module.exports = {
   getExternalContractMock,
   getSmartWalletCheckerMock,
   getDistro,
+  getStashMock,
 };

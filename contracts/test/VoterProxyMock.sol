@@ -140,10 +140,6 @@ contract VoterProxyMock {
         external
         returns (bool)
     {
-        require(msg.sender == operator, "!auth");
-
-        //vote
-        IVoting(gaugeController).vote_for_gauge_weights(_gauge, _weight);
         return true;
     }
 
