@@ -126,8 +126,8 @@ describe("Controller", function () {
         operator = roles.operator;
         reward_manager = roles.reward_manager;
     });
-    context('setup', async function () {
-        it('should setup', async function () {
+    context('» setup', async function () {
+        it('Should setup', async function () {
             expect(await controller.isShutdown()).to.equals(false)
             expect(await controller.bal()).to.equals(tokens.BAL.address)
             expect(await controller.wethBal()).to.equals(tokens.WethBal.address)
@@ -141,7 +141,89 @@ describe("Controller", function () {
             expect(await controller.treasury()).to.equals(zero_address)
         });
     });
+    context('» setters', async function () {
+        it('Should set owner', async function () {
+            expect(await controller.connect(root).setOwner(admin.address));
+            expect(await controller.owner()).to.equals(admin.address);
+        });
+        it('Should fail set owner', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setOwner(staker.address),
+                "!auth"
+            );   
+        });
+        it('Should set feeManager', async function () {
+            expect(await controller.connect(root).setFeeManager(admin.address));
+            expect(await controller.owner()).to.equals(admin.address);
+        });
+        it('Should fail set feeManager', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setFeeManager(staker.address),
+                "!auth"
+            );     
+        });
+        it('Should set poolManager', async function () {
+            expect(await controller.connect(root).setPoolManager(admin.address));
+            expect(await controller.poolManager()).to.equals(admin.address);
+        });
+        it('Should fail set poolManager', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setPoolManager(staker.address),
+                "!auth"
+            );     
+        });
+
+
+
+
+        it('Should set setArbitrator', async function () {
+            expect(await controller.connect(admin).setArbitrator(admin.address));
+            expect(await controller.rewardArbitrator()).to.equals(admin.address);
+        });
+        it('Should fail set setArbitrator', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setArbitrator(staker.address),
+                "!auth"
+            );     
+        });
+        it('Should set voteDelegate', async function () {
+            expect(await controller.connect(root).setVoteDelegate(admin.address));
+            expect(await controller.voteDelegate()).to.equals(admin.address);
+        });
+        it('Should fail set voteDelegate', async function () {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setVoteDelegate(staker.address),
+                "!auth"
+            );     
+        });
+    });
     context("» setFeeInfo testing", () => {
+        before('>>> setup', async function() {
+            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, tokens_, roles } = await setupTests();
+            VoterProxy = VoterProxy_; 
+            rewardFactory = rewardFactory_;
+            stashFactory = stashFactory_;
+            stashFactoryMock = stashFactoryMock_;
+            tokenFactory = tokenFactory_; 
+            GaugeController = GaugeController_;
+            smartWalletCheckerMock = smartWalletCheckerMock_;
+            tokens = tokens_;
+            controller = controller_;
+            root = roles.root;
+            staker = roles.staker;
+            admin = roles.prime;
+            reward_manager = roles.reward_manager;
+        });
         it("Sets VoterProxy operator ", async () => {
             expect(await VoterProxy.connect(root).setOperator(controller.address));
         });
