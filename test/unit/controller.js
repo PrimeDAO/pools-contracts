@@ -149,7 +149,6 @@ describe("Controller", function () {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
         });
         it("Prepare registry and setRewardContracts", async () => {
-            // await RegistryMock.add_new_id(tokens.VeBal.address, "description of registry");            
             await RegistryMock.add_new_id(distro.address, "description of registry");
             const lockRewards = baseRewardPool.address; //address of the main reward pool contract --> baseRewardPool
             const stakerRewards = reward_manager.address; 
