@@ -298,31 +298,19 @@ contract VoterProxy is IStaker {
         withdraw(_token, _gauge, amount);
     }
 
-    // function withdrawWethBal(
-    //     address _to, //treasury
-    //     address _gauge,
-    //     uint256 _amount
-    // ) public returns (bool) {
-    //     require(msg.sender == operator, "!auth");
-    //     IBalVoteEscrow(veBal).withdraw();
-    //     uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-    //     IERC20(wethBal).transfer(_to, _balance);
-    //     return true;
-    // }
-
     function withdrawWethBal(
         address _to, //treasury
         address _gauge,
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
+        IBalVoteEscrow(veBal).withdraw();
+        uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
+        if (_balance < _amount) {
+            _amount = _balance;
             IBalVoteEscrow(veBal).withdraw();
-            uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-            if (_balance < _amount) {
-                _amount = _balance;
-                IBalVoteEscrow(veBal).withdraw();
-            }
-            IERC20(veBal).transfer(_to, _amount);
+        }
+        IERC20(veBal).transfer(_to, _amount);
         return true;
         IERC20(wethBal).transfer(msg.sender, _amount);
     }

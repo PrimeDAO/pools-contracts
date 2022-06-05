@@ -7,7 +7,6 @@ const init = require("../test-init.js");
 const zero_address = "0x0000000000000000000000000000000000000000";
 const FEE_DENOMINATOR = 10000;
 const smallLockTime = time.duration.days(30);
-const doubleSmallLockTime = time.duration.days(60);
 const tenMillion = 30000000;
 const twentyMillion = 20000000;
 const thirtyMillion = 30000000;
@@ -33,7 +32,6 @@ let feeManager;
 let treasury;
 let VoterProxy;
 let controller; 
-let GaugeController;
 let gaugeMock;
 let RegistryMock;
 let smartWalletCheckerMock;
@@ -513,7 +511,7 @@ describe("Controller", function () {
         });
 
         it("It withdraw Unlocked WethBal when pool is closed", async () => {
-          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles, randomUser } = await setupTests();
+          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
 
           const root = roles.root;
           const authorizer_adaptor = roles.authorizer_adaptor;
@@ -554,7 +552,7 @@ describe("Controller", function () {
     });
     context("» restake testing", () => {
         before('>>> setup', async function() {
-            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, tokens_, roles, randomUser } = await setupTests();
+            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, tokens_, roles } = await setupTests();
             VoterProxy = VoterProxy_; 
             rewardFactory = rewardFactory_;
             stashFactory = stashFactory_;
