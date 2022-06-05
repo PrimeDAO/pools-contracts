@@ -778,12 +778,16 @@ describe("Controller", function () {
     context("» claimRewards testing", () => {
         it("Calls claimRewards", async () => {
             // need to call from StashMock contract directly
-            expect(await controller.connect(implementationAddress).claimRewards(pid, gauge.address));
+            expect(await tokens.Stash.initialize(pid, controller.address,staker.address, gauge.address, rewardFactory.address));
+
+            expect(await tokens.Stash.claimRewards()); //setGaugeRedirect calls from this
+            // expect(await controller.connect(implementationAddress).claimRewards(pid, gauge.address));
         });
     });
     context("» setGaugeRedirect testing", () => {
         it("Calls setGaugeRedirect", async () => {
             // need to call from StashMock contract directly
+            expect(await tokens.Stash.claimRewards()); //setGaugeRedirect calls from this
             expect(await controller.connect(implementationAddress).setGaugeRedirect(pid));
         });
     });

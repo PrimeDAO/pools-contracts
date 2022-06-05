@@ -40,6 +40,12 @@ const getTokens = async (setup) => {
     ); 
     const StashMock = StashMockFactory.deploy();
 
+    const StashFactory = await ethers.getContractFactory(
+      "ExtraRewardStashV3",
+      setup.roles.root
+    ); 
+    const Stash = StashFactory.deploy();
+
     const tokens = {
       BAL,
       D2DBal,
@@ -47,7 +53,8 @@ const getTokens = async (setup) => {
       WethBal,
       VeBal,
       B50WBTC50WETH,
-      StashMock
+      StashMock,
+      Stash
     };
 
     setup.tokens = tokens;
