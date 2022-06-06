@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { BigNumber, constants } = require("ethers");
 const { ethers } = require("hardhat");
+
 const init = require("../test-init.js");
 
 const addressOne = "0x0000000000000000000000000000000000000001";
@@ -19,20 +20,20 @@ describe("BaseRewardPool", function() {
         const setup = await init.initialize(await ethers.getSigners());
         const { BAL, D2DBal } = await init.getTokens(setup);
 
-        const baseRewardPool = await init.getBaseRewardPool(setup);
+        setup.baseRewardPool = await init.getBaseRewardPool(setup);
 
-        const operatorFactory = await ethers.getContractFactory(
+        setup.operatorFactory = await ethers.getContractFactory(
             "ControllerMock"
         );
-        const operatorAddress = await baseRewardPool.operator();
-        const operator = operatorFactory.attach(operatorAddress);
-        await operator.setRewardContracts(baseRewardPool.address);
+        const operatorAddress = await setup.baseRewardPool.operator();
+        const operator = setup.operatorFactory.attach(operatorAddress);
+        await operator.setRewardContracts(setup.baseRewardPool.address);
 
         // mint BAL to pool so that the pool can give out rewards
-        await BAL.mint(baseRewardPool.address, INITIAL_BAL_BALANCE);
+        await BAL.mint(setup.baseRewardPool.address, INITIAL_BAL_BALANCE);
 
         return {
-            baseRewardPool,
+            baseRewardPool: setup.baseRewardPool,
             operator,
             rewardToken: BAL,
             stakeToken: D2DBal,
@@ -258,6 +259,7 @@ describe("BaseRewardPool", function() {
         // in this case we have 1 reward token per second
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
+
         const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
