@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+// solium-disable linebreak-style
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/Interfaces.sol";
@@ -88,7 +89,7 @@ contract ExtraRewardStash {
     // check if gauge rewards have changed
     function checkForNewRewardTokens() internal {
         for (uint256 i = 0; i < MAX_REWARDS; i++) {
-            address token = ICurveGauge(gauge).reward_tokens(i);
+            address token = IBalGauge(gauge).reward_tokens(i);
             if (token == address(0)) {
                 break;
             }

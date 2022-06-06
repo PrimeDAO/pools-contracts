@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.14;
 
 import "./utils/Interfaces.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,11 +14,11 @@ contract BalDepositor {
     error InvalidAmount();
 
     uint256 public constant FEE_DENOMINATOR = 10000;
-    uint256 private constant MAXTIME = 364 days;
+    uint256 private constant MAXTIME = 365 days;
     uint256 private constant WEEK = 7 days;
 
     address public immutable wethBal; // 80/20 BAL/WETH Balancer Pool Token
-    address public immutable escrow; // veBAL
+    address public immutable veBal;
     address public immutable staker; // VoterProxy smart contract
     address public immutable d2dBal; // d2dBal
 
@@ -29,22 +29,15 @@ contract BalDepositor {
 
     constructor(
         address _wethBal,
+        address _veBal,
         address _staker,
-        address _d2dBal,
-        address _escrow
+        address _d2dBal
     ) {
         wethBal = _wethBal;
+        veBal = _veBal;
         staker = _staker;
         d2dBal = _d2dBal;
-        escrow = _escrow;
         feeManager = msg.sender;
-    }
-
-    /// @notice Mints & stakes `_amount` of rewards tokens for caller in Rewards contract
-    /// @param _amount The amount of Weth/Bal we are staking
-    /// @param _lock boolean whether depositor wants to lock funds immediately
-    function deposit(uint256 _amount, bool _lock) external {
-        deposit(_amount, _lock, address(0));
     }
 
     /// @notice Deposits entire Weth/Bal balance of caller. Stakes same amount in Rewards contract
@@ -83,8 +76,8 @@ contract BalDepositor {
             revert Unauthorized();
         }
 
-        uint256 vBal = IERC20(escrow).balanceOf(staker);
-        if (vBal == 0) {
+        uint256 veBalance = IERC20(veBal).balanceOf(staker);
+        if (veBalance == 0) {
             // solhint-disable-next-line
             uint256 unlockAt = block.timestamp + MAXTIME;
             uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
