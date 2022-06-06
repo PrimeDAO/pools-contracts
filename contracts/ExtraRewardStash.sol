@@ -11,8 +11,7 @@ contract ExtraRewardStash {
     error AlreadyInitialized();
 
     uint256 private constant MAX_REWARDS = 8;
-    address public constant BAL =
-        address(0x41286Bb1D3E870f3F750eB7E1C25d7E48c8A1Ac7);
+    address public immutable bal;
 
     uint256 public pid;
     address public operator;
@@ -34,8 +33,9 @@ contract ExtraRewardStash {
     mapping(address => TokenInfo) public tokenInfo;
     address[] public tokenList;
 
-    // solhint-disable-next-line no-empty-blocks
-    constructor() public {}
+    constructor(address _bal) {
+        bal = _bal;
+    }
 
     function initialize(
         uint256 _pid,
@@ -127,7 +127,7 @@ contract ExtraRewardStash {
             t.token = _token;
 
             //check if BAL
-            if (_token != BAL) {
+            if (_token != bal) {
                 //create new reward contract (for NON-BAL tokens only)
                 (, , , address mainRewardContract, , ) = IDeposit(operator)
                     .poolInfo(pid);
@@ -166,7 +166,7 @@ contract ExtraRewardStash {
             uint256 amount = IERC20(token).balanceOf(address(this));
             if (amount > 0) {
                 historicalRewards[token] = historicalRewards[token] + amount;
-                if (token == BAL) {
+                if (token == bal) {
                     //if BAL, send back to booster to distribute
                     IERC20(token).transfer(operator, amount);
                     continue;

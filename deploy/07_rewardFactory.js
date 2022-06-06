@@ -6,15 +6,15 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
   const addresses = getAddresses();
 
-  const voterProxy = await deployments.get('VoterProxy');
+  const controller = await deployments.get('Controller');
 
   await deploy("RewardFactory", {
     from: root,
-    args: [voterProxy.address, addresses.bal],
+    args: [controller.address, addresses.bal],
     log: true,
   });
 };
 
 module.exports = deployFunction;
 module.exports.tags = ["RewardFactory"];
-module.exports.dependencies = ['VoterProxy'];
+module.exports.dependencies = ['Controller'];

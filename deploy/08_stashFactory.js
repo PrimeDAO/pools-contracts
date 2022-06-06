@@ -4,13 +4,13 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
-  const voterProxy = await deployments.get('VoterProxy');
+  const controller = await deployments.get('Controller');
   const rewardFactory = await deployments.get('RewardFactory');
   const proxyFactory = await deployments.get('ProxyFactory');
   
   const { address: stashFactoryAddress } = await deploy("StashFactory", {
     from: root,
-    args: [voterProxy.address, rewardFactory.address, proxyFactory.address],
+    args: [controller.address, rewardFactory.address, proxyFactory.address],
     log: true,
   });
   
@@ -25,4 +25,4 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
 module.exports = deployFunction;
 module.exports.tags = ["StashFactory"];
-module.exports.dependencies = ['VoterProxy', 'RewardFactory', 'ProxyFactory', 'Stash'];
+module.exports.dependencies = ['Controller', 'RewardFactory', 'ProxyFactory', 'Stash'];

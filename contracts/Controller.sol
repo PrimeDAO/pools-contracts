@@ -230,7 +230,7 @@ contract Controller {
         //the next pool's pid
         uint256 pid = poolInfo.length;
         //create a tokenized deposit
-        address token = ITokenFactory(tokenFactory).CreateDepositToken(
+        address token = ITokenFactory(tokenFactory).createDepositToken(
             _lptoken
         );
         //create a reward contract for bal rewards
@@ -334,7 +334,6 @@ contract Controller {
             //mint here and send to rewards on user behalf
             ITokenMinter(token).mint(address(this), _amount);
             address rewardContract = pool.balRewards;
-            IERC20(token).approve(rewardContract, 0);
             IERC20(token).approve(rewardContract, _amount);
             IRewards(rewardContract).stakeFor(msg.sender, _amount);
         } else {

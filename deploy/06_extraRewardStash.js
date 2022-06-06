@@ -1,10 +1,14 @@
+const { getAddresses } = require("../config");
+
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
 
+  const addresses = getAddresses();
+
   await deploy("ExtraRewardStash", {
     from: root,
-    args: [],
+    args: [addresses.bal],
     log: true,
   });
 };

@@ -20,17 +20,20 @@ const getFutureTimestamp = (days = 1) => {
 
 // returns signer for address
 const impersonateAddress = async (address) => {
-    await ethers.provider.request({
-        method: 'hardhat_impersonateAccount',
-        params: [address],
-    });
+    await ethers.provider.send('hardhat_impersonateAccount', [address])
     const signer = await ethers.provider.getSigner(address);
     signer.address = signer._address;
     return signer;
 };
 
+const getContract = async (name, address) => {
+    const Factory = await ethers.getContractFactory(name)
+    return Factory.attach(address)
+}
+
 module.exports = {
     increaseTime,
     getFutureTimestamp,
     impersonateAddress,
+    getContract,
 }

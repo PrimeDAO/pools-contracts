@@ -236,7 +236,7 @@ interface IStashFactory {
 }
 
 interface ITokenFactory {
-    function CreateDepositToken(address) external returns (address);
+    function createDepositToken(address) external returns (address);
 }
 
 interface IPools {
