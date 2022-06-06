@@ -71,11 +71,10 @@ contract Controller {
 
     constructor(
         address _staker,
-        address _feeManager,
         address _wethBal,
         address _bal,
         address _registry
-    ) public {
+    ) {
         isShutdown = false;
         wethBal = _wethBal;
         bal = _bal;
@@ -83,7 +82,7 @@ contract Controller {
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
-        feeManager = _feeManager;
+        feeManager = msg.sender;
         poolManager = msg.sender;
         feeDistro = address(0);
         feeToken = address(0);

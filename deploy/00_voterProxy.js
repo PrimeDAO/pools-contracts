@@ -8,7 +8,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
     await deploy("VoterProxy", {
         from: root,
-        args: [addresses.minter, addresses.bal, addresses.veBal, addresses.gaugeController],
+        args: [addresses.minter, addresses.bal, addresses.wethBal, addresses.veBal, addresses.gaugeController],
         log: true
     });
 };

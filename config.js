@@ -17,9 +17,9 @@ const contractAddresses = {
     'kovan': {
         [minter]: "0x1bbfa323155526F54EEc458571Bb5A75e0c41507",
         [veBal]: "0x16ba924752EF283C7946db8A122a6742AA35C1DC", 
-        [bal]: "0x41286Bb1D3E870f3F750eB7E1C25d7E48c8A1Ac7",
+        [bal]: "0xcb355677e36f390ccc4a5d4beadfbf1eb2071c81",
         [gaugeController]: "0x35c425234DC42e7402f54cC54573f77842963a56",
-        [wethBal]: '0xDC2EcFDf2688f92c85064bE0b929693ACC6dBcA6',
+        [wethBal]: '0xdc2ecfdf2688f92c85064be0b929693acc6dbca6',
         [PRIME_MULTISIG]: '0x5F9a7EA6A79Ef04F103bfe7BD45dA65476a5155C', // Benjamin's dev wallet
     },
 }
