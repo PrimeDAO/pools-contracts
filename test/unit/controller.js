@@ -32,15 +32,14 @@ let balBal;
 let feeManager;
 let treasury;
 let VoterProxy;
-let VoterProxyMockFactory;
 let controller; 
 let gaugeMock;
 let RegistryMock;
 let smartWalletCheckerMock;
-let controllerMockedVP;
 let baseRewardPool;
 let stashMock;
 let tokens;
+let implementation;
 
 describe("Controller", function () {
     const setupTests = deployments.createFixture(async () => {
@@ -55,18 +54,12 @@ describe("Controller", function () {
         setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);
 
         setup.VoterProxy = await init.getVoterProxy(setup, setup.GaugeController, setup.tokens.D2DBal);
-
-        setup.VoterProxyMockFactory = await init.getVoterProxyMock(setup);
         
         setup.RegistryMock = await init.getRegistryMock(setup);
 
-        setup.controller = await init.controller(setup, setup.VoterProxy);//VoterProxyMockFactory);//VoterProxy);
+        setup.controller = await init.controller(setup);//, setup.VoterProxy);
 
-        setup.controllerMockedVP = await init.controller(setup, setup.VoterProxyMockFactory); //for claimRewards Testing
-
-        setup.rewardFactory = await init.rewardFactory(setup, setup.controller);
-
-        setup.rewardFactoryMVP = await init.rewardFactory(setup, setup.controllerMockedVP);
+        setup.rewardFactory = await init.rewardFactory(setup);
 
         setup.baseRewardPool = await init.baseRewardPool(setup);
             
@@ -76,7 +69,7 @@ describe("Controller", function () {
       
         setup.stashFactoryMock = await init.getStashFactoryMock(setup);
 
-        setup.stashMock = await init.getStashMock(setup);
+        setup.stashMock = await init.getStash(setup);
       
         setup.tokenFactory = await init.tokenFactory(setup);
       
@@ -94,13 +87,10 @@ describe("Controller", function () {
             GaugeController_: setup.GaugeController,
             gaugeMock_: setup.gaugeMock,
             VoterProxy_: setup.VoterProxy,
-            VoterProxyMockFactory_: setup.VoterProxyMockFactory,
             RegistryMock_: setup.RegistryMock,
             baseRewardPool_: setup.baseRewardPool,
             controller_: setup.controller,
-            controllerMockedVP_: setup.controllerMockedVP,
             rewardFactory_: setup.rewardFactory,
-            rewardFactoryMVP_: setup.rewardFactoryMVP,
             proxyFactory_: setup.proxyFactory,
             stashFactory_: setup.stashFactory ,
             tokenFactory_: setup.tokenFactory,
@@ -120,9 +110,8 @@ describe("Controller", function () {
     });
 
     before('>>> setup', async function() {
-        const { VoterProxy_, VoterProxyMockFactory_, controller_, controllerMockedVP_, rewardFactory_, stashFactory_, stashMock_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, gaugeMock_, distro_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
+        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashMock_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, gaugeMock_, distro_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
         VoterProxy = VoterProxy_; 
-        VoterProxyMockFactory = VoterProxyMockFactory_;
         rewardFactory = rewardFactory_;
         stashFactory = stashFactory_;
         stashFactoryMock = stashFactoryMock_;
@@ -136,7 +125,6 @@ describe("Controller", function () {
         distro = distro_;
         tokens = tokens_;
         controller = controller_;
-        controllerMockedVP = controllerMockedVP_;
         root = roles.root;
         staker = roles.staker;
         admin = roles.prime;
@@ -146,8 +134,6 @@ describe("Controller", function () {
     });
     context('» setup', async function () {
         it('Should setup', async function () {
-            const { VoterProxyMockFactory_ } = await setupTests();
-
             expect(await controller.isShutdown()).to.equals(false)
             expect(await controller.bal()).to.equals(tokens.BAL.address)
             expect(await controller.wethBal()).to.equals(tokens.WethBal.address)
@@ -1094,57 +1080,82 @@ describe("Controller", function () {
         });
     });
 
+    context("» with VoterProxyMock testing", () => {
+        before('>>> setup', async function() {
+        // it("Calls voteGaugeWeight", async () => {
 
+            const signers = await ethers.getSigners();
+            const setup = await init.initialize(await ethers.getSigners());
+    
+            setup.tokens = await init.getTokens(setup);    
+            setup.GaugeController = await init.gaugeController(setup);    
+            const lpTokenAddress = setup.tokens.B50WBTC50WETH;
+            setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);        
+            setup.VoterProxy = await init.getVoterProxyMock(setup);            
+            setup.RegistryMock = await init.getRegistryMock(setup);    
+            setup.controller = await init.controller(setup);//, setup.VoterProxyMock);        
+            setup.rewardFactory = await init.rewardFactory(setup);        
+            setup.baseRewardPool = await init.baseRewardPool(setup);                
+            setup.proxyFactory = await init.proxyFactory(setup);          
+            setup.stashFactory = await init.stashFactory(setup);          
+            setup.stashFactoryMock = await init.getStashFactoryMock(setup);    
+            setup.stashMock = await init.getStashMock(setup);          
+            setup.tokenFactory = await init.tokenFactory(setup);          
+            setup.extraRewardFactory = await init.getExtraRewardMock(setup);    
+            setup.distroMock = await init.getDistro(setup);//getDistroMock(setup);    
+            setup.smartWalletCheckerMock = await init.getSmartWalletCheckerMock(setup);          
+            platformFee = 500;
+            profitFee = 100;
 
-    context("» voteGaugeWeight testing", () => {
-        it("Calls voteGaugeWeight", async () => {
-            const { VoterProxyMockFactory_, controllerMockedVP_, rewardFactoryMVP_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
-
-            // const root = roles.root;
-            const authorizer_adaptor = roles.authorizer_adaptor;
-            const staker = roles.staker;
+            root = setup.roles.root;
+            const authorizer_adaptor = setup.roles.authorizer_adaptor;
+            staker = setup.roles.staker;
   
-            VoterProxyMockFactory_.connect(root).setOperator(controllerMockedVP_.address);
-            VoterProxyMockFactory_.connect(root).setDepositor(controllerMockedVP_.address);
-  
-            await controllerMockedVP_.connect(root).setFactories(rewardFactoryMVP_.address, stashFactory_.address, tokenFactory_.address);
+            setup.VoterProxy.connect(root).setOperator(setup.controller.address);
+            setup.VoterProxy.connect(root).setDepositor(setup.controller.address);  
+            await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
             // Deploy implementation contract
             const implementationAddress = await ethers.getContractFactory('StashMock')
               .then(x => x.deploy())
               .then(x => x.address)                      
             // Set implementation contract
-            await expect(stashFactory_.connect(root).setImplementation(implementationAddress))
-              .to.emit(stashFactory_, 'ImpelemntationChanged')
+            await expect(setup.stashFactory.connect(root).setImplementation(implementationAddress))
+              .to.emit(setup.stashFactory, 'ImpelemntationChanged')
               .withArgs(implementationAddress);
   
-            const lptoken = tokens_.B50WBTC50WETH;
-            const gauge = gaugeMock_;
-            await controllerMockedVP_.connect(root).addPool(lptoken.address, gauge.address);              
-            await tokens_.WethBal.transfer(staker.address, twentyMillion);
+            const lptoken = setup.tokens.B50WBTC50WETH;
+            gauge = setup.gaugeMock;
+            await setup.controller.connect(root).addPool(lptoken.address, gauge.address);              
+            await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
   
-            await tokens_.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxyMockFactory_.address);
-            await tokens_.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
+            await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address);
+            await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
-            //
-            expect(await controllerMockedVP_.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
+            controller = setup.controller;
+            rewardFactory = setup.rewardFactory;
+            stashMock = setup.stashMock;
+            implementation = implementationAddress;
+        });
+        it("Calls voteGaugeWeight", async () => {
+            expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
         });
     });
-    context("» claimRewards testing", () => {
-        it("Calls claimRewards", async () => {
-            // need to call from StashMock contract directly
-            expect(await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address));
+    // context("» claimRewards testing", () => {
+    //     it("Calls claimRewards", async () => {
+    //         // need to call from StashMock contract directly
+    //         expect(await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address));
 
-            expect(await stashMock.claimRewards()); //setGaugeRedirect calls from this
-            // expect(await controller.connect(implementationAddress).claimRewards(pid, gauge.address));
-        });
-    });
-    context("» setGaugeRedirect testing", () => {
-        it("Calls setGaugeRedirect", async () => {
-            // need to call from StashMock contract directly
-            expect(await stashMock.claimRewards()); //setGaugeRedirect calls from this
-            expect(await controller.connect(implementationAddress).setGaugeRedirect(pid));
-        });
-    });
+    //         expect(await stashMock.claimRewards()); //setGaugeRedirect calls from this
+    //         // expect(await controller.connect(implementationAddress).claimRewards(pid, gauge.address));
+    //     });
+    // });
+    // context("» setGaugeRedirect testing", () => {
+    //     it("Calls setGaugeRedirect", async () => {
+    //         // need to call from StashMock contract directly
+    //         expect(await stashMock.claimRewards()); //setGaugeRedirect calls from this
+    //         expect(await controller.connect(implementationAddress).setGaugeRedirect(pid));
+    //     });
+    // });
     context("» rewardClaimed testing", () => {
         it('Should call rewardClaimed if not auth', async function () {
             await expectRevert(
