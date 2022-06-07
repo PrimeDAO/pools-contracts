@@ -17,15 +17,15 @@ contract BalDepositor {
     uint256 private constant MAXTIME = 365 days;
     uint256 private constant WEEK = 7 days;
 
-    address public immutable wethBal; // 80/20 BAL/WETH Balancer Pool Token
+    address public immutable wethBal;
     address public immutable veBal;
     address public immutable staker; // VoterProxy smart contract
-    address public immutable d2dBal; // d2dBal
+    address public immutable d2dBal;
 
+    address public feeManager;
     uint256 public lockIncentive = 10; // incentive to users who spend gas to lock bal
     uint256 public incentiveBal;
     uint256 public unlockTime;
-    address public feeManager;
 
     constructor(
         address _wethBal,
@@ -40,54 +40,40 @@ contract BalDepositor {
         feeManager = msg.sender;
     }
 
-    /// @notice Deposits entire Weth/Bal balance of caller. Stakes same amount in Rewards contract
-    /// @param _stakeAddress The Reward contract address
-    /// @param _lock boolean whether depositor wants to lock funds immediately
-    function depositAll(bool _lock, address _stakeAddress) external {
-        uint256 wethBalBalance = IERC20(wethBal).balanceOf(msg.sender);
-        deposit(wethBalBalance, _lock, _stakeAddress);
+    modifier onlyFeeManager() {
+        if (msg.sender != feeManager) revert Unauthorized();
+        _;
     }
 
     /// @notice Sets the contracts feeManager variable
     /// @param _feeManager The address of the fee manager
-    function setFeeManager(address _feeManager) external {
-        if (msg.sender != feeManager) {
-            revert Unauthorized();
-        }
+    function setFeeManager(address _feeManager) external onlyFeeManager {
         feeManager = _feeManager;
         emit FeeManagerChanged(_feeManager);
     }
 
     /// @notice Sets the lock incentive variable
     /// @param _lockIncentive Time to lock tokens
-    function setFees(uint256 _lockIncentive) external {
-        if (msg.sender != feeManager) {
-            revert Unauthorized();
-        }
+    function setFees(uint256 _lockIncentive) external onlyFeeManager {
         if (_lockIncentive >= 0 && _lockIncentive <= 30) {
             lockIncentive = _lockIncentive;
             emit LockIncentiveChanged(_lockIncentive);
         }
     }
 
-    /// @notice Locks initial Weth/Bal in veBal escrow
-    function initialLock() external {
-        if (msg.sender != feeManager) {
-            revert Unauthorized();
-        }
-
+    /// @notice Locks initial Weth/Bal balance in veBal contract via voterProxy contract
+    function initialLock() external onlyFeeManager {
         uint256 veBalance = IERC20(veBal).balanceOf(staker);
         if (veBalance == 0) {
             // solhint-disable-next-line
             uint256 unlockAt = block.timestamp + MAXTIME;
-            uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
 
             // release old lock if exists
             IStaker(staker).release();
             // create new lock
             uint256 wethBalBalanceStaker = IERC20(wethBal).balanceOf(staker);
             IStaker(staker).createLock(wethBalBalanceStaker, unlockAt);
-            unlockTime = unlockInWeeks;
+            unlockTime = (unlockAt / WEEK) * WEEK;
         }
     }
 
@@ -103,6 +89,14 @@ contract BalDepositor {
         }
     }
 
+    /// @notice Deposits entire Weth/Bal balance of caller. Stakes same amount in Rewards contract
+    /// @param _stakeAddress The Reward contract address
+    /// @param _lock boolean whether depositor wants to lock funds immediately
+    function depositAll(bool _lock, address _stakeAddress) external {
+        uint256 wethBalBalance = IERC20(wethBal).balanceOf(msg.sender); //This is balancer balance of msg.sender
+        deposit(wethBalBalance, _lock, _stakeAddress);
+    }
+
     /// @notice Locks initial balance of Weth/Bal in Voter Proxy. Then stakes `_amount` of Weth/Bal tokens to veBal contract
     /// Mints & stakes d2dBal in Rewards contract on behalf of caller
     /// @dev VoterProxy `staker` is responsible for sending Weth/Bal tokens to veBal contract via _locktoken()
@@ -115,7 +109,7 @@ contract BalDepositor {
         bool _lock,
         address _stakeAddress
     ) public {
-        if (_amount < 1) {
+        if (_amount == 0) {
             revert InvalidAmount();
         }
 
@@ -139,45 +133,46 @@ contract BalDepositor {
             // add to a pool for lock caller
             incentiveBal = incentiveBal + callIncentive;
         }
-
-        bool depositOnly = _stakeAddress == address(0);
-        if (depositOnly) {
-            // mint for msg.sender
-            ITokenMinter(d2dBal).mint(msg.sender, _amount);
-        } else {
-            // mint here
-            ITokenMinter(d2dBal).mint(address(this), _amount);
-            // stake for msg.sender
-            IERC20(d2dBal).approve(_stakeAddress, _amount);
-            IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
-        }
+        // mint here
+        ITokenMinter(d2dBal).mint(address(this), _amount);
+        // stake for msg.sender
+        IERC20(d2dBal).approve(_stakeAddress, _amount);
+        IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
     }
 
     /// @notice Transfers Weth/Bal from VoterProxy `staker` to veBal contract
     /// @dev VoterProxy `staker` is responsible for transferring Weth/Bal tokens to veBal contract via increaseAmount()
     function _lockBalancer() internal {
-        uint256 wethBalBalance = IERC20(wethBal).balanceOf(address(this));
+        // multiple SLOAD -> MLOAD
+        address wethBalMemory = wethBal;
+        address stakerMemory = staker;
+
+        uint256 wethBalBalance = IERC20(wethBalMemory).balanceOf(address(this));
         if (wethBalBalance > 0) {
-            IERC20(wethBal).transfer(staker, wethBalBalance);
+            IERC20(wethBalMemory).transfer(stakerMemory, wethBalBalance);
         }
 
-        // increase ammount
-        uint256 wethBalBalanceStaker = IERC20(wethBal).balanceOf(staker);
+        uint256 wethBalBalanceStaker = IERC20(wethBalMemory).balanceOf(
+            stakerMemory
+        );
         if (wethBalBalanceStaker == 0) {
             return;
         }
 
         // increase amount
-        IStaker(staker).increaseAmount(wethBalBalanceStaker);
+        IStaker(stakerMemory).increaseAmount(wethBalBalanceStaker);
 
         // solhint-disable-next-line
-        uint256 unlockAt = block.timestamp + MAXTIME;
-        uint256 unlockInWeeks = (unlockAt / WEEK) * WEEK;
+        uint256 newUnlockAt = block.timestamp + MAXTIME;
+        uint256 unlockInWeeks = (newUnlockAt / WEEK) * WEEK;
 
-        // increase time too if over 2 week buffer
-        if ((unlockInWeeks - unlockTime) > 2) {
-            IStaker(staker).increaseTime(unlockAt);
-            unlockTime = unlockInWeeks;
+        // We always want to have max voting power on each vote
+        // Bal voting is a weekly event, and we want to increase time every week
+        // solhint-disable-next-line
+        if ((unlockInWeeks - unlockTime) > 1) {
+            IStaker(stakerMemory).increaseTime(newUnlockAt);
+            // solhint-disable-next-line
+            unlockTime = newUnlockAt;
         }
     }
 }
