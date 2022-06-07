@@ -15,7 +15,7 @@ const contractAddresses = {
         [PRIME_MULTISIG]: '' // TODO: setup multisig wallet
     },
     'kovan': {
-        [minter]: "0x1bbfa323155526F54EEc458571Bb5A75e0c41507",
+        [minter]: "0xe1008f2871f5f5c3da47f806deba3cd83fe0e55b", // Address on balancer docs is wrong
         [veBal]: "0x16ba924752EF283C7946db8A122a6742AA35C1DC", 
         [bal]: "0xcb355677e36f390ccc4a5d4beadfbf1eb2071c81",
         [gaugeController]: "0x35c425234DC42e7402f54cC54573f77842963a56",
@@ -28,6 +28,6 @@ module.exports = {
     contractAddresses,
     getAddresses: function() {
         const blockchainOverride = process.env.BLOCKCHAIN_FORK ? process.env.BLOCKCHAIN_FORK : hre.network.name;
-        return contractAddresses[blockchainOverride];
+        return contractAddresses[blockchainOverride] ?? [];
     }
 }

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat test",
+    "test:integration": "npx hardhat test --grep Kovan",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
     "coverage": "hardhat coverage",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan",

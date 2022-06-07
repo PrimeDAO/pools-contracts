@@ -15,7 +15,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
   const { address: balDepositor } = await deploy("BalDepositor", {
     from: root,
-    args: [addresses.wethBal, voterProxy.address, addresses.veBal, d2dBalAddress],
+    args: [addresses.wethBal, addresses.veBal, voterProxy.address, d2dBalAddress],
     log: true,
   });
 
