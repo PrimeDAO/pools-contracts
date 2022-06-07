@@ -38,6 +38,7 @@ let RegistryMock;
 let smartWalletCheckerMock;
 let baseRewardPool;
 let stashMock;
+let VotingMock;
 let tokens;
 let implementation;
 
@@ -57,7 +58,9 @@ describe("Controller", function () {
         
         setup.RegistryMock = await init.getRegistryMock(setup);
 
-        setup.controller = await init.controller(setup);//, setup.VoterProxy);
+        setup.VotingMock = await init.getVotingMock(setup);
+
+        setup.controller = await init.controller(setup);
 
         setup.rewardFactory = await init.rewardFactory(setup);
 
@@ -89,6 +92,7 @@ describe("Controller", function () {
             VoterProxy_: setup.VoterProxy,
             RegistryMock_: setup.RegistryMock,
             baseRewardPool_: setup.baseRewardPool,
+            VotingMock_: setup.VotingMock,
             controller_: setup.controller,
             rewardFactory_: setup.rewardFactory,
             proxyFactory_: setup.proxyFactory,
@@ -110,12 +114,13 @@ describe("Controller", function () {
     });
 
     before('>>> setup', async function() {
-        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashMock_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, gaugeMock_, distro_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
+        const { VoterProxy_, VotingMock_, controller_, rewardFactory_, stashFactory_, stashMock_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, gaugeMock_, distro_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
         VoterProxy = VoterProxy_; 
         rewardFactory = rewardFactory_;
         stashFactory = stashFactory_;
         stashFactoryMock = stashFactoryMock_;
         stashMock = stashMock_;
+        VotingMock = VotingMock_;
         tokenFactory = tokenFactory_; 
         GaugeController = GaugeController_;
         smartWalletCheckerMock = smartWalletCheckerMock_;
@@ -232,8 +237,6 @@ describe("Controller", function () {
                 "!auth"
             );     
         });
-
-
         it('Should fail add Pool if lptoken or gauge is address(0)', async function () {
             await expectRevert(
                 controller
@@ -563,6 +566,7 @@ describe("Controller", function () {
             ).to.equal(admin.address.toString());
         });
         it("Should fails to call earmarkRewards if Shutdown", async () => {
+            await controller.connect(root).shutdownPool(pid);
             await controller.connect(root).shutdownSystem();
             await expectRevert(
                 controller
@@ -703,9 +707,6 @@ describe("Controller", function () {
             expect(await controller.connect(staker).depositAll(pid, stake));
         });
         it("It withdraw lp tokens", async () => {
-            console.log("lptoken.address is %s", lptoken.address);
-            console.log("tokens.BAL.address is %s", tokens.BAL.address);
-            console.log("tokens.WethBal.address is %s", tokens.WethBal.address);
             time.increase(lockTime.add(difference));
             
             expect(await controller.connect(staker).withdraw(pid, tenMillion));
@@ -792,10 +793,6 @@ describe("Controller", function () {
             expect(await controller.connect(staker).depositAll(pid, stake));
         });
         it("It withdraw all lp tokens", async () => {
-            console.log("VoterProxy.address is %s", VoterProxy.address);
-            console.log("lptoken.address is %s", lptoken.address);
-            console.log("tokens.BAL.address is %s", tokens.BAL.address);
-            console.log("tokens.WethBal.address is %s", tokens.WethBal.address);
             time.increase(lockTime.add(difference));
 
             expect(await controller.connect(staker).withdrawAll(pid));
@@ -1059,26 +1056,60 @@ describe("Controller", function () {
             expect(await controller.connect(staker).restake(pidStashZero));
         });
         it("It fails redeposit tokens when pool is closed", async () => {
-          expect(await controller.connect(root).shutdownPool(pid));
+            expect(await controller.connect(root).shutdownPool(pid));
 
-          await expectRevert(
-            controller
-                .connect(staker)
-                .restake(pid),
-            "pool is closed"
-          );
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .restake(pid),
+                "pool is closed"
+            );
         });
         it("It fails redeposit tokens when shutdownSystem", async () => {
-          expect(await controller.connect(root).shutdownSystem());
+            expect(await controller.connect(root).shutdownSystem());
 
-          await expectRevert(
-            controller
-                .connect(staker)
-                .restake(pid),
-            "shutdown"
-          );
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .restake(pid),
+                "shutdown"
+            );
         });
     });
+    context("» vote testing", () => {
+        it("Fails to call vote if not auth", async () => {
+            const voteId = 1;
+            const votingAddress = staker.address;
+            const support = true;
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .vote(voteId, votingAddress, support),
+                "!auth"
+            );   
+        });
+        it("Fails to call vote if not voteAddr", async () => {
+            const voteId = 1;
+            const votingAddress = staker.address;
+            const support = true;
+
+            // expect(await controller.connect(root).vote(voteId, votingAddress, support));
+            await expectRevert(
+                controller
+                    .connect(root)
+                    .vote(voteId, votingAddress, support),
+                "!voteAddr"
+            );  
+        });
+        it("Calls vote", async () => {
+            const voteId = 1;
+            const votingAddress = VotingMock.address;
+            const support = true;
+
+            expect(await controller.connect(root).vote(voteId, votingAddress, support));
+        });
+    });
+
 
     context("» with VoterProxyMock testing", () => {
         before('>>> setup', async function() {
@@ -1092,7 +1123,8 @@ describe("Controller", function () {
             const lpTokenAddress = setup.tokens.B50WBTC50WETH;
             setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);        
             setup.VoterProxy = await init.getVoterProxyMock(setup);            
-            setup.RegistryMock = await init.getRegistryMock(setup);    
+            setup.RegistryMock = await init.getRegistryMock(setup);  
+            setup.VotingMock = await init.getVotingMock(setup);  
             setup.controller = await init.controller(setup);//, setup.VoterProxyMock);        
             setup.rewardFactory = await init.rewardFactory(setup);        
             setup.baseRewardPool = await init.baseRewardPool(setup);                
@@ -1183,6 +1215,17 @@ describe("Controller", function () {
                 //     "!auth"
                 // );
             // expect(await controller.rewardClaimed(pid, staker.address, tenMillion));
+            const amount = tenMillion;
+            const claim = true;
+
+            expect(await tokens.D2DBal.mint(staker.address, amount));
+            expect(await tokens.D2DBal.connect(staker).approve(baseRewardPool.address, amount));
+
+            expect(await baseRewardPool.connect(staker).stake(amount));
+
+            time.increase(lockTime.add(difference));
+
+            expect(await baseRewardPool.withdrawAndUnwrap(1, claim));
         });
     });
 });
