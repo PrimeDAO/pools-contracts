@@ -72,15 +72,26 @@ const getRegistryMock = async (setup) => {
 }
 
 const controller = async (setup) => {
-  const controller = await ethers.getContractFactory(
-    "Controller",
-    setup.roles.root
-  );
-  const bal = setup.tokens.BAL;
-  const wethBal = setup.tokens.WethBal;
-  const staker = setup.VoterProxy;
-  const registry = setup.RegistryMock;
-  return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address, bal.address, registry.address);
+    const controller = await ethers.getContractFactory(
+      "Controller",
+      setup.roles.root
+    );
+    const bal = setup.tokens.BAL;
+    const wethBal = setup.tokens.WethBal;
+    const staker = setup.VoterProxy;
+    const registry = setup.RegistryMock;
+    const voteOwnership = staker;
+    const voteParameter = staker;
+    const distributionAddressId = 1;
+    return await controller.deploy(
+        staker.address, 
+        setup.roles.root.address, 
+        wethBal.address, 
+        bal.address, 
+        registry.address,
+        voteOwnership.address,
+        voteParameter.address,
+        distributionAddressId);
 };
 
 const tokenFactory = async (setup) => {

@@ -14,11 +14,9 @@ contract Controller {
     address public immutable bal;
     address public immutable wethBal;
     address public immutable registry;
-    uint256 public constant distributionAddressId = 1; //Note: originally was 4;
-    address public constant voteOwnership =
-        address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
-    address public constant voteParameter =
-        address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
+    uint256 public immutable distributionAddressId;
+    address public immutable voteOwnership; // 0xE478de485ad2fe566d49342Cbd03E49ed7DB3356
+    address public immutable voteParameter; // 0xBCfF8B0b9419b9A88c44546519b1e909cF330399
 
     uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
     uint256 public platformFees = 1000; //10% //possible fee to build treasury
@@ -74,15 +72,22 @@ contract Controller {
         address _feeManager,
         address _wethBal,
         address _bal,
-        address _registry
+        address _registry,
+        address _voteOwnership,
+        address _voteParameter,
+        uint256 _distributionAddressId
     ) public {
         isShutdown = false;
         wethBal = _wethBal;
         bal = _bal;
         registry = _registry;
+        voteOwnership = _voteOwnership;
+        voteParameter = _voteParameter;
+        distributionAddressId = _distributionAddressId;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
+        feeManager = msg.sender;
         feeManager = _feeManager;
         poolManager = msg.sender;
         feeDistro = address(0);
