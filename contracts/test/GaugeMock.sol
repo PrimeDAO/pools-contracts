@@ -29,7 +29,7 @@ contract GaugeMock is IBalGauge {
     }
 
     function reward_tokens(uint256) external view returns (address) {
-        return address(0);
+        return address(lpToken);//address(0);
     } //v2
 
     function rewarded_token() external view returns (address) {

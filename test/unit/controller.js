@@ -1115,7 +1115,7 @@ describe("Controller", function () {
             setup.VoterProxy.connect(root).setDepositor(setup.controller.address);  
             await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
             // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('StashMock')
+            const implementationAddress = await ethers.getContractFactory('ExtraRewardStashV3')//StashMock')
               .then(x => x.deploy())
               .then(x => x.address)                      
             // Set implementation contract
@@ -1140,22 +1140,34 @@ describe("Controller", function () {
             expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
         });
     });
-    // context("» claimRewards testing", () => {
-    //     it("Calls claimRewards", async () => {
-    //         // need to call from StashMock contract directly
-    //         expect(await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address));
+    context("» claimRewards testing", () => {
+        it("Calls claimRewards", async () => {
+            // need to call from StashMock contract directly
+            expect(await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address));
 
-    //         expect(await stashMock.claimRewards()); //setGaugeRedirect calls from this
-    //         // expect(await controller.connect(implementationAddress).claimRewards(pid, gauge.address));
-    //     });
-    // });
-    // context("» setGaugeRedirect testing", () => {
-    //     it("Calls setGaugeRedirect", async () => {
-    //         // need to call from StashMock contract directly
-    //         expect(await stashMock.claimRewards()); //setGaugeRedirect calls from this
-    //         expect(await controller.connect(implementationAddress).setGaugeRedirect(pid));
-    //     });
-    // });
+            expect(await controller.connect(root).earmarkRewards(pid));
+            expect(await controller.connect(root).earmarkRewards(pid));
+
+        });
+        it("Fails to call claimRewards if not auth", async () => {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .claimRewards(pid, gauge.address),
+                "!auth"
+            );   
+        });
+    });
+    context("» setGaugeRedirect testing", () => {
+        it("Fails to call setGaugeRedirect if not auth", async () => {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .setGaugeRedirect(pid),
+                "!auth"
+            );   
+        });
+    });
     context("» rewardClaimed testing", () => {
         it('Should call rewardClaimed if not auth', async function () {
             await expectRevert(
