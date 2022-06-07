@@ -15,8 +15,7 @@ contract Controller {
     address public immutable wethBal;
     address public immutable registry;
     uint256 public constant distributionAddressId = 1; //Note: originally was 4;
-    address public constant voteOwnership =
-        address(0xE478de485ad2fe566d49342Cbd03E49ed7DB3356); //Note: Did not change this
+    address public immutable voteOwnership;
     address public constant voteParameter =
         address(0xBCfF8B0b9419b9A88c44546519b1e909cF330399); //Note: Did not change this
 
@@ -74,7 +73,8 @@ contract Controller {
         address _feeManager,
         address _wethBal,
         address _bal,
-        address _registry
+        address _registry,
+        address _voteOwnership
     ) public {
         isShutdown = false;
         wethBal = _wethBal;
@@ -85,6 +85,7 @@ contract Controller {
         voteDelegate = msg.sender;
         feeManager = _feeManager;
         poolManager = msg.sender;
+        voteOwnership = _voteOwnership;
         feeDistro = address(0);
         feeToken = address(0);
         treasury = address(0);

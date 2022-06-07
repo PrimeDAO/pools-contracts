@@ -1093,7 +1093,6 @@ describe("Controller", function () {
             const votingAddress = staker.address;
             const support = true;
 
-            // expect(await controller.connect(root).vote(voteId, votingAddress, support));
             await expectRevert(
                 controller
                     .connect(root)
@@ -1109,7 +1108,6 @@ describe("Controller", function () {
             expect(await controller.connect(root).vote(voteId, votingAddress, support));
         });
     });
-
 
     context("» with VoterProxyMock testing", () => {
         before('>>> setup', async function() {
@@ -1171,6 +1169,14 @@ describe("Controller", function () {
         it("Calls voteGaugeWeight", async () => {
             expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
         });
+        it("Fails to call voteGaugeWeight if not auth", async () => {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .voteGaugeWeight([gauge.address, gauge.address], [1, 1]),
+                "!auth"
+            ); 
+        });
     });
     context("» claimRewards testing", () => {
         it("Calls claimRewards", async () => {
@@ -1218,14 +1224,14 @@ describe("Controller", function () {
             const amount = tenMillion;
             const claim = true;
 
-            expect(await tokens.D2DBal.mint(staker.address, amount));
-            expect(await tokens.D2DBal.connect(staker).approve(baseRewardPool.address, amount));
+            expect(await tokens.D2DBal.mint(root.address, amount));
+            expect(await tokens.D2DBal.connect(root).approve(baseRewardPool.address, amount));
 
-            expect(await baseRewardPool.connect(staker).stake(amount));
+            expect(await baseRewardPool.connect(root).stake(amount));
 
             time.increase(lockTime.add(difference));
 
-            expect(await baseRewardPool.withdrawAndUnwrap(1, claim));
+            expect(await baseRewardPool.connect(root).withdrawAndUnwrap(1, claim));
         });
     });
 });
