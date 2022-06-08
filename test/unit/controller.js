@@ -1224,14 +1224,22 @@ describe("Controller", function () {
             const amount = tenMillion;
             const claim = true;
 
-            expect(await tokens.D2DBal.mint(root.address, amount));
-            expect(await tokens.D2DBal.connect(root).approve(baseRewardPool.address, amount));
+            const poolInfo = await controller.poolInfo(0);
+            const rewardPoolAddress = poolInfo.balRewards.toString();
 
-            expect(await baseRewardPool.connect(root).stake(amount));
+            //Get new rewardPool and attach to that address
+            const rewardPool = await ethers
+                .getContractFactory("BaseRewardPool")
+                .then((x) => x.attach(rewardPoolAddress));
+
+            expect(await tokens.D2DBal.mint(root.address, amount));
+            expect(await tokens.D2DBal.connect(root).approve(rewardPool.address, amount));
+
+            expect(await rewardPool.stake(amount));
 
             time.increase(lockTime.add(difference));
 
-            expect(await baseRewardPool.connect(root).withdrawAndUnwrap(1, claim));
+            expect(await rewardPool.connect(root).withdrawAndUnwrap(0, claim));
         });
     });
 });
