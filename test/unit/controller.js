@@ -557,12 +557,31 @@ describe("Controller", function () {
             expect(
                 (await tokens.BAL.balanceOf(treasury.address)).toString()
             ).to.equal(treasury_amount_expected.toString());
-        });  
+        }); 
         it("Sets correct treasury back", async () => {
             expect(await controller.connect(feeManager).setTreasury(treasury.address));
             expect(
                 (await controller.treasury()).toString()
             ).to.equal(admin.address.toString());
+        });
+        it("Calls earmarkRewards when stash == address(0)", async () => {
+            const zeroStashPid = 1;
+            balBal = await tokens.BAL.balanceOf(controller.address);
+            let profitFees = await controller.profitFees();
+            const profit = (balBal * profitFees) / FEE_DENOMINATOR;
+            let platformFees = await controller.platformFees();
+            const platform = (balBal * platformFees) / FEE_DENOMINATOR;
+            balBal = balBal - profit;
+            rewardContract_amount_expected = balBal - platform;
+
+            let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
+
+            await controller.connect(root).earmarkRewards(zeroStashPid);
+
+            //expect 0 when platformFees = 0
+            expect(
+                (await tokens.BAL.balanceOf(treasury.address)).toString()
+            ).to.equal(treasury_amount_expected.toString());
         });
         it("Should fails to call earmarkRewards if pool closed", async () => {
             await controller.connect(root).shutdownPool(pid);
@@ -574,7 +593,6 @@ describe("Controller", function () {
             );
         });
         it("Calls earmarkRewards check 'send treasury' when treasury = controller", async () => {
-            // await controller.connect(root).shutdownPool(pid);
             await controller.connect(root).shutdownSystem();
             await expectRevert(
                 controller
