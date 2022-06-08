@@ -10,7 +10,15 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
   await deploy("Controller", {
     from: root,
-    args: [voterProxy.address, addresses.wethBal, addresses.bal, '0x0000000000000000000000000000000000000000'],
+    args: [
+      voterProxy.address, 
+      addresses.wethBal, 
+      addresses.bal, 
+      '0x0000000000000000000000000000000000000000', 
+      voterProxy.address,
+      voterProxy.address,
+      1 // distribution id
+    ],
     log: true,
   });
 };

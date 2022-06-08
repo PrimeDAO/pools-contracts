@@ -54,11 +54,12 @@ contract ExtraRewardStash {
         rewardFactory = _rFactory;
     }
 
+    /// @notice Returns the length of the tokenList
     function tokenCount() external view returns (uint256) {
         return tokenList.length;
     }
 
-    // try claiming if there are reward tokens registered
+    /// @notice Claims registered reward tokens
     function claimRewards() external returns (bool) {
         if (msg.sender != operator) {
             revert Unauthorized();
@@ -86,7 +87,7 @@ contract ExtraRewardStash {
         return true;
     }
 
-    // check if gauge rewards have changed
+    /// @notice Checks if the gauge rewards have changed
     function checkForNewRewardTokens() internal {
         for (uint256 i = 0; i < MAX_REWARDS; i++) {
             address token = IBalGauge(gauge).reward_tokens(i);
@@ -100,8 +101,9 @@ contract ExtraRewardStash {
         }
     }
 
-    // register an extra reward token to be handled
-    // (any new incentive that is not directly on curve gauges)
+    /// @notice Registers an extra reward token to be handled
+    /// @param _token The reward token address
+    /// @dev Used for any new incentive that is not directly on curve gauges
     function setExtraReward(address _token) external {
         // owner of booster can set extra rewards
         if (msg.sender != IDeposit(operator).owner()) {
@@ -110,6 +112,8 @@ contract ExtraRewardStash {
         setToken(_token);
     }
 
+    /// @notice Sets the reward hook address
+    /// @param _hook The address of the reward hook
     function setRewardHook(address _hook) external {
         // owner of booster can set reward hook
         if (msg.sender != IDeposit(operator).owner()) {
@@ -118,7 +122,8 @@ contract ExtraRewardStash {
         rewardHook = _hook;
     }
 
-    // replace a token on token list
+    /// @notice Replaces a token on the token list
+    /// @param _token The address of the token
     function setToken(address _token) internal {
         TokenInfo storage t = tokenInfo[_token];
 
@@ -145,14 +150,14 @@ contract ExtraRewardStash {
         }
     }
 
-    // pull assigned tokens from staker to stash
+    /// @notice Pulls assigned tokens from staker to stash
     function stashRewards() external pure returns (bool) {
         //after depositing/withdrawing, extra incentive tokens are claimed
         //but from v3 this is default to off, and this stash is the reward receiver too.
         return true;
     }
 
-    // send all extra rewards to their reward contracts
+    /// @notice Sends all of the extra rewards to the reward contracts
     function processStash() external returns (bool) {
         if (msg.sender != operator) {
             revert Unauthorized();

@@ -17,41 +17,41 @@ const initialize = async (accounts) => {
 };
 
 const getTokens = async (setup) => {
-    const ERC20Factory = await ethers.getContractFactory(
-      "ERC20Mock",
-      setup.roles.root
-    );
+  const ERC20Factory = await ethers.getContractFactory(
+    "ERC20Mock",
+    setup.roles.root
+  );
 
-    const VeBalFactory = await ethers.getContractFactory(
-      "VeBalMock",
-      setup.roles.root
-    );
+  const VeBalFactory = await ethers.getContractFactory(
+    "VeBalMock",
+    setup.roles.root
+  );
 
-    const B50WBTC50WETH = await ERC20Factory.deploy("Balancer 50 WBTC 50 WETH", "B-50WBTC-50WETH"); // LP token
-    const BAL = await ERC20Factory.deploy("Bal", "BAL");
-    const D2DBal = await ERC20Factory.deploy("D2DBal", "D2DBAL");
-    const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
-    const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL"); // Balancer80BAL20WETH LP token
-    const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
+  const B50WBTC50WETH = await ERC20Factory.deploy("Balancer 50 WBTC 50 WETH", "B-50WBTC-50WETH"); // LP token
+  const BAL = await ERC20Factory.deploy("Bal", "BAL");
+  const D2DBal = await ERC20Factory.deploy("D2DBal", "D2DBAL");
+  const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
+  const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL"); // Balancer80BAL20WETH LP token
+  const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
 
-    const StashMockFactory = await ethers.getContractFactory(
-      "StashMock",
-      setup.roles.root
-    ); 
-    const StashMock = StashMockFactory.deploy();
+  const StashMockFactory = await ethers.getContractFactory(
+    "StashMock",
+    setup.roles.root
+  );
+  const StashMock = StashMockFactory.deploy();
 
-    const tokens = {
-      BAL,
-      D2DBal,
-      PoolContract,
-      WethBal,
-      VeBal,
-      B50WBTC50WETH,
-      StashMock
-    };
+  const tokens = {
+    BAL,
+    D2DBal,
+    PoolContract,
+    WethBal,
+    VeBal,
+    B50WBTC50WETH,
+    StashMock
+  };
 
-    setup.tokens = tokens;
-    return tokens;
+  setup.tokens = tokens;
+  return tokens;
 };
 
 const getVoterProxyMock = async (setup) => {
@@ -61,7 +61,7 @@ const getVoterProxyMock = async (setup) => {
   const veBal = setup.tokens.VeBal;
   const gaugeController = await setup.GaugeController;
 
-  return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)    
+  return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)
 };
 
 const getRegistryMock = async (setup) => {
@@ -80,7 +80,18 @@ const controller = async (setup) => {
   const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy;
   const registry = setup.RegistryMock;
-  return await controller.deploy(staker.address, wethBal.address, bal.address, registry.address);
+  const voteOwnership = staker;
+  const voteParameter = staker;
+  const distributionAddressId = 1;
+  return await controller.deploy(
+    staker.address,
+    wethBal.address,
+    bal.address,
+    registry.address,
+    voteOwnership.address,
+    voteParameter.address,
+    distributionAddressId
+  );
 };
 
 const tokenFactory = async (setup) => {
@@ -213,28 +224,28 @@ const gaugeController = async (setup) => {
   const GaugeController = await ethers.getContractFactory(
     "GaugeControllerMock",
     setup.roles.root
-  );         
+  );
   return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
-}; 
+};
 
 const getVoterProxy = async (setup, gaugeController, mintr) => {
-    const VoterProxy = await ethers.getContractFactory(
-        "VoterProxy",
-        setup.roles.root
-    );
+  const VoterProxy = await ethers.getContractFactory(
+    "VoterProxy",
+    setup.roles.root
+  );
 
-    // const mintr = setup.tokens.D2DBal;
-    const wethBal = setup.tokens.WethBal;
-    const bal = setup.tokens.BAL;
-    const veBal = setup.tokens.VeBal;
-    // const gaugeController = setup.GaugeController;
-    return await VoterProxy.deploy(
-        mintr.address,
-        bal.address,
-        wethBal.address,
-        veBal.address,
-        gaugeController.address
-    );
+  // const mintr = setup.tokens.D2DBal;
+  const wethBal = setup.tokens.WethBal;
+  const bal = setup.tokens.BAL;
+  const veBal = setup.tokens.VeBal;
+  // const gaugeController = setup.GaugeController;
+  return await VoterProxy.deploy(
+    mintr.address,
+    bal.address,
+    wethBal.address,
+    veBal.address,
+    gaugeController.address
+  );
 };
 
 const getGaugeMock = async (setup, lpTokenAddress) => {
