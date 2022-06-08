@@ -1154,7 +1154,7 @@ describe("Controller", function () {
               .to.emit(setup.stashFactory, 'ImpelemntationChanged')
               .withArgs(implementationAddress);
   
-            const lptoken = setup.tokens.B50WBTC50WETH;
+            lptoken = setup.tokens.B50WBTC50WETH;
             gauge = setup.gaugeMock;
             await setup.controller.connect(root).addPool(lptoken.address, gauge.address);              
             await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
@@ -1228,20 +1228,26 @@ describe("Controller", function () {
 
             const poolInfo = await controller.poolInfo(0);
             const rewardPoolAddress = poolInfo.balRewards.toString();
-
             //Get new rewardPool and attach to that address
             const rewardPool = await ethers
                 .getContractFactory("BaseRewardPool")
                 .then((x) => x.attach(rewardPoolAddress));
 
-            expect(await D2DBal.mint(root.address, amount));
-            expect(await D2DBal.connect(root).approve(rewardPool.address, amount));
+            const tokenAddress = poolInfo.token.toString();
+            //Get new token and attach to that address
+            const token = await ethers
+                .getContractFactory("DepositToken")
+                .then((x) => x.attach(tokenAddress));
 
-            expect(await rewardPool.connect(root).stake(amount));
+            const stake = true;
+            expect(await lptoken.connect(root).mint(root.address, amount));
+            expect(await lptoken.connect(root).approve(controller.address, amount));
+            expect(await controller.connect(root).deposit(0, amount, stake)); //from deposit in controller only
 
             time.increase(lockTime.add(difference));
 
-            expect(await rewardPool.connect(root).withdrawAndUnwrap(0, claim));
+            expect(await lptoken.connect(root).mint(controller.address, amount)); //why? it shouldn't be necessary
+            expect(await rewardPool.connect(root).withdrawAndUnwrap(amount, claim));
         });
     });
 });
