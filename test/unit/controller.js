@@ -40,6 +40,7 @@ let baseRewardPool;
 let stashMock;
 let VotingMock;
 let tokens;
+let D2DBal;
 let implementation;
 
 describe("Controller", function () {
@@ -1165,6 +1166,7 @@ describe("Controller", function () {
             rewardFactory = setup.rewardFactory;
             stashMock = setup.stashMock;
             implementation = implementationAddress;
+            D2DBal = setup.tokens.D2DBal;
         });
         it("Calls voteGaugeWeight", async () => {
             expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
@@ -1232,10 +1234,10 @@ describe("Controller", function () {
                 .getContractFactory("BaseRewardPool")
                 .then((x) => x.attach(rewardPoolAddress));
 
-            expect(await tokens.D2DBal.mint(root.address, amount));
-            expect(await tokens.D2DBal.connect(root).approve(rewardPool.address, amount));
+            expect(await D2DBal.mint(root.address, amount));
+            expect(await D2DBal.connect(root).approve(rewardPool.address, amount));
 
-            expect(await rewardPool.stake(amount));
+            expect(await rewardPool.connect(root).stake(amount));
 
             time.increase(lockTime.add(difference));
 
