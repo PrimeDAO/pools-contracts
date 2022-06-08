@@ -271,7 +271,7 @@ describe("Controller", function () {
     });
     context("» setFeeInfo testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
         });
         it("Sets VoterProxy operator ", async () => {
             expect(await VoterProxy.connect(root).setOperator(controller.address));
@@ -614,7 +614,7 @@ describe("Controller", function () {
     });
     context("» deposit testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
 
             expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -704,7 +704,7 @@ describe("Controller", function () {
     });
     context("» depositAll testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
 
             expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -745,7 +745,7 @@ describe("Controller", function () {
     });        
     context("» withdraw testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
 
             expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -829,7 +829,7 @@ describe("Controller", function () {
     });
     context("» withdrawTo testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
 
             expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -893,7 +893,7 @@ describe("Controller", function () {
     });
     context("» withdrawAll testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
 
             expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -977,7 +977,7 @@ describe("Controller", function () {
     });
     context("» withdrawUnlockedWethBal testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
 
             expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -1057,7 +1057,7 @@ describe("Controller", function () {
     });
     context("» restake testing", () => {
         before('>>> setup', async function() {
-            const { } = await setupTests();
+            await setupTests();
 
             expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -1253,7 +1253,6 @@ describe("Controller", function () {
     });
     context("» rewardClaimed testing", () => {
         before('>>> setup', async function() {
-            const signers = await ethers.getSigners();
             const setup = await init.initialize(await ethers.getSigners());
     
             setup.tokens = await init.getTokens(setup);    

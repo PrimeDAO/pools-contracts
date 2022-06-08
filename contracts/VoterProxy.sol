@@ -149,7 +149,6 @@ contract VoterProxy is IStaker {
         if (_balance < _amount) {
             IBalGauge(_gauge).withdraw(_amount - _balance);
         }
-
         IERC20(_token).transfer(msg.sender, _amount);
     }
 
