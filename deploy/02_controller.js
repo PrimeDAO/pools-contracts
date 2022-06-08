@@ -12,9 +12,8 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     from: root,
     args: [
       voterProxy.address, 
-      addresses.wethBal, 
       addresses.bal, 
-      '0x0000000000000000000000000000000000000000', 
+      addresses.feeDistro, 
       voterProxy.address,
       voterProxy.address,
       1 // distribution id

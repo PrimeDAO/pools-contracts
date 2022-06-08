@@ -46,7 +46,7 @@ describe("Kovan integration", function () {
         expect(await d2DBal.name()).to.equals('D2DBal')
     });
 
-    it("adds pool, deposits LP tokens, earmarks rewards, treasury acc gets BAL", async function () {
+    it("adds pool, deposits LP tokens, earmarks rewards, treasury acc gets BAL, staker withdraws", async function () {
         await expect(controller.addPool(lpToken, gauge)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
         // creates a pool with PID 0
         const pid = 0
@@ -63,7 +63,7 @@ describe("Kovan integration", function () {
         expect(await balTokenContract.balanceOf(root)).to.equals(0)
 
         // deposit from signer
-        await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, true)) // do not stake tokens
+        await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
             .to.emit(controller, 'Deposited')
             .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
 
@@ -73,6 +73,10 @@ describe("Kovan integration", function () {
 
         // Treasury (root) BAL balance should not be zero anymore
         expect(await balTokenContract.balanceOf(root)).to.not.equals(0)
+
+        await expect(controller.connect(signer).withdraw(pid, ONE_HUNDRED_ETHER))
+            .to.emit(controller, 'Withdrawn')
+            .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
     })
 
     it("adds pool, deposits LP tokens, votes for gauge", async function () {

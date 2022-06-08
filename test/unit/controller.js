@@ -33,11 +33,10 @@ let treasury;
 let VoterProxy;
 let controller; 
 let GaugeController;
-let RegistryMock;
 let baseRewardPool;
 let tokens;
 
-describe("Controller", function () {
+describe.only("Controller", function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -48,9 +47,7 @@ describe("Controller", function () {
         setup.GaugeController = await init.gaugeController(setup);
 
         setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
-      
-        setup.RegistryMock = await init.getRegistryMock(setup);
-
+    
         setup.controller = await init.controller(setup);
 
         setup.rewardFactory = await init.rewardFactory(setup);
@@ -74,7 +71,6 @@ describe("Controller", function () {
             tokens_: tokens,
             GaugeController_: setup.GaugeController,
             VoterProxy_: setup.VoterProxy,
-            RegistryMock_: setup.RegistryMock,
             baseRewardPool_: setup.baseRewardPool,
             controller_: setup.controller,
             rewardFactory_: setup.rewardFactory,
@@ -94,14 +90,13 @@ describe("Controller", function () {
     });
 
     before('>>> setup', async function() {
-        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
+        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, baseRewardPool_, tokens_, roles } = await setupTests();
         VoterProxy = VoterProxy_; 
         rewardFactory = rewardFactory_;
         stashFactory = stashFactory_;
         stashFactoryMock = stashFactoryMock_;
         tokenFactory = tokenFactory_; 
         GaugeController = GaugeController_;
-        RegistryMock = RegistryMock_;
         baseRewardPool = baseRewardPool_;
         tokens = tokens_;
         controller = controller_;
@@ -118,27 +113,21 @@ describe("Controller", function () {
         it("Sets factories", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
         });
-        it("Prepare registry and setRewardContracts", async () => {
-            await RegistryMock.add_new_id(tokens.VeBal.address, "description of registry");
-            const lockRewards = baseRewardPool.address; //address of the main reward pool contract --> baseRewardPool
-            const stakerRewards = reward_manager.address; 
-            await controller.setRewardContracts(lockRewards, stakerRewards);
+        it("Sets RewardContracts", async () => {
+            expect(await controller.connect(root).setRewardContracts(baseRewardPool.address));
         });
         it("Call setFeeInfo", async () => {
             expect((await controller.feeToken()).toString()).to.equal(zero_address);
-            expect(await controller.connect(root).setFeeInfo());
+            expect(await controller.connect(root).setFeeInfo(tokens.BAL.address));
             expect((await controller.feeToken()).toString()).to.not.equal(zero_address);
         });
         it("Can not setFeeInfo if not feeManager", async () => {
             await expectRevert(
                 controller
                     .connect(staker)
-                    .setFeeInfo(),
-                "!auth"
+                    .setFeeInfo(tokens.BAL.address),
+                "Unauthorized()"
             );
-        });
-        it("Can setFeeInfo if feeToken already setted", async () => {
-            expect(await controller.connect(root).setFeeInfo());
         });
     });
     context("» setFees testing", () => {
@@ -147,7 +136,7 @@ describe("Controller", function () {
                 controller
                     .connect(staker)
                     .setFees(platformFee, profitFee),
-                "!auth"
+                "Unauthorized()"
             );      
         });
         it("Sets correct fees", async () => {
@@ -155,14 +144,14 @@ describe("Controller", function () {
                     .connect(root)
                     .setFees(platformFee, profitFee);            
         });
-        it("Should fail if total >MaxFees", async () => {
+        it("Should fail if total >MAX_FEES", async () => {
             platformFee = 1000;
             profitFee = 1001;
             await expectRevert(
                 controller
                     .connect(root)
                     .setFees(platformFee, profitFee),
-                ">MaxFees"
+                "InvalidParameters()"
             );                
         });
         it("Should fail if platformFee is too small", async () => {
@@ -180,7 +169,7 @@ describe("Controller", function () {
                 controller
                     .connect(root)
                     .setFees(platformFee, profitFee),
-                ">MaxFees"
+                "InvalidParameters()"
             );  
         });
         it("Should fail if profitFee is too small", async () => {
@@ -208,7 +197,7 @@ describe("Controller", function () {
                 controller
                     .connect(root)
                     .earmarkRewards(pid),
-                "Controller: pool is not exists"
+                "VM Exception while processing transaction: reverted with panic code 0x32 (Array accessed at an out-of-bounds or negative index)"
             );  
         });
         it("Sets VoterProxy operator ", async () => {
@@ -251,11 +240,6 @@ describe("Controller", function () {
             (await controller.poolLength()).toNumber()
           ).to.equal(2);
           expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-        });
-        it("Sets RewardContracts", async () => {
-            rewards = rewardFactory;
-            stakerRewards = stashFactory;
-            expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
         });
         it("Calls earmarkRewards with existing pool number", async () => {
             pid = 0;
@@ -465,7 +449,7 @@ describe("Controller", function () {
 
             rewards = rewardFactory;
             stakerRewards = stashFactory;
-            expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
+            expect(await controller.connect(root).setRewardContracts(rewards.address));
         });
         it("Sets VoterProxy depositor", async () => {
           expect(await VoterProxy.connect(root).setDepositor(root.address));
@@ -570,7 +554,7 @@ describe("Controller", function () {
 
             rewards = rewardFactory;
             stakerRewards = stashFactory;
-            expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
+            expect(await controller.connect(root).setRewardContracts(rewards.address));
         });
         it("It redeposit tokens", async () => { 
             expect(await VoterProxy.connect(root).setDepositor(controller.address));
@@ -593,7 +577,7 @@ describe("Controller", function () {
             controller
                 .connect(staker)
                 .restake(pid),
-            "pool is closed"
+            "PoolIsClosed()"
           );
         });
         it("It fails redeposit tokens when shutdownSystem", async () => {
@@ -603,7 +587,7 @@ describe("Controller", function () {
             controller
                 .connect(staker)
                 .restake(pid),
-            "shutdown"
+            "Shutdown()"
           );
         });
     });

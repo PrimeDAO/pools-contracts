@@ -76,18 +76,17 @@ const controller = async (setup) => {
     "Controller",
     setup.roles.root
   );
+
+  const feeDistributor = await getDistroMock(setup)
   const bal = setup.tokens.BAL;
-  const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy;
-  const registry = setup.RegistryMock;
   const voteOwnership = staker;
   const voteParameter = staker;
   const distributionAddressId = 1;
   return await controller.deploy(
     staker.address,
-    wethBal.address,
     bal.address,
-    registry.address,
+    feeDistributor.address,
     voteOwnership.address,
     voteParameter.address,
     distributionAddressId

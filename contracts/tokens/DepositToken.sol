@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
-contract DepositToken is ERC20 {
+contract DepositToken is ERC20Permit {
     error Unauthorized();
 
     address public immutable operator;
 
     constructor(address _operator, address _lptoken)
+        ERC20Permit(string(abi.encodePacked("D2D ", ERC20(_lptoken).name())))
         ERC20(
             string(abi.encodePacked("D2D ", ERC20(_lptoken).name())),
             string(abi.encodePacked("d2d ", ERC20(_lptoken).symbol()))

@@ -27,7 +27,7 @@ contract VoterProxyMock {
         address bal_,
         address veBal_,
         address gaugeController_
-    ) public {
+    ) {
         owner = msg.sender;
 
         mintr = mintr_;
@@ -157,7 +157,7 @@ contract VoterProxyMock {
         return true;
     }
 
-    function claimFees(address _distroContract, address _token)
+    function claimFees(address _distroContract, IERC20 _token)
         external
         returns (uint256)
     {
