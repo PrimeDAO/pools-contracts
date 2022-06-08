@@ -298,6 +298,11 @@ contract VoterProxy is IStaker {
         withdraw(_token, _gauge, amount);
     }
 
+    /// @notice Used for withdrawing wethBal tokens to treasury
+    /// @dev If contract doesn't have asked _amount tokens it will withdraw all tokens
+    /// @param _to treasury address
+    /// @param _gauge The gauge
+    /// @param _amount The amount to withdraw
     function withdrawWethBal(
         address _to, //treasury
         address _gauge,
