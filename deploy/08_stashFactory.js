@@ -25,4 +25,4 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
 module.exports = deployFunction;
 module.exports.tags = ["StashFactory"];
-module.exports.dependencies = ['Controller', 'RewardFactory', 'ProxyFactory', 'Stash'];
+module.exports.dependencies = ['Controller', 'RewardFactory', 'ProxyFactory', 'ExtraRewardStash'];

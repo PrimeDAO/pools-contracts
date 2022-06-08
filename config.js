@@ -15,10 +15,10 @@ const contractAddresses = {
         [PRIME_MULTISIG]: '' // TODO: setup multisig wallet
     },
     'kovan': {
-        [minter]: "0xe1008f2871f5f5c3da47f806deba3cd83fe0e55b", // Address on balancer docs is wrong
-        [veBal]: "0x16ba924752EF283C7946db8A122a6742AA35C1DC", 
-        [bal]: "0xcb355677e36f390ccc4a5d4beadfbf1eb2071c81",
-        [gaugeController]: "0x28bE1a58A534B281c3A22df28d3720323bfF331D", // again wrong address on docs
+        [minter]: "0xe1008f2871f5f5c3da47f806deba3cd83fe0e55b", // wrong address on balancer docs
+        [veBal]: "0x0BA4d28a89b0aB0c48253f4f36B204DE24354651", 
+        [bal]: "0xcb355677e36f390ccc4a5d4beadfbf1eb2071c81", // wrong address on balancer docs
+        [gaugeController]: "0x28bE1a58A534B281c3A22df28d3720323bfF331D", // wrong address on balancer docs
         [wethBal]: '0xdc2ecfdf2688f92c85064be0b929693acc6dbca6',
         [PRIME_MULTISIG]: '0x5F9a7EA6A79Ef04F103bfe7BD45dA65476a5155C', // Benjamin's dev wallet
     },
