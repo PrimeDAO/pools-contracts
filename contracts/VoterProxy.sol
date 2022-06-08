@@ -310,8 +310,7 @@ contract VoterProxy is IStaker {
             _amount = _balance;
             IBalVoteEscrow(veBal).withdraw();
         }
-        IERC20(veBal).transfer(_to, _amount);
+        IERC20(wethBal).transfer(_to, _amount);
         return true;
-        IERC20(wethBal).transfer(msg.sender, _amount);
     }
 }
