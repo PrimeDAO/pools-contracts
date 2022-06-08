@@ -3,9 +3,7 @@ const { expect } = require("chai");
 const { deployments, ethers } = require("hardhat");
 const init = require("../test-init.js");
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
-const { getFutureTimestamp } = require('../helpers/helpers')
-
-const currentTimeInSeconds = Math.floor(Date.now() / 1000);
+const { getFutureTimestamp, getCurrentBlockTimestamp } = require('../helpers/helpers')
 
 describe("VoterProxy", function () {
     let voterProxy, mintr, operator, gauge, distro, gaugeController, externalContract, root, bal, veBal, wethBal, votingMock, B50WBTC50WETH, anotherUser, stash;
@@ -14,7 +12,7 @@ describe("VoterProxy", function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
-        const gaugeControllerMock = await init.gaugeControllerMock(setup);
+        const gaugeControllerMock = await init.gaugeController(setup);
         const mintr = await init.getMintrMock(setup);
         const voterProxy = await init.getVoterProxy(setup, gaugeControllerMock, mintr);
         const controllerMock = await init.getControllerMock(setup)
@@ -93,7 +91,7 @@ describe("VoterProxy", function () {
     });
 
     it('reverts if not depositor', async function () {
-        await expect(voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(365)))
+        await expect(voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365)))
             .to.be.revertedWith('Unauthorized()')
     });
 
@@ -233,22 +231,22 @@ describe("VoterProxy", function () {
 
     it('creates a lock', async function () {
         await voterProxy.setDepositor(anotherUser.address)
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(365))
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365))
     });
 
 
     it('increases amount', async function () {
         await voterProxy.setDepositor(anotherUser.address)
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(365))
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365))
         await voterProxy.connect(anotherUser).increaseAmount(1)
     });
 
     it('increases time', async function () {
         await voterProxy.setDepositor(anotherUser.address)
         // lock for 100 days
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(100))
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(100))
         // increase lock to 200 days
-        const nextUnlock = getFutureTimestamp(200)
+        const nextUnlock = await getFutureTimestamp(200)
         await voterProxy.connect(anotherUser).increaseTime(nextUnlock)
     });
 
@@ -267,7 +265,9 @@ describe("VoterProxy", function () {
         await changeOperator(voterProxy, anotherUser.address);
         await voterProxy.setDepositor(anotherUser.address)
 
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(100))
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(100))
+
+        const currentTimeInSeconds = await getCurrentBlockTimestamp();
 
         // manipulate future timestamp
         const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
@@ -292,7 +292,9 @@ describe("VoterProxy", function () {
         await changeOperator(voterProxy, anotherUser.address);
         await voterProxy.setDepositor(anotherUser.address)
 
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(100))
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(100))
+
+        const currentTimeInSeconds = await getCurrentBlockTimestamp();
 
         // manipulate future timestamp
         const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds

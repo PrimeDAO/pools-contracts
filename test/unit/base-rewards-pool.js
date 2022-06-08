@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { BigNumber, constants } = require("ethers");
 const { ethers } = require("hardhat");
+const { getCurrentBlockTimestamp } = require("../helpers/helpers.js");
 const init = require("../test-init.js");
 
 const addressOne = "0x0000000000000000000000000000000000000001";
@@ -10,7 +11,6 @@ const ONE_WEEK = 604800;
 const ZERO = 0;
 const NEW_REWARD_RATIO = 830;
 const ONE_DAY = 1440;
-const currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
 describe("BaseRewardPool", function() {
     const setupTests = deployments.createFixture(async () => {
@@ -19,20 +19,20 @@ describe("BaseRewardPool", function() {
         const setup = await init.initialize(await ethers.getSigners());
         const { BAL, D2DBal } = await init.getTokens(setup);
 
-        const baseRewardPool = await init.getBaseRewardPool(setup);
+        setup.baseRewardPool = await init.getBaseRewardPool(setup);
 
-        const operatorFactory = await ethers.getContractFactory(
+        setup.operatorFactory = await ethers.getContractFactory(
             "ControllerMock"
         );
-        const operatorAddress = await baseRewardPool.operator();
-        const operator = operatorFactory.attach(operatorAddress);
-        await operator.setRewardContracts(baseRewardPool.address);
+        const operatorAddress = await setup.baseRewardPool.operator();
+        const operator = setup.operatorFactory.attach(operatorAddress);
+        await operator.setRewardContracts(setup.baseRewardPool.address);
 
         // mint BAL to pool so that the pool can give out rewards
-        await BAL.mint(baseRewardPool.address, INITIAL_BAL_BALANCE);
+        await BAL.mint(setup.baseRewardPool.address, INITIAL_BAL_BALANCE);
 
         return {
-            baseRewardPool,
+            baseRewardPool: setup.baseRewardPool,
             operator,
             rewardToken: BAL,
             stakeToken: D2DBal,
@@ -258,6 +258,8 @@ describe("BaseRewardPool", function() {
         // in this case we have 1 reward token per second
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
+        const currentTimeInSeconds = await getCurrentBlockTimestamp();
+
         const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
@@ -283,6 +285,8 @@ describe("BaseRewardPool", function() {
 
     it("changes ratio by queueing new rewards multiple times queuedRation > NEW_REWARD_RATIO", async function() {
         const { baseRewardPool, operator } = await setupTests();
+
+        const currentTimeInSeconds = await getCurrentBlockTimestamp();
 
         // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
         const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
@@ -338,6 +342,8 @@ describe("BaseRewardPool", function() {
 
         await stakeAmount(baseRewardPool, stakeToken, amountStaked, root);
 
+        const currentTimeInSeconds = await getCurrentBlockTimestamp();
+        
         // now + 1 day
         const nextBlockTimestamp = currentTimeInSeconds + ONE_DAY;
         await network.provider.send("evm_setNextBlockTimestamp", [

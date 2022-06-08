@@ -17,4 +17,13 @@ contract ERC20Mock is ERC20, Ownable {
     function mint(address _address, uint256 amount) public {
         _mint(_address, amount);
     }
+
+    function burn(address _address, uint256 amount) public {
+        _burn(_address, amount);
+    }
+
+    function burnAll(address _address) public {
+        uint256 amount = balanceOf(_address);
+        _burn(_address, amount);
+    }
 }
