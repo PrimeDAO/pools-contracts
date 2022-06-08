@@ -564,16 +564,6 @@ describe("Controller", function () {
                 (await controller.treasury()).toString()
             ).to.equal(admin.address.toString());
         });
-        it("Calls earmarkRewards check 'send treasury' when treasury = controller", async () => {
-            await controller.connect(root).shutdownPool(pid);
-            await controller.connect(root).shutdownSystem();
-            await expectRevert(
-                controller
-                    .connect(root)
-                    .earmarkRewards(pid),
-                "shutdown"
-            );
-        });
         it("Should fails to call earmarkRewards if pool closed", async () => {
             await controller.connect(root).shutdownPool(pid);
             await expectRevert(
@@ -582,8 +572,8 @@ describe("Controller", function () {
                     .earmarkRewards(pid),
                 "pool is closed"
             );
-        }); 
-        it("Should fails to call earmarkRewards if Shutdown", async () => {
+        });
+        it("Calls earmarkRewards check 'send treasury' when treasury = controller", async () => {
             // await controller.connect(root).shutdownPool(pid);
             await controller.connect(root).shutdownSystem();
             await expectRevert(
@@ -592,7 +582,17 @@ describe("Controller", function () {
                     .earmarkRewards(pid),
                 "shutdown"
             );
-        });           
+        });
+        it("Should fails to call earmarkRewards if Shutdown", async () => {
+            await controller.connect(root).shutdownPool(pid);
+            await controller.connect(root).shutdownSystem();
+            await expectRevert(
+                controller
+                    .connect(root)
+                    .earmarkRewards(pid),
+                "shutdown"
+            );
+        });        
     });
     context("» deposit testing", () => {
         before('>>> setup', async function() {
@@ -1103,9 +1103,6 @@ describe("Controller", function () {
     });
     context("» voteGaugeWeight testing", () => {
         before('>>> setup', async function() {
-        // it("Calls voteGaugeWeight", async () => {
-
-            const signers = await ethers.getSigners();
             const setup = await init.initialize(await ethers.getSigners());
     
             setup.tokens = await init.getTokens(setup);    
@@ -1115,7 +1112,7 @@ describe("Controller", function () {
             setup.VoterProxy = await init.getVoterProxyMock(setup);            
             setup.RegistryMock = await init.getRegistryMock(setup);  
             setup.VotingMock = await init.getVotingMock(setup);  
-            setup.controller = await init.controller(setup);//, setup.VoterProxyMock);        
+            setup.controller = await init.controller(setup);
             setup.rewardFactory = await init.rewardFactory(setup);        
             setup.baseRewardPool = await init.baseRewardPool(setup);                
             setup.proxyFactory = await init.proxyFactory(setup);          
