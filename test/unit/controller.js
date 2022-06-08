@@ -1146,7 +1146,7 @@ describe("Controller", function () {
             setup.VoterProxy.connect(root).setDepositor(setup.controller.address);  
             await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
             // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('ExtraRewardStashV3')//StashMock')
+            const implementationAddress = await ethers.getContractFactory('ExtraRewardStashV3')
               .then(x => x.deploy())
               .then(x => x.address)                      
             // Set implementation contract
@@ -1163,6 +1163,7 @@ describe("Controller", function () {
             await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
             controller = setup.controller;
+            VoterProxy = setup.VoterProxy;
             rewardFactory = setup.rewardFactory;
             stashMock = setup.stashMock;
             implementation = implementationAddress;
@@ -1209,6 +1210,62 @@ describe("Controller", function () {
         });
     });
     context("» rewardClaimed testing", () => {
+        before('>>> setup', async function() {
+            const signers = await ethers.getSigners();
+            const setup = await init.initialize(await ethers.getSigners());
+    
+            setup.tokens = await init.getTokens(setup);    
+            setup.GaugeController = await init.gaugeController(setup);    
+            const lpTokenAddress = setup.tokens.B50WBTC50WETH;
+            setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);        
+            setup.VoterProxy = await init.getVoterProxy(setup, setup.GaugeController, setup.tokens.D2DBal);
+            setup.RegistryMock = await init.getRegistryMock(setup);  
+            setup.VotingMock = await init.getVotingMock(setup);  
+            setup.controller = await init.controller(setup);  
+            setup.rewardFactory = await init.rewardFactory(setup);        
+            setup.baseRewardPool = await init.baseRewardPool(setup);                
+            setup.proxyFactory = await init.proxyFactory(setup);          
+            setup.stashFactory = await init.stashFactory(setup);          
+            setup.stashFactoryMock = await init.getStashFactoryMock(setup);    
+            setup.stashMock = await init.getStashMock(setup);          
+            setup.tokenFactory = await init.tokenFactory(setup);          
+            setup.extraRewardFactory = await init.getExtraRewardMock(setup);    
+            setup.distroMock = await init.getDistro(setup);
+            setup.smartWalletCheckerMock = await init.getSmartWalletCheckerMock(setup);          
+            platformFee = 500;
+            profitFee = 100;
+
+            root = setup.roles.root;
+            const authorizer_adaptor = setup.roles.authorizer_adaptor;
+            staker = setup.roles.staker;
+  
+            setup.VoterProxy.connect(root).setOperator(setup.controller.address);
+            setup.VoterProxy.connect(root).setDepositor(setup.controller.address);  
+            await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
+            // Deploy implementation contract
+            const implementationAddress = await ethers.getContractFactory('ExtraRewardStashV3')
+              .then(x => x.deploy())
+              .then(x => x.address)                      
+            // Set implementation contract
+            await expect(setup.stashFactory.connect(root).setImplementation(implementationAddress))
+              .to.emit(setup.stashFactory, 'ImpelemntationChanged')
+              .withArgs(implementationAddress);
+  
+            lptoken = setup.tokens.B50WBTC50WETH;
+            gauge = setup.gaugeMock;
+            await setup.controller.connect(root).addPool(lptoken.address, gauge.address);              
+            await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+  
+            await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address);
+            await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
+
+            controller = setup.controller;
+            VoterProxy = setup.VoterProxy;
+            rewardFactory = setup.rewardFactory;
+            stashMock = setup.stashMock;
+            implementation = implementationAddress;
+            D2DBal = setup.tokens.D2DBal;
+        });
         it('Should call rewardClaimed if not auth', async function () {
             await expectRevert(
                 controller
@@ -1218,11 +1275,6 @@ describe("Controller", function () {
             );     
         });
         it("Calls rewardClaimed", async () => {
-                // require(
-                //     msg.sender == rewardContract || msg.sender == lockRewards,
-                //     "!auth"
-                // );
-            // expect(await controller.rewardClaimed(pid, staker.address, tenMillion));
             const amount = tenMillion;
             const claim = true;
 
@@ -1245,8 +1297,8 @@ describe("Controller", function () {
             expect(await controller.connect(root).deposit(0, amount, stake)); //from deposit in controller only
 
             time.increase(lockTime.add(difference));
-
-            expect(await lptoken.connect(root).mint(controller.address, amount)); //why? it shouldn't be necessary
+//now all lp has staker (voterProxy)(row 386) //not working because voterproxyMOCK
+            // expect(await lptoken.connect(root).mint(controller.address, amount)); //why? it shouldn't be necessary
             expect(await rewardPool.connect(root).withdrawAndUnwrap(amount, claim));
         });
     });
