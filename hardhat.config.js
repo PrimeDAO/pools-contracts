@@ -102,6 +102,16 @@ module.exports = {
                     },
                 },
             },
+            {
+                version: "0.8.13",
+                settings: {
+                    // viaIR: true, // TODO: experiment with this option
+                    optimizer: {
+                        enabled: true,
+                        runs: 100000,
+                    },
+                },
+            },
         ],
     },
     etherscan: {
