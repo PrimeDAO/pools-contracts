@@ -322,7 +322,6 @@ contract Controller {
 
         //stake
         address gauge = pool.gauge;
-        require(gauge != address(0), "!gauge setting");
         IStaker(staker).deposit(lptoken, gauge); //VoterProxy
 
         //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
