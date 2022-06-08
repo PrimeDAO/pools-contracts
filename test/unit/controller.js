@@ -633,6 +633,13 @@ describe("Controller", function () {
             gauge = gaugeMock;
             await controller.connect(root).addPool(lptoken.address, gauge.address);
 
+            // Add pool with stash == address(0)
+            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address));
+            await controller.connect(root).addPool(lptoken.address, gauge.address);
+            // Return normal settings back
+            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+
+
             await smartWalletCheckerMock.allow(VoterProxy.address);
             await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(smartWalletCheckerMock.address);
             await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
@@ -646,24 +653,53 @@ describe("Controller", function () {
             expect(await controller.connect(root).setTreasury(treasury.address));
         });
         it("It deposit lp tokens from operator stake = true", async () => {
-          await lptoken.mint(staker.address, twentyMillion);
-          await lptoken.connect(staker).approve(controller.address, twentyMillion);
-          const stake = true;
-          
-          expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
+            await lptoken.mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+            const stake = true;
+            
+            expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
         });
         it("It deposit lp tokens stake = true", async () => {
-          await lptoken.mint(staker.address, twentyMillion);
-          await lptoken.connect(staker).approve(controller.address, twentyMillion);
-          const stake = true;
+            await lptoken.mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+            const stake = true;
 
-          expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
+            expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
         });
         it("It deposit lp tokens stake = false", async () => {
-          await lptoken.mint(staker.address, twentyMillion);
-          await lptoken.connect(staker).approve(controller.address, twentyMillion);
-          const stake = false;
-          expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
+            await lptoken.mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+            const stake = false;
+            expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
+        });
+        it("It deposit lp tokens if stash == address(0)", async () => {
+            const zeroStashPid = 1;
+
+            await lptoken.mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+            const stake = false;
+            expect(await controller.connect(staker).deposit(zeroStashPid, twentyMillion, stake));
+        });
+        it("It can not deposit lp tokens if pool is closed", async () => {
+            const zeroStashPid = 1;
+            expect(await controller.connect(root).shutdownPool(zeroStashPid));
+            const stake = false;
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .deposit(zeroStashPid, twentyMillion, stake),
+                "pool is closed"
+            );
+        });
+        it("It can not deposit lp tokens if isShutdown", async () => {
+            await controller.connect(root).shutdownSystem();
+            const stake = false;
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .deposit(pid, twentyMillion, stake),
+                "shutdown"
+            );
         });
     });
     context("» depositAll testing", () => {
