@@ -17,7 +17,7 @@ contract TokenFactory {
     }
 
     function CreateDepositToken(address _lptoken) external returns (address) {
-        // require(msg.sender == operator, "!authorized");
+        require(msg.sender == operator, "!authorized");
 
         DepositToken dtoken = new DepositToken(operator, _lptoken);
         token = address(dtoken);

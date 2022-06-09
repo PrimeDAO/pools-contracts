@@ -1276,13 +1276,31 @@ describe("Controller", function () {
             platformFee = 500;
             profitFee = 100;
 
+
+            authorizer_adaptor = setup.roles.authorizer_adaptor;
             root = setup.roles.root;
-            const authorizer_adaptor = setup.roles.authorizer_adaptor;
+            distro = setup.distroMock;
             staker = setup.roles.staker;
-  
-            setup.VoterProxy.connect(root).setOperator(setup.controller.address);
-            setup.VoterProxy.connect(root).setDepositor(setup.controller.address);  
-            await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
+            tokens = setup.tokens;
+            controller = setup.controller;
+            VoterProxy = setup.VoterProxy;
+            rewardFactory = setup.rewardFactory;
+            stashMock = setup.stashMock;
+            D2DBal = setup.tokens.D2DBal;
+            baseRewardPool = setup.baseRewardPool;
+
+
+            VoterProxy.connect(root).setOperator(controller.address);
+            VoterProxy.connect(root).setDepositor(controller.address);  
+            await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
+
+            await setup.RegistryMock.add_new_id(distro.address, "description of registry");
+            const lockRewards = baseRewardPool.address; //address of the main reward pool contract --> baseRewardPool
+            const stakerRewards = reward_manager.address; 
+            await controller.setRewardContracts(lockRewards, stakerRewards);
+
+            await controller.connect(root).setFeeInfo();
+
             // Deploy implementation contract
             const implementationAddress = await ethers.getContractFactory('ExtraRewardStashV3')
               .then(x => x.deploy())
@@ -1292,20 +1310,15 @@ describe("Controller", function () {
               .to.emit(setup.stashFactory, 'ImpelemntationChanged')
               .withArgs(implementationAddress);
   
-            lptoken = setup.tokens.B50WBTC50WETH;
+            lptoken = tokens.B50WBTC50WETH;
             gauge = setup.gaugeMock;
-            await setup.controller.connect(root).addPool(lptoken.address, gauge.address);              
-            await setup.tokens.WethBal.transfer(staker.address, twentyMillion);
+            await controller.connect(root).addPool(lptoken.address, gauge.address);              
+            await tokens.WethBal.transfer(staker.address, twentyMillion);
   
-            await setup.tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(setup.VoterProxy.address);
-            await setup.tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
+            await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy.address);
+            await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
-            controller = setup.controller;
-            VoterProxy = setup.VoterProxy;
-            rewardFactory = setup.rewardFactory;
-            stashMock = setup.stashMock;
             implementation = implementationAddress;
-            D2DBal = setup.tokens.D2DBal;
         });
         it('Fails to call rewardClaimed if not auth', async function () {
             await expectRevert(
@@ -1317,7 +1330,6 @@ describe("Controller", function () {
         });
         it("Calls rewardClaimed", async () => {
             const amount = tenMillion;
-
             const poolInfo = await controller.poolInfo(0);
             const rewardPoolAddress = poolInfo.balRewards.toString();
             //Get new rewardPool and attach to that address
@@ -1325,15 +1337,20 @@ describe("Controller", function () {
                 .getContractFactory("BaseRewardPool")
                 .then((x) => x.attach(rewardPoolAddress));
 
-            const stake = true;
             expect(await lptoken.connect(root).mint(root.address, amount));
             expect(await lptoken.connect(root).approve(controller.address, amount));
+
+            const stake = true;
             expect(await controller.connect(root).deposit(0, amount, stake));
 
             time.increase(lockTime.add(difference));
-            time.increase(lockTime.add(difference));
+            
+            expect(await tokens.BAL.connect(root).mint(controller.address, amount));
+    
+            // _earmarkRewards() --> queueNewRewards --> notifyRewardAmount --> getReward calls Controller rewardClaimed()
+            expect(await controller.earmarkRewards(0));
 
-            const claimExtras = true;
+            const claimExtras = true;            
             expect(await rewardPool["getReward(address,bool)"](root.address, claimExtras));
         });
     });
