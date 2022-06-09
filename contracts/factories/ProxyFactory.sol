@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+/// @title ProxyFactory contract
 contract ProxyFactory {
+    /// @notice Creates a new contract based on the target contract address provided
+    /// @param target contract address to be cloned
+    /// @return result address of the new contract
     function clone(address target) external returns (address result) {
         bytes20 targetBytes = bytes20(target);
         // solhint-disable-next-line
