@@ -36,7 +36,7 @@ let GaugeController;
 let baseRewardPool;
 let tokens;
 
-describe.only("Controller", function () {
+describe("Controller", function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();

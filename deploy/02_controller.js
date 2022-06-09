@@ -15,8 +15,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
       addresses.bal, 
       addresses.feeDistro, 
       voterProxy.address,
-      voterProxy.address,
-      1 // distribution id
+      voterProxy.address
     ],
     log: true,
   });

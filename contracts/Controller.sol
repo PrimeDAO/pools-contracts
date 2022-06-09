@@ -24,7 +24,6 @@ contract Controller {
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
 
     address public immutable bal;
-    uint256 public immutable distributionAddressId;
     address public immutable staker;
     address public immutable voteOwnership; // 0xE478de485ad2fe566d49342Cbd03E49ed7DB3356
     address public immutable voteParameter; // 0xBCfF8B0b9419b9A88c44546519b1e909cF330399
@@ -77,14 +76,12 @@ contract Controller {
         address _bal,
         address _feeDistro,
         address _voteOwnership,
-        address _voteParameter,
-        uint256 _distributionAddressId
+        address _voteParameter
     ) {
         bal = _bal;
         feeDistro = _feeDistro;
         voteOwnership = _voteOwnership;
         voteParameter = _voteParameter;
-        distributionAddressId = _distributionAddressId;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
@@ -283,9 +280,10 @@ contract Controller {
         PoolInfo storage pool = poolInfo[_pid];
 
         //withdraw from gauge
-        try
-            IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge)
-        {} catch {}
+        // solhint-disable-next-line
+        try IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge) {
+            // solhint-disable-next-line
+        } catch {}
 
         pool.shutdown = true;
         gaugeMap[pool.gauge] = false;
@@ -307,6 +305,7 @@ contract Controller {
             //withdraw from gauge
             try IVoterProxy(staker).withdrawAll(token, gauge) {
                 pool.shutdown = true;
+                // solhint-disable-next-line
             } catch {}
         }
     }

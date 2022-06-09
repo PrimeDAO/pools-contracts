@@ -82,14 +82,12 @@ const controller = async (setup) => {
   const staker = setup.VoterProxy;
   const voteOwnership = staker;
   const voteParameter = staker;
-  const distributionAddressId = 1;
   return await controller.deploy(
     staker.address,
     bal.address,
     feeDistributor.address,
     voteOwnership.address,
-    voteParameter.address,
-    distributionAddressId
+    voteParameter.address
   );
 };
 
