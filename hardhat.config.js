@@ -132,5 +132,6 @@ module.exports = {
     prime: 1,
     beneficiary: 2,
     rewardManager: 3, // BaseRewardPool reward manager
+    treasury: 4,
   }, 
 };

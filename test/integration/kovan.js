@@ -46,7 +46,7 @@ describe("Kovan integration", function () {
         expect(await d2DBal.name()).to.equals('D2DBal')
     });
 
-    it("adds pool, deposits LP tokens, earmarks rewards, treasury acc gets BAL, staker withdraws", async function () {
+    it("adds pool, deposits LP tokens, earmarks rewards, fee manager, treasury get BAL, staker withdraws", async function () {
         await expect(controller.addPool(lpToken, gauge)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
         // creates a pool with PID 0
         const pid = 0
@@ -57,10 +57,16 @@ describe("Kovan integration", function () {
 
         const balTokenContract = await getContract('ERC20Mock', bal);
 
-        // root is deployer + treasury accc
+        // root is deployer + feeManager
         // it starts with 0 BAL balance
-        const { root } = await getNamedAccounts();
+        const { root, treasury } = await getNamedAccounts();
         expect(await balTokenContract.balanceOf(root)).to.equals(0)
+        expect(await balTokenContract.balanceOf(treasury)).to.equals(0)
+        
+        // add treasury
+        await expect(controller.setTreasury(treasury))
+            .to.emit(controller, 'TreasuryChanged')
+            .withArgs(treasury);
 
         // deposit from signer
         await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
@@ -71,8 +77,10 @@ describe("Kovan integration", function () {
 
         await controller.earmarkRewards(pid)
 
-        // Treasury (root) BAL balance should not be zero anymore
+        // Fee Manager (root) BAL balance should not be zero anymore
         expect(await balTokenContract.balanceOf(root)).to.not.equals(0)
+        // Treasury (root) BAL balance should not be zero anymore
+        expect(await balTokenContract.balanceOf(treasury)).to.not.equals(0)
 
         await expect(controller.connect(signer).withdraw(pid, ONE_HUNDRED_ETHER))
             .to.emit(controller, 'Withdrawn')
