@@ -1225,12 +1225,9 @@ describe("Controller", function () {
     });
     context("» claimRewards testing", () => {
         it("Calls claimRewards", async () => {
-            // need to call from StashMock contract directly
+            // claimRewards need to be called from StashMock contract directly
             expect(await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address));
-
             expect(await controller.connect(root).earmarkRewards(pid));
-            expect(await controller.connect(root).earmarkRewards(pid));
-
         });
         it("Fails to call claimRewards if not auth", async () => {
             await expectRevert(
@@ -1249,6 +1246,9 @@ describe("Controller", function () {
                     .setGaugeRedirect(pid),
                 "!auth"
             );   
+        });
+        it('Should shutdown System ', async function () {
+            expect(await controller.connect(root).shutdownSystem());     
         });
     });
     context("» rewardClaimed testing", () => {
@@ -1276,7 +1276,6 @@ describe("Controller", function () {
             platformFee = 500;
             profitFee = 100;
 
-
             authorizer_adaptor = setup.roles.authorizer_adaptor;
             root = setup.roles.root;
             distro = setup.distroMock;
@@ -1288,7 +1287,6 @@ describe("Controller", function () {
             stashMock = setup.stashMock;
             D2DBal = setup.tokens.D2DBal;
             baseRewardPool = setup.baseRewardPool;
-
 
             VoterProxy.connect(root).setOperator(controller.address);
             VoterProxy.connect(root).setDepositor(controller.address);  
@@ -1309,10 +1307,11 @@ describe("Controller", function () {
             await expect(setup.stashFactory.connect(root).setImplementation(implementationAddress))
               .to.emit(setup.stashFactory, 'ImpelemntationChanged')
               .withArgs(implementationAddress);
-  
-            lptoken = tokens.B50WBTC50WETH;
+
+            lptoken = tokens.B50WBTC50WETH;            
             gauge = setup.gaugeMock;
-            await controller.connect(root).addPool(lptoken.address, gauge.address);              
+
+            await controller.connect(root).addPool(lptoken.address, gauge.address);           
             await tokens.WethBal.transfer(staker.address, twentyMillion);
   
             await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy.address);
