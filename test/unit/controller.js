@@ -7,7 +7,6 @@ const init = require("../test-init.js");
 const zero_address = "0x0000000000000000000000000000000000000000";
 const FEE_DENOMINATOR = 10000;
 const smallLockTime = time.duration.days(30);
-const doubleSmallLockTime = time.duration.days(60);
 const tenMillion = 30000000;
 const twentyMillion = 20000000;
 const thirtyMillion = 30000000;
@@ -22,6 +21,7 @@ let reward_manager;
 let platformFee;
 let profitFee;
 let pid;
+let distro;
 let rewardFactory;
 let stashFactory;
 let tokenFactory;
@@ -32,23 +32,28 @@ let feeManager;
 let treasury;
 let VoterProxy;
 let controller; 
-let GaugeController;
+let gaugeMock;
 let RegistryMock;
+let smartWalletCheckerMock;
 let baseRewardPool;
 let tokens;
 
 describe("Controller", function () {
-
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(await ethers.getSigners());
 
-        const tokens = await init.getTokens(setup);
+        setup.tokens = await init.getTokens(setup);
 
         setup.GaugeController = await init.gaugeController(setup);
 
-        setup.VoterProxy = await init.getVoterProxyMock(setup);//getVoterProxy(setup);
-      
+        const lpTokenAddress = setup.tokens.B50WBTC50WETH;
+        setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);
+
+        setup.VoterProxy = await init.getVoterProxy(setup, setup.GaugeController, setup.tokens.D2DBal);
+
+        setup.VoterProxyMockFactory = await init.getVoterProxyMock(setup);
+        
         setup.RegistryMock = await init.getRegistryMock(setup);
 
         setup.controller = await init.controller(setup);
@@ -66,13 +71,18 @@ describe("Controller", function () {
         setup.tokenFactory = await init.tokenFactory(setup);
       
         setup.extraRewardFactory = await init.getExtraRewardMock(setup);
+
+        setup.distroMock = await init.getDistro(setup);//getDistroMock(setup);
+
+        setup.smartWalletCheckerMock = await init.getSmartWalletCheckerMock(setup);
       
         platformFee = 500;
         profitFee = 100;
 
         return {
-            tokens_: tokens,
+            tokens_: setup.tokens,
             GaugeController_: setup.GaugeController,
+            gaugeMock_: setup.gaugeMock,
             VoterProxy_: setup.VoterProxy,
             RegistryMock_: setup.RegistryMock,
             baseRewardPool_: setup.baseRewardPool,
@@ -81,7 +91,9 @@ describe("Controller", function () {
             proxyFactory_: setup.proxyFactory,
             stashFactory_: setup.stashFactory ,
             tokenFactory_: setup.tokenFactory,
-            stashFactoryMock_ : setup.stashFactoryMock,
+            stashFactoryMock_: setup.stashFactoryMock,
+            smartWalletCheckerMock_: setup.smartWalletCheckerMock,
+            distro_: setup.distroMock,
             root_: setup.roles.root,
             staker_: setup.roles.staker,
             admin_: setup.roles.prime,
@@ -94,22 +106,40 @@ describe("Controller", function () {
     });
 
     before('>>> setup', async function() {
-        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
+        const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, gaugeMock_, distro_, RegistryMock_, baseRewardPool_, tokens_, roles } = await setupTests();
         VoterProxy = VoterProxy_; 
         rewardFactory = rewardFactory_;
         stashFactory = stashFactory_;
         stashFactoryMock = stashFactoryMock_;
+        smartWalletCheckerMock = smartWalletCheckerMock_;
         tokenFactory = tokenFactory_; 
         GaugeController = GaugeController_;
+        gaugeMock = gaugeMock_;
         RegistryMock = RegistryMock_;
         baseRewardPool = baseRewardPool_;
         tokens = tokens_;
         controller = controller_;
+        distro = distro_;
         root = roles.root;
         staker = roles.staker;
         admin = roles.prime;
         operator = roles.operator;
         reward_manager = roles.reward_manager;
+    });
+    context('setup', async function () {
+        it('should setup', async function () {
+            expect(await controller.isShutdown()).to.equals(false)
+            expect(await controller.bal()).to.equals(tokens.BAL.address)
+            expect(await controller.wethBal()).to.equals(tokens.WethBal.address)
+            expect(await controller.staker()).to.equals(VoterProxy.address)
+            expect(await controller.registry()).to.equals(RegistryMock.address)
+            expect(await controller.owner()).to.equals(root.address)
+            expect(await controller.poolManager()).to.equals(root.address)
+            expect(await controller.feeManager()).to.equals(root.address)
+            expect(await controller.feeDistro()).to.equals(zero_address)
+            expect(await controller.feeToken()).to.equals(zero_address)
+            expect(await controller.treasury()).to.equals(zero_address)
+        });
     });
     context("» setFeeInfo testing", () => {
         it("Sets VoterProxy operator ", async () => {
@@ -119,7 +149,7 @@ describe("Controller", function () {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
         });
         it("Prepare registry and setRewardContracts", async () => {
-            await RegistryMock.add_new_id(tokens.VeBal.address, "description of registry");
+            await RegistryMock.add_new_id(distro.address, "description of registry");
             const lockRewards = baseRewardPool.address; //address of the main reward pool contract --> baseRewardPool
             const stakerRewards = reward_manager.address; 
             await controller.setRewardContracts(lockRewards, stakerRewards);
@@ -211,9 +241,6 @@ describe("Controller", function () {
                 "Controller: pool is not exists"
             );  
         });
-        it("Sets VoterProxy operator ", async () => {
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
-        });
         it("Sets factories", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
         });
@@ -229,8 +256,8 @@ describe("Controller", function () {
                 .withArgs(implementationAddress);
         });
         it("Adds pool", async () => {
-            lptoken = tokens.PoolContract;
-            gauge = GaugeController;
+            lptoken = tokens.B50WBTC50WETH;
+            gauge = gaugeMock;
 
             await controller.connect(root).addPool(lptoken.address, gauge.address);
             expect(
@@ -459,30 +486,20 @@ describe("Controller", function () {
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
-            lptoken = tokens.PoolContract;
-            gauge = GaugeController;
+            lptoken = tokens.B50WBTC50WETH;
+            gauge = gaugeMock;
             await controller.connect(root).addPool(lptoken.address, gauge.address);
 
             rewards = rewardFactory;
             stakerRewards = stashFactory;
             expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
-        });
-        it("Sets VoterProxy depositor", async () => {
-          expect(await VoterProxy.connect(root).setDepositor(root.address));
-        });
-        it("It configure settings WethBal and VoterProxy", async () => {
-          expect(await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy.address));
-          expect(await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker());
-          
-          expect(await tokens.WethBal.mint(tokens.VeBal.address, thirtyMillion));
-          expect(await tokens.WethBal.mint(VoterProxy.address, sixtyMillion));
 
-          let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
-          expect(await VoterProxy.connect(root).createLock(tenMillion, unlockTime));
+            expect(await VoterProxy.connect(root).setDepositor(root.address));
+
+            treasury = admin;
+            expect(await controller.connect(root).setTreasury(treasury.address));
         });
-        it("It increaseAmount WethBal", async () => {
-          expect(await VoterProxy.connect(root).increaseAmount(thirtyMillion));     
-        });
+        
         it("It withdraw Unlocked WethBal", async () => {
           time.increase(smallLockTime.add(difference));
           let unitTest_treasury_amount_expected = 0;
@@ -493,13 +510,15 @@ describe("Controller", function () {
         });
 
         it("It withdraw Unlocked WethBal when pool is closed", async () => {
-          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, tokenFactory_, tokens_, roles } = await setupTests();
+          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
 
           const root = roles.root;
           const authorizer_adaptor = roles.authorizer_adaptor;
           const staker = roles.staker;
 
-          await VoterProxy_.connect(root).setOperator(controller_.address);
+          await expect(VoterProxy_.connect(root).setOperator(controller_.address));
+          await expect(VoterProxy_.connect(root).setDepositor(controller_.address));
+
           const rewardFactory = rewardFactory_;
           const stashFactory = stashFactory_;
           const tokenFactory = tokenFactory_;
@@ -512,24 +531,19 @@ describe("Controller", function () {
           await expect(stashFactory.connect(root).setImplementation(implementationAddress))
             .to.emit(stashFactory, 'ImpelemntationChanged')
             .withArgs(implementationAddress);
-          await VoterProxy_.connect(root).setDepositor(root.address);
 
+          const lptoken = tokens_.B50WBTC50WETH;
+          const gauge = gaugeMock_;
           await controller_.connect(root).addPool(lptoken.address, gauge.address);              
           await tokens_.WethBal.transfer(staker.address, twentyMillion);
 
-          let unlockTime = ((await time.latest()).add(doubleSmallLockTime)).toNumber();
           await tokens_.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy_.address);
           await tokens_.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
           await tokens_.WethBal.mint(tokens_.VeBal.address, thirtyMillion);
           await tokens_.WethBal.mint(VoterProxy_.address, sixtyMillion);
 
-          await VoterProxy_.connect(root).createLock(tenMillion, unlockTime);              
-          await VoterProxy_.connect(root).increaseAmount(thirtyMillion);     
-
           const pid = 0;
-
-          time.increase(smallLockTime.add(difference));
 
           expect(await controller_.connect(root).shutdownPool(pid));
           expect(await controller_.connect(staker).withdrawUnlockedWethBal(pid, twentyMillion));
@@ -537,13 +551,14 @@ describe("Controller", function () {
     });
     context("» restake testing", () => {
         before('>>> setup', async function() {
-            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, GaugeController_, tokens_, roles } = await setupTests();
+            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, tokens_, roles } = await setupTests();
             VoterProxy = VoterProxy_; 
             rewardFactory = rewardFactory_;
             stashFactory = stashFactory_;
             stashFactoryMock = stashFactoryMock_;
             tokenFactory = tokenFactory_; 
             GaugeController = GaugeController_;
+            smartWalletCheckerMock = smartWalletCheckerMock_;
             tokens = tokens_;
             controller = controller_;
             root = roles.root;
@@ -564,13 +579,21 @@ describe("Controller", function () {
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
-            lptoken = tokens.PoolContract;
-            gauge = GaugeController;
+            lptoken = tokens.B50WBTC50WETH;
+            gauge = gaugeMock;
             await controller.connect(root).addPool(lptoken.address, gauge.address);
+
+            await smartWalletCheckerMock.allow(VoterProxy.address);
+            await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(smartWalletCheckerMock.address);
+            await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
             rewards = rewardFactory;
             stakerRewards = stashFactory;
             expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
+            expect(await VoterProxy.connect(root).setDepositor(root.address));
+
+            treasury = admin;
+            expect(await controller.connect(root).setTreasury(treasury.address));
         });
         it("It redeposit tokens", async () => { 
             expect(await VoterProxy.connect(root).setDepositor(controller.address));
