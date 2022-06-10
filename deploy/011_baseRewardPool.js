@@ -1,15 +1,7 @@
 const { getAddresses } = require('../config');
 
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
-    // Normally BaseRewardPool is deployed from controller when we addPool
-
-    // Convex has 2 pools with pid 0
-    // One deployed from controller https://etherscan.io/address/0xf403c135812408bfbe8713b5a23a04b3d48aae31#readContract
-    // poolInfo(0) -> crvRewards
-
-    // Another deployed manualy (this deployment script is doing that)
-    // This tx is setingRewadContract on controller https://etherscan.io/tx/0x76c5a9a5e98d1c5f5d350ac8fe5d1c42e2a0d401d6392e5545b8faf3fda2325b
-    // rewards address is a basereward pool deployed from deployer
+    // This is our cvxCRV Rewards equivalent
     const { deploy, execute } = deployments;
     const { root } = await getNamedAccounts();
 
