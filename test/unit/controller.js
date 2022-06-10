@@ -1188,7 +1188,7 @@ describe("Controller", function () {
             setup.VoterProxy.connect(root).setDepositor(setup.controller.address);  
             await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
             // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('ExtraRewardStashV3')
+            const implementationAddress = await ethers.getContractFactory('Stash')
               .then(x => x.deploy())
               .then(x => x.address)                      
             // Set implementation contract
@@ -1300,7 +1300,7 @@ describe("Controller", function () {
             await controller.connect(root).setFeeInfo();
 
             // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('ExtraRewardStashV3')
+            const implementationAddress = await ethers.getContractFactory('Stash')
               .then(x => x.deploy())
               .then(x => x.address)                      
             // Set implementation contract

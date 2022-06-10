@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./utils/Interfaces.sol";
 
-contract ExtraRewardStashV3 {
+contract Stash {
     using Address for address;
 
     address public constant bal =

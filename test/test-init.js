@@ -81,7 +81,7 @@ const getStashMock = async (setup) => {
 
 const getStash = async (setup) => {
   const Stash = await ethers.getContractFactory(
-    "ExtraRewardStashV3",
+    "Stash",
     setup.roles.root
   ); 
   return await Stash.deploy();
