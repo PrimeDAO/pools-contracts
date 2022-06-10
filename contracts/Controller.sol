@@ -20,7 +20,7 @@ contract Controller {
 
     uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
     uint256 public platformFees = 1000; //10% //possible fee to build treasury
-    uint256 public constant MaxFees = 2000;
+    uint256 public constant MaxFees = 3000;
     uint256 public constant FEE_DENOMINATOR = 10000;
     uint256 public constant lockTime = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
 
