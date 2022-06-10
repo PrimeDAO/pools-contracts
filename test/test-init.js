@@ -64,20 +64,12 @@ const getVoterProxyMock = async (setup) => {
   return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)
 };
 
-const getRegistryMock = async (setup) => {
-  const RegistryMock = await ethers.getContractFactory("RegistryMock");
-
-  const admin = setup.roles.root;// setup.controller;
-  return await RegistryMock.deploy(admin.address);
-}
-
-const controller = async (setup) => {
+const controller = async (setup, feeDistributor) => {
   const controller = await ethers.getContractFactory(
     "Controller",
     setup.roles.root
   );
 
-  const feeDistributor = await getDistroMock(setup)
   const bal = setup.tokens.BAL;
   const staker = setup.VoterProxy;
   const voteOwnership = staker;
@@ -269,6 +261,14 @@ const getDistroMock = async (setup) => {
   return await DistroMock.deploy();
 };
 
+const getDistro = async (setup) => {
+  const Distro = await ethers.getContractFactory(
+    "Distro",
+    setup.roles.root
+  );
+  return await Distro.deploy(setup.tokens.BAL.address);
+};
+
 const getExternalContractMock = async (setup) => {
   const DistroMock = await ethers.getContractFactory(
     "ExternalContractMock",
@@ -317,10 +317,10 @@ module.exports = {
   gaugeController,
   getControllerMock,
   getRewardFactory,
-  getRegistryMock,
   getGaugeMock,
   getVotingMock,
   getDistroMock,
   getExternalContractMock,
   getSmartWalletCheckerMock,
+  getDistro,
 };
