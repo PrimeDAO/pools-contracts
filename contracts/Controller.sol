@@ -204,8 +204,8 @@ contract Controller {
         if (
             _platformFee >= 500 && //5%
             _platformFee <= 2000 && //20%
-            _profitFee >= 100 &&
-            _profitFee <= 500
+            _profitFee >= 100 && //1%
+            _profitFee <= 1000 //10%
         ) {
             platformFees = _platformFee;
             profitFees = _profitFee;
