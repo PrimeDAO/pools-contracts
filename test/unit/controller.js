@@ -198,7 +198,6 @@ describe("Controller", function () {
                     .connect(root)
                     .setFees(platformFee, profitFee);
             expect((await controller.profitFees()).toString()).to.equal("100");
-            
         });
     });
     context("» _earmarkRewards testing", () => {
