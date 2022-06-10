@@ -12,7 +12,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     from: root,
     args: [
       voterProxy.address, 
-      addresses.bal, 
+      addresses.bal,
       addresses.feeDistro, 
       voterProxy.address,
       voterProxy.address

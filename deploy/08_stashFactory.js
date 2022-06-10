@@ -1,14 +1,12 @@
-const { ethers } = require('hardhat');
-
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
-  const { deploy } = deployments;
+  const { deploy, execute } = deployments;
   const { root } = await getNamedAccounts();
 
   const controller = await deployments.get('Controller');
   const rewardFactory = await deployments.get('RewardFactory');
   const proxyFactory = await deployments.get('ProxyFactory');
   
-  const { address: stashFactoryAddress } = await deploy("StashFactory", {
+  await deploy("StashFactory", {
     from: root,
     args: [controller.address, rewardFactory.address, proxyFactory.address],
     log: true,
@@ -17,10 +15,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   // Set implementation contract on stash factory
   const stashDeployment = await deployments.get('ExtraRewardStash');
 
-  const stashFactory = await ethers.getContractFactory('StashFactory')
-  const stash = stashFactory.attach(stashFactoryAddress)
-
-  await stash.setImplementation(stashDeployment.address)
+  await execute('StashFactory', { from: root, log: true }, 'setImplementation', stashDeployment.address)
 };
 
 module.exports = deployFunction;

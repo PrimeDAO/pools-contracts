@@ -1,7 +1,7 @@
 const { getAddresses } = require('../config')
 
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
-  const { deploy } = deployments;
+  const { deploy, execute } = deployments;
   const { root } = await getNamedAccounts();
 
   const addresses = getAddresses();
@@ -20,10 +20,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   });
 
   // Owner of D2DBal should be BalDepositor
-  const D2DBalFactory = await ethers.getContractFactory('D2DBal')
-  const D2DBal = D2DBalFactory.attach(d2dBalAddress)
-
-  await D2DBal.transferOwnership(balDepositor)
+  await execute('D2DBal', { from: root, log: true }, 'transferOwnership', balDepositor)
 };
 
 module.exports = deployFunction;
