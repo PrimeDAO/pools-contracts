@@ -40,6 +40,7 @@ let baseRewardPool;
 let stashMock;
 let VotingMock;
 let tokens;
+let feeDistributor;
 
 describe("Controller", function () {
     const setupTests = deployments.createFixture(async () => {
@@ -59,7 +60,11 @@ describe("Controller", function () {
 
         setup.VotingMock = await init.getVotingMock(setup);
 
-        setup.controller = await init.controller(setup);
+        setup.distroMock = await init.getDistro(setup);//getDistroMock(setup);
+
+        feeDistributor = setup.distroMock;// await init.getDistro(setup);
+
+        setup.controller = await init.controller(setup, feeDistributor);
 
         setup.rewardFactory = await init.rewardFactory(setup);
 
@@ -76,8 +81,6 @@ describe("Controller", function () {
         setup.tokenFactory = await init.tokenFactory(setup);
       
         setup.extraRewardFactory = await init.getExtraRewardMock(setup);
-
-        setup.distroMock = await init.getDistro(setup);//getDistroMock(setup);
 
         setup.smartWalletCheckerMock = await init.getSmartWalletCheckerMock(setup);
       
@@ -146,7 +149,7 @@ describe("Controller", function () {
             expect(await controller.owner()).to.equals(root.address)
             expect(await controller.poolManager()).to.equals(root.address)
             expect(await controller.feeManager()).to.equals(root.address)
-            expect(await controller.feeDistro()).to.equals(zero_address)
+            expect(await controller.feeDistro()).to.equals(feeDistributor.address)
             expect(await controller.feeToken()).to.equals(zero_address)
             expect(await controller.treasury()).to.equals(zero_address)
         });
@@ -1013,6 +1016,11 @@ describe("Controller", function () {
         });
         
         it("It withdraw Unlocked WethBal", async () => {
+            await lptoken.mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+            const stake = false;
+            
+            expect(await controller.connect(staker).depositAll(pid, stake));
           time.increase(lockTime.add(difference));
           let unitTest_treasury_amount_expected = 0;
           expect(await controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
@@ -1171,8 +1179,10 @@ describe("Controller", function () {
             setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);        
             setup.VoterProxy = await init.getVoterProxyMock(setup);            
             setup.RegistryMock = await init.getRegistryMock(setup);  
-            setup.VotingMock = await init.getVotingMock(setup);  
-            setup.controller = await init.controller(setup);
+            setup.VotingMock = await init.getVotingMock(setup);
+            setup.distroMock = await init.getDistro(setup);
+            feeDistributor = setup.distroMock;
+            setup.controller = await init.controller(setup, feeDistributor);
             setup.rewardFactory = await init.rewardFactory(setup);        
             setup.baseRewardPool = await init.baseRewardPool(setup);                
             setup.proxyFactory = await init.proxyFactory(setup);          
@@ -1181,7 +1191,6 @@ describe("Controller", function () {
             setup.stashMock = await init.getStashMock(setup);          
             setup.tokenFactory = await init.tokenFactory(setup);          
             setup.extraRewardFactory = await init.getExtraRewardMock(setup);    
-            setup.distroMock = await init.getDistro(setup);//getDistroMock(setup);    
             setup.smartWalletCheckerMock = await init.getSmartWalletCheckerMock(setup);          
             platformFee = 500;
             profitFee = 100;
@@ -1268,7 +1277,9 @@ describe("Controller", function () {
             setup.VoterProxy = await init.getVoterProxy(setup, setup.GaugeController, setup.tokens.D2DBal);
             setup.RegistryMock = await init.getRegistryMock(setup);  
             setup.VotingMock = await init.getVotingMock(setup);  
-            setup.controller = await init.controller(setup);  
+            setup.distroMock = await init.getDistro(setup);
+            feeDistributor = setup.distroMock;
+            setup.controller = await init.controller(setup, feeDistributor);
             setup.rewardFactory = await init.rewardFactory(setup);        
             setup.baseRewardPool = await init.baseRewardPool(setup);                
             setup.proxyFactory = await init.proxyFactory(setup);          
@@ -1277,7 +1288,6 @@ describe("Controller", function () {
             setup.stashMock = await init.getStashMock(setup);          
             setup.tokenFactory = await init.tokenFactory(setup);          
             setup.extraRewardFactory = await init.getExtraRewardMock(setup);    
-            setup.distroMock = await init.getDistro(setup);
             setup.smartWalletCheckerMock = await init.getSmartWalletCheckerMock(setup);          
             platformFee = 500;
             profitFee = 100;

@@ -87,7 +87,7 @@ const getStash = async (setup) => {
   return await Stash.deploy();
 }
 
-const controller = async (setup) => {
+const controller = async (setup, feeDistributor) => {
   const controller = await ethers.getContractFactory(
     "Controller",
     setup.roles.root
@@ -97,7 +97,14 @@ const controller = async (setup) => {
   const staker = setup.VoterProxy;
   const registry = setup.RegistryMock;
   const voteOwnership = setup.VotingMock;
-  return await controller.deploy(staker.address, setup.roles.root.address, wethBal.address, bal.address, registry.address, voteOwnership.address);
+  return await controller.deploy(
+    staker.address,
+    setup.roles.root.address,
+    wethBal.address,
+    bal.address,
+    registry.address,
+    voteOwnership.address,
+    feeDistributor.address);
 };
 
 const tokenFactory = async (setup) => {

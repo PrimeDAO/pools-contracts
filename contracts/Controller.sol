@@ -74,7 +74,8 @@ contract Controller {
         address _wethBal,
         address _bal,
         address _registry,
-        address _voteOwnership
+        address _voteOwnership,
+        address _feeDistro
     ) public {
         isShutdown = false;
         wethBal = _wethBal;
@@ -86,7 +87,7 @@ contract Controller {
         feeManager = _feeManager;
         poolManager = msg.sender;
         voteOwnership = _voteOwnership;
-        feeDistro = address(0);
+        feeDistro = _feeDistro;
         feeToken = address(0);
         treasury = address(0);
     }
