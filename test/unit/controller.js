@@ -60,9 +60,9 @@ describe("Controller", function () {
 
         setup.VotingMock = await init.getVotingMock(setup);
 
-        setup.distroMock = await init.getDistro(setup);//getDistroMock(setup);
+        setup.distroMock = await init.getDistro(setup);
 
-        feeDistributor = setup.distroMock;// await init.getDistro(setup);
+        feeDistributor = setup.distroMock;
 
         setup.controller = await init.controller(setup, feeDistributor);
 
