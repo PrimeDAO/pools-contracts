@@ -19,7 +19,7 @@ contract StashFactory {
         address _operator,
         address _rewardFactory,
         address _proxyFactory
-    ) public {
+    ) {
         operator = _operator;
         rewardFactory = _rewardFactory;
         proxyFactory = _proxyFactory;
@@ -50,7 +50,7 @@ contract StashFactory {
         address stash = IProxyFactory(proxyFactory).clone(implementation);
         IStash(stash).initialize(
             _pid,
-            operator,
+            msg.sender,
             _staker,
             _gauge,
             rewardFactory

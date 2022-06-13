@@ -25,6 +25,16 @@ if (PK) {
     };
 }
 
+// Moralis has archive node for free
+// And we are using it to test the deployment on a fork
+const testForking = {
+    ...sharedNetworkConfig,
+    forking: {
+        url: `https://speedy-nodes-nyc.moralis.io/${process.env.MORALIS_KEY}/eth/${process.env.BLOCKCHAIN_FORK}/archive`,
+        blockNumber: process.env.BLOCKCHAIN_FORK == 'kovan' ? 31844292 : 14854404 // Adapt if needed 
+    },
+}
+
 module.exports = {
     paths: {
         artifacts: "build/artifacts",
@@ -33,7 +43,6 @@ module.exports = {
         sources: "contracts",
         imports: "imports",
     },
-    defaultNetwork: "hardhat",
     gasReporter: {
         currency: "USD",
         token: "ETH",
@@ -52,12 +61,13 @@ module.exports = {
             gas: 2000000,
             saveDeployments: false,
         },
-        hardhat: {
+        hardhat: process.env.BLOCKCHAIN_FORK ? testForking : {
             blockGasLimit: 10000000000000,
             gas: 200000000000,
             saveDeployments: false,
             initialBaseFeePerGas: 0,
             hardfork: "london",
+            defaultNetwork: "hardhat",
         },
         mainnet: {
             ...sharedNetworkConfig,
@@ -90,6 +100,15 @@ module.exports = {
             saveDeployments: true,
         },
     },
+    verify: {
+        etherscan: {
+            apiKey: {
+                mainnet: ETHERSCAN_API_KEY,
+                kovan: ETHERSCAN_API_KEY,
+                arbitrumOne: ARBISCAN_API_KEY,
+            },
+        },
+    },
     solidity: {
         compilers: [
             {
@@ -115,5 +134,6 @@ module.exports = {
         prime: 1,
         beneficiary: 2,
         rewardManager: 3, // BaseRewardPool reward manager
+        treasury: 4,
     },
 };

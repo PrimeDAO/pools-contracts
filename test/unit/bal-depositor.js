@@ -69,7 +69,7 @@ describe("Contract: BalDepositor", async () => {
         it("checks BalDepositor constructor", async () => {
             assert(await balDepositor.wethBal() == wethBal.address);
             assert(await balDepositor.staker() == voterProxy.address);
-            assert(await balDepositor.minter() == D2DBal.address);
+            assert(await balDepositor.d2dBal() == D2DBal.address);
         });
     });
     context("» setFeeManager testing", () => {
