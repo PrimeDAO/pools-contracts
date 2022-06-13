@@ -7,7 +7,6 @@ const init = require("../test-init.js");
 const zero_address = "0x0000000000000000000000000000000000000000";
 const FEE_DENOMINATOR = 10000;
 const lockTime = time.duration.days(365);
-const smallLockTime = time.duration.days(30);
 const tenMillion = 10000000;
 const twentyMillion = 20000000;
 const thirtyMillion = 30000000;
@@ -546,9 +545,6 @@ describe("Controller", function () {
             const platform = (balBal * platformFees) / FEE_DENOMINATOR;
             balBal = balBal - profit;
             rewardContract_amount_expected = balBal - platform;
- 
-            const feeToken = tokens.WethBal; // controller.feeToken() = WethBal
-            const balance = await feeToken.balanceOf(controller.address);
 
             let treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
 
