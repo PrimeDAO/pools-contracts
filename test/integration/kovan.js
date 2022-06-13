@@ -9,6 +9,9 @@ const lpToken = '0x647c1fd457b95b75d0972ff08fe01d7d7bda05df' // LP TOKEN Balance
 const gauge = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for pool 50WBTC 50WETH
 const lpTokenHolderAddress = '0x79613fb99098089e454ca2439eca452d3740391f' // LP token Whale that we impersonate
 
+const WETHBAL = '0xDC2EcFDf2688f92c85064bE0b929693ACC6dBcA6' // WETHBAL TOKEN 80BAL-20WETH
+const WETHBALHolderAddress = '0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f' // WETHBAL token Whale that we impersonate
+
 describe("Kovan integration", function () {
 
     let voterProxy, d2DBal, balDepositor, controller, rewardFactory, lpTokenContract;
@@ -48,10 +51,6 @@ describe("Kovan integration", function () {
         // creates a pool with PID 0
         const pid = 0
 
-        // creates a few more pools
-        await expect(controller.addPool(lpToken, gauge)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
-        await expect(controller.addPool(lpToken, gauge)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
-
         // We impersonate LP token WHALE and make him a signer
         const signer = await impersonateAddress(lpTokenHolderAddress);
         await lpTokenContract.connect(signer).approve(controller.address, ONE_HUNDRED_ETHER)
@@ -70,14 +69,6 @@ describe("Kovan integration", function () {
             .withArgs(treasury);
 
         // deposit from signer
-        await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
-            .to.emit(controller, 'Deposited')
-            .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
-
-        // deposit to a few more pools
-        await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
-            .to.emit(controller, 'Deposited')
-            .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
         await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
             .to.emit(controller, 'Deposited')
             .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
@@ -102,22 +93,25 @@ describe("Kovan integration", function () {
     })
 
     it("It deposit and withdraw WethBal", async () => {
-        expect(await tokens.WethBal.mint(root.address, ONE_HUNDRED_ETHER));
-        expect(await tokens.WethBal.connect(root).approve(balDepositor.address, ONE_HUNDRED_ETHER));
+        const pid = 0
 
-        const before = (await wethBal.balanceOf(balDepositor.address)).toNumber();
+        // We impersonate LP token WHALE and make him a signer
+        const signer = await impersonateAddress(WETHBALHolderAddress);
+        await WETHBAL.connect(signer).approve(balDepositor.address, ONE_HUNDRED_ETHER);
+
+        const before = (await WETHBAL.balanceOf(balDepositor.address)).toNumber();
         const depositAmount = ONE_HUNDRED_ETHER;
         expect(await balDepositor.deposit(depositAmount, false, baseRewardPool.address));
 
         const after = before.add(ONE_HUNDRED_ETHER.toNumber());
-        expect(await wethBal.balanceOf(balDepositor.address)).to.equals(after);
+        expect(await WETHBAL.balanceOf(balDepositor.address)).to.equals(after);
 
         await increaseTime(60 * 60 * 24 * 365) // 365 days
 
         expect(await controller.connect(root).withdrawUnlockedWethBal(pid, ONE_HUNDRED_ETHER));
-        expect(
-            (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
-        ).to.equal(ONE_HUNDRED_ETHER.toString());
+        // expect(
+            // (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
+        // ).to.equal(ONE_HUNDRED_ETHER.toString());
     });
     
 });
