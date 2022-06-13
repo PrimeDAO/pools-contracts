@@ -1004,14 +1004,20 @@ describe("Controller", function () {
 
             treasury = admin;
             expect(await controller.connect(root).setTreasury(treasury.address));
+            
+            await lptoken.mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+            const stake = false;
+            
+            expect(await controller.connect(staker).depositAll(pid, stake));
         });
         
         it("It withdraw Unlocked WethBal", async () => {
-          time.increase(smallLockTime.add(difference));
+          time.increase(lockTime.add(difference));
           let unitTest_treasury_amount_expected = 0;
           expect(await controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
           expect(
-            (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
+            (await tokens.WethBal.balanceOf(treasury.address)).toString()
           ).to.equal(unitTest_treasury_amount_expected.toString());
         });
 
