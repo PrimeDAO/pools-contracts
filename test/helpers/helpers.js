@@ -1,6 +1,5 @@
 const { SECONDS_IN_DAY } = require("./constants");
 
-/// Increases blockchain timestamp by value of `seconds`
 async function increaseTime(value) {
     if (!ethers.BigNumber.isBigNumber(value)) {
         value = ethers.BigNumber.from(value);
@@ -9,28 +8,37 @@ async function increaseTime(value) {
     await ethers.provider.send('evm_mine');
 }
 
-// calculates timestamp in x days
-const getFutureTimestamp = (days = 1) => {
-    const oneYearFromNow = new Date();
-    oneYearFromNow.setSeconds(oneYearFromNow.getSeconds() + (SECONDS_IN_DAY * days));
+// calculates timestamp in x days from current block timestamp
+const getFutureTimestamp = async (days = 1) => {
+    const currentTimeInSeconds = await getCurrentBlockTimestamp()
 
-    // getTime() returns milliseconds
-    return Math.round(oneYearFromNow.getTime() / 1000)
+    return currentTimeInSeconds + (SECONDS_IN_DAY * days);
 }
 
 // returns signer for address
 const impersonateAddress = async (address) => {
-    await ethers.provider.request({
-        method: 'hardhat_impersonateAccount',
-        params: [address],
-    });
+    await ethers.provider.send('hardhat_impersonateAccount', [address])
     const signer = await ethers.provider.getSigner(address);
     signer.address = signer._address;
     return signer;
 };
 
+
+const getContract = async (name, address) => {
+    const Factory = await ethers.getContractFactory(name)
+    return Factory.attach(address)
+}
+
+const getCurrentBlockTimestamp = async function () {
+    const blockNumBefore = await ethers.provider.getBlockNumber();
+    const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+    return blockBefore.timestamp;
+}
+
 module.exports = {
-    increaseTime,
     getFutureTimestamp,
     impersonateAddress,
+    getContract,
+    getCurrentBlockTimestamp,
+    increaseTime
 }

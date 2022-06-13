@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.14;
 
 import "../utils/Interfaces.sol";
 import "../BaseRewardPool.sol";
@@ -114,7 +114,7 @@ contract RewardFactory {
             _pid,
             _depositToken,
             bal,
-            operator,
+            msg.sender,
             address(this)
         );
         emit BaseRewardPoolCreated(address(rewardPool));

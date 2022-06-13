@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity 0.8.14;
 /**
  *Submitted for verification at Etherscan.io on 2020-07-17
  */
@@ -81,7 +81,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         address deposit_,
         address reward_,
         address op_
-    ) public {
+    ) {
         deposits = IDeposit(deposit_);
         rewardToken = IERC20(reward_);
         operator = op_;
@@ -153,7 +153,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         getReward(msg.sender);
     }
 
-    function donate(uint256 _amount) external returns (bool) {
+    function donate(uint256 _amount) external {
         IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards + _amount;
     }

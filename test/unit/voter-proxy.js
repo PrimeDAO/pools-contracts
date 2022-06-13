@@ -1,13 +1,9 @@
 const { ZERO_ADDRESS } = require("@openzeppelin/test-helpers/src/constants");
 const { expect } = require("chai");
 const { deployments, ethers } = require("hardhat");
-const { time } = require("@openzeppelin/test-helpers");
 const init = require("../test-init.js");
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
-const { getFutureTimestamp } = require('../helpers/helpers')
-
-const lockTime = time.duration.days(365);
-const smallLockTime = time.duration.days(100);
+const { getFutureTimestamp, getCurrentBlockTimestamp } = require('../helpers/helpers')
 
 describe("VoterProxy", function () {
     let voterProxy, mintr, operator, gauge, distro, gaugeController, externalContract, root, bal, veBal, wethBal, votingMock, B50WBTC50WETH, anotherUser, stash;
@@ -95,7 +91,7 @@ describe("VoterProxy", function () {
     });
 
     it('reverts if not depositor', async function () {
-        await expect(voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, getFutureTimestamp(365)))
+        await expect(voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365)))
             .to.be.revertedWith('Unauthorized()')
     });
 
@@ -235,25 +231,22 @@ describe("VoterProxy", function () {
 
     it('creates a lock', async function () {
         await voterProxy.setDepositor(anotherUser.address)
-        let unlockTime = ((await time.latest()).add(lockTime)).toNumber();
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365))
     });
 
 
     it('increases amount', async function () {
         await voterProxy.setDepositor(anotherUser.address)
-        let unlockTime = ((await time.latest()).add(lockTime)).toNumber();
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365))
         await voterProxy.connect(anotherUser).increaseAmount(1)
     });
 
     it('increases time', async function () {
         await voterProxy.setDepositor(anotherUser.address)
         // lock for 100 days
-        let unlockTime = ((await time.latest()).add(smallLockTime)).toNumber();
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(100))
         // increase lock to 200 days
-        const nextUnlock = getFutureTimestamp(200)
+        const nextUnlock = await getFutureTimestamp(200)
         await voterProxy.connect(anotherUser).increaseTime(nextUnlock)
     });
 
@@ -272,11 +265,12 @@ describe("VoterProxy", function () {
         await changeOperator(voterProxy, anotherUser.address);
         await voterProxy.setDepositor(anotherUser.address)
 
-        let unlockTime = ((await time.latest()).add(smallLockTime)).toNumber();
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(100))
+
+        const currentTimeInSeconds = await getCurrentBlockTimestamp();
 
         // manipulate future timestamp
-        const nextBlockTimestamp = (await time.latest()).toNumber() + 1000; // current timestamp + 1000 seconds
+        const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);
@@ -297,12 +291,13 @@ describe("VoterProxy", function () {
     it('votes on voteMultipleGauges', async function () {
         await changeOperator(voterProxy, anotherUser.address);
         await voterProxy.setDepositor(anotherUser.address)
-        
-        let unlockTime = ((await time.latest()).add(smallLockTime)).toNumber();
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, unlockTime)
+
+        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(100))
+
+        const currentTimeInSeconds = await getCurrentBlockTimestamp();
 
         // manipulate future timestamp
-        const nextBlockTimestamp = (await time.latest()).toNumber() + 1000; // current timestamp + 1000 seconds
+        const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
         await network.provider.send("evm_setNextBlockTimestamp", [
             nextBlockTimestamp,
         ]);

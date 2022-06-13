@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 // When new types are added - the whole contract is changed
 // The check() method is modifying to be able to use caching
 // for individual wallet addresses 
-interface SmartWalletChecker { //0x7869296efd0a76872fee62a058c8fbca5c1c826c
+interface SmartWalletChecker {
     function check(address addr) external returns (bool);//nonpayable
 }   
 
@@ -77,7 +77,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         string memory  _symbol,
         address _authorizer_adaptor
     ) ERC20(_name, _symbol)
-    public {
+    {
         /**
         @notice Contract constructor
         @param token_addr 80/20 BAL-WETH BPT token address
