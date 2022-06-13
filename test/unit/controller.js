@@ -113,7 +113,6 @@ describe("Controller", function () {
     });
     context("» setFeeInfo testing", () => {
         it("Sets VoterProxy operator ", async () => {
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
         });
         it("Sets factories", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -210,9 +209,6 @@ describe("Controller", function () {
                     .earmarkRewards(pid),
                 "Controller: pool is not exists"
             );  
-        });
-        it("Sets VoterProxy operator ", async () => {
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
         });
         it("Sets factories", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
@@ -446,7 +442,6 @@ describe("Controller", function () {
             reward_manager = roles.reward_manager;
             authorizer_adaptor = roles.authorizer_adaptor;
 
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
 
             // Deploy implementation contract
@@ -466,9 +461,6 @@ describe("Controller", function () {
             rewards = rewardFactory;
             stakerRewards = stashFactory;
             expect(await controller.connect(root).setRewardContracts(rewards.address, stakerRewards.address));
-        });
-        it("Sets VoterProxy depositor", async () => {
-          expect(await VoterProxy.connect(root).setDepositor(root.address));
         });
         it("It configure settings WethBal and VoterProxy", async () => {
           expect(await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy.address));
@@ -499,7 +491,6 @@ describe("Controller", function () {
           const authorizer_adaptor = roles.authorizer_adaptor;
           const staker = roles.staker;
 
-          await VoterProxy_.connect(root).setOperator(controller_.address);
           const rewardFactory = rewardFactory_;
           const stashFactory = stashFactory_;
           const tokenFactory = tokenFactory_;
@@ -512,7 +503,6 @@ describe("Controller", function () {
           await expect(stashFactory.connect(root).setImplementation(implementationAddress))
             .to.emit(stashFactory, 'ImpelemntationChanged')
             .withArgs(implementationAddress);
-          await VoterProxy_.connect(root).setDepositor(root.address);
 
           await controller_.connect(root).addPool(lptoken.address, gauge.address);              
           await tokens_.WethBal.transfer(staker.address, twentyMillion);
@@ -551,7 +541,6 @@ describe("Controller", function () {
             admin = roles.prime;
             reward_manager = roles.reward_manager;
 
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
 
             // Deploy implementation contract

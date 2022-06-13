@@ -76,7 +76,7 @@ describe("VoterProxy", function () {
             expect(await voterProxy.gaugeController()).to.equals(gaugeController.address)
             expect(await voterProxy.owner()).to.equals(root.address)
             expect(await voterProxy.operator()).to.equals(ZERO_ADDRESS)
-            expect(await voterProxy.depositor()).to.equals(ZERO_ADDRESS)
+            expect(await voterProxy.depositor()).to.equals(root.address)
         });
     });
 
