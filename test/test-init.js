@@ -63,24 +63,44 @@ const getVoterProxyMock = async (setup) => {
 
   return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)
 };
+
+const getStashMock = async (setup) => {
+  const StashMockFactory = await ethers.getContractFactory(
+    "StashMock",
+    setup.roles.root
+  ); 
+  return await StashMockFactory.deploy();
+}
+
+const getStash = async (setup) => {
+  const Stash = await ethers.getContractFactory(
+    "ExtraRewardStash",
+    setup.roles.root
+  ); 
+  return await Stash.deploy(setup.tokens.BAL.address);
+}
+
 const controller = async (setup, feeDistributor) => {
   const controller = await ethers.getContractFactory(
     "Controller",
     setup.roles.root
   );
+
   const bal = setup.tokens.BAL;
-  const wethBal = setup.tokens.WethBal;
   const staker = setup.VoterProxy;
-  const registry = setup.RegistryMock;
   const voteOwnership = setup.VotingMock;
-  return await controller.deploy(
+  const voteParameter = staker;
+  deployedController = await controller.deploy(
     staker.address,
-    setup.roles.root.address,
-    wethBal.address,
     bal.address,
-    registry.address,
+    feeDistributor.address,
     voteOwnership.address,
-    feeDistributor.address);
+    voteParameter.address
+  );
+
+  await staker.connect(setup.roles.root).setOperator(deployedController.address);
+  await staker.connect(setup.roles.root).setDepositor(deployedController.address);
+  return deployedController;
 };
 
 const tokenFactory = async (setup) => {
@@ -218,26 +238,23 @@ const gaugeController = async (setup) => {
 };
 
 const getVoterProxy = async (setup, gaugeController, mintr) => {
-    const VoterProxy = await ethers.getContractFactory(
-        "VoterProxy",
-        setup.roles.root
-    );
+  const VoterProxy = await ethers.getContractFactory(
+      "VoterProxy",
+      setup.roles.root
+  );
 
-    // const mintr = setup.tokens.D2DBal;
-    const wethBal = setup.tokens.WethBal;
-    const bal = setup.tokens.BAL;
-    const veBal = setup.tokens.VeBal;
-    // const gaugeController = setup.GaugeController;
-    deployedVoterProxy = await VoterProxy.deploy(
-        mintr.address,
-        bal.address,
-        wethBal.address,
-        veBal.address,
-        gaugeController.address
-    );
-
-    await deployedVoterProxy.connect(setup.roles.root).setDepositor(setup.roles.root.address);
-    return deployedVoterProxy;
+  // const mintr = setup.tokens.D2DBal;
+  const wethBal = setup.tokens.WethBal;
+  const bal = setup.tokens.BAL;
+  const veBal = setup.tokens.VeBal;
+  // const gaugeController = setup.GaugeController;
+  return await VoterProxy.deploy(
+      mintr.address,
+      bal.address,
+      wethBal.address,
+      veBal.address,
+      gaugeController.address
+  );
 };
 
 const getGaugeMock = async (setup, lpTokenAddress) => {
@@ -326,4 +343,6 @@ module.exports = {
   getExternalContractMock,
   getSmartWalletCheckerMock,
   getDistro,
+  getStashMock,
+  getStash,
 };
