@@ -21,7 +21,6 @@ contract BaseRewardPool {
 
     // Rewards token is Bal
     IERC20 public immutable rewardToken;
-    // Staking token is d2dBal
     IERC20 public immutable stakingToken;
 
     // Operator is Controller smart contract
@@ -50,7 +49,7 @@ contract BaseRewardPool {
         address rewardToken_,
         address operator_,
         address rewardManager_
-    ) public {
+    ) {
         pid = pid_;
         stakingToken = IERC20(stakingToken_);
         rewardToken = IERC20(rewardToken_);

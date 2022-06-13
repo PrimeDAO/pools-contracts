@@ -2,13 +2,16 @@
 pragma solidity 0.8.14;
 
 import "../utils/Interfaces.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DistroMock is IFeeDistro {
-
-    // solhint-disable-next-line no-empty-blocks
-    function claim() external {}
-    
-    function token() external view returns(address) {
-        return address(0);
+    // solhint-disable-next-line
+    function claimToken(address user, IERC20 token) external pure returns (uint256) {
+        return 0;
+    }
+    // solhint-disable-next-line
+    function claimTokens(address user, IERC20[] calldata tokens) external pure returns (uint256[] memory) {
+        uint256[] memory res;
+        return res;
     }
 }

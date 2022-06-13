@@ -2,29 +2,26 @@
 pragma solidity 0.8.14;
 
 import "./utils/Interfaces.sol";
-import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title BalDepositor contract
 /// @dev Deposit contract for Prime Pools is based on the convex contract
 contract BalDepositor {
-    using Address for address;
-
-    event FeeManagerChanged(address _newFeeManager);
-    event LockIncentiveChanged(uint256 _newLockIncentive);
+    event FeeManagerChanged(address newFeeManager);
+    event LockIncentiveChanged(uint256 newLockIncentive);
 
     error Unauthorized();
     error InvalidAmount();
 
-    uint256 private constant MAXTIME = 365 days;
-    uint256 private constant WEEK = 1 weeks;
     uint256 public constant FEE_DENOMINATOR = 10000;
+    uint256 private constant MAXTIME = 365 days;
+    uint256 private constant WEEK = 7 days;
 
     address public immutable wethBal;
     address public immutable veBal;
     address public immutable staker; // VoterProxy smart contract
-    address public immutable minter;
+    address public immutable d2dBal;
+
     address public feeManager;
     uint256 public lockIncentive = 10; // incentive to users who spend gas to lock bal
     uint256 public incentiveBal;
@@ -34,12 +31,12 @@ contract BalDepositor {
         address _wethBal,
         address _veBal,
         address _staker,
-        address _minter
+        address _d2dBal
     ) {
         wethBal = _wethBal;
-        staker = _staker;
-        minter = _minter;
         veBal = _veBal;
+        staker = _staker;
+        d2dBal = _d2dBal;
         feeManager = msg.sender;
     }
 
@@ -67,16 +64,15 @@ contract BalDepositor {
     /// @notice Locks initial Weth/Bal balance in veBal contract via voterProxy contract
     function initialLock() external onlyFeeManager {
         uint256 veBalance = IERC20(veBal).balanceOf(staker);
-
         if (veBalance == 0) {
             // solhint-disable-next-line
             uint256 unlockAt = block.timestamp + MAXTIME;
 
             // release old lock if exists
-            IStaker(staker).release();
+            IVoterProxy(staker).release();
             // create new lock
             uint256 wethBalBalanceStaker = IERC20(wethBal).balanceOf(staker);
-            IStaker(staker).createLock(wethBalBalanceStaker, unlockAt);
+            IVoterProxy(staker).createLock(wethBalBalanceStaker, unlockAt);
             unlockTime = (unlockAt / WEEK) * WEEK;
         }
     }
@@ -88,7 +84,7 @@ contract BalDepositor {
 
         // mint incentives
         if (incentiveBal > 0) {
-            ITokenMinter(minter).mint(msg.sender, incentiveBal);
+            ITokenMinter(d2dBal).mint(msg.sender, incentiveBal);
             incentiveBal = 0;
         }
     }
@@ -138,9 +134,9 @@ contract BalDepositor {
             incentiveBal = incentiveBal + callIncentive;
         }
         // mint here
-        ITokenMinter(minter).mint(address(this), _amount);
+        ITokenMinter(d2dBal).mint(address(this), _amount);
         // stake for msg.sender
-        IERC20(minter).approve(_stakeAddress, _amount);
+        IERC20(d2dBal).approve(_stakeAddress, _amount);
         IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
     }
 
@@ -164,7 +160,7 @@ contract BalDepositor {
         }
 
         // increase amount
-        IStaker(stakerMemory).increaseAmount(wethBalBalanceStaker);
+        IVoterProxy(stakerMemory).increaseAmount(wethBalBalanceStaker);
 
         // solhint-disable-next-line
         uint256 newUnlockAt = block.timestamp + MAXTIME;
@@ -174,7 +170,7 @@ contract BalDepositor {
         // Bal voting is a weekly event, and we want to increase time every week
         // solhint-disable-next-line
         if ((unlockInWeeks - unlockTime) > 1) {
-            IStaker(stakerMemory).increaseTime(newUnlockAt);
+            IVoterProxy(stakerMemory).increaseTime(newUnlockAt);
             // solhint-disable-next-line
             unlockTime = newUnlockAt;
         }

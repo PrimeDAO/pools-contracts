@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title VoterProxy contract
 /// @dev based on Convex's VoterProxy smart contract
 ///      https://etherscan.io/address/0x989AEb4d175e16225E39E87d0D97A3360524AD80#code
-contract VoterProxy is IStaker {
+contract VoterProxy is IVoterProxy {
     using MathUtil for uint256;
 
     event OperatorChanged(address newOperator);
@@ -215,14 +215,14 @@ contract VoterProxy is IStaker {
     /// @param _distroContract The distro contract to claim from
     /// @param _token The token to claim from
     /// @return uint256 amaunt claimed
-    function claimFees(address _distroContract, address _token)
+    function claimFees(address _distroContract, IERC20 _token)
         external
         onlyOperator
         returns (uint256)
     {
-        IFeeDistro(_distroContract).claim();
-        uint256 _balance = IERC20(_token).balanceOf(address(this));
-        IERC20(_token).transfer(operator, _balance);
+        IFeeDistro(_distroContract).claimToken(address(this), _token);
+        uint256 _balance = _token.balanceOf(address(this));
+        _token.transfer(operator, _balance);
         return _balance;
     }
 
@@ -298,15 +298,24 @@ contract VoterProxy is IStaker {
         withdraw(_token, _gauge, amount);
     }
 
+    /// @notice Used for withdrawing wethBal tokens to address
+    /// @dev If contract doesn't have asked _amount tokens it will withdraw all tokens
+    /// @param _to send to address
+    /// @param _gauge The gauge
+    /// @param _amount The amount to withdraw
     function withdrawWethBal(
-        address _to, //treasury
+        address _to,
         address _gauge,
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
         IBalVoteEscrow(veBal).withdraw();
         uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-        IERC20(wethBal).transfer(_to, _balance);
+        if (_balance < _amount) {
+            _amount = _balance;
+            IBalVoteEscrow(veBal).withdraw();
+        }
+        IERC20(wethBal).transfer(_to, _amount);
         return true;
     }
 }
