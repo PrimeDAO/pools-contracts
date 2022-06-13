@@ -131,7 +131,6 @@ contract VoterProxyMock {
         address _votingAddress,
         bool _support
     ) external returns (bool) {
-        require(msg.sender == operator, "!auth");
         IVoting(_votingAddress).vote(_voteId, _support, false);
         return true;
     }
@@ -140,10 +139,6 @@ contract VoterProxyMock {
         external
         returns (bool)
     {
-        require(msg.sender == operator, "!auth");
-
-        //vote
-        IVoting(gaugeController).vote_for_gauge_weights(_gauge, _weight);
         return true;
     }
 
@@ -174,8 +169,6 @@ contract VoterProxyMock {
         uint256 _value,
         bytes calldata _data
     ) external returns (bool, bytes memory) {
-        require(msg.sender == operator, "!auth");
-
         // solhint-disable-next-line
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
 

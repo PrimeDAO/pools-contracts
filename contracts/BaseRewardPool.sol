@@ -152,7 +152,6 @@ contract BaseRewardPool {
 
         _totalSupply = _totalSupply + (_amount);
         _balances[msg.sender] = _balances[msg.sender] + (_amount);
-
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         emit Staked(msg.sender, _amount);
 
@@ -184,7 +183,6 @@ contract BaseRewardPool {
         _totalSupply = _totalSupply + (_amount);
         // update _for balances
         _balances[_for] = _balances[_for] + (_amount);
-
         // take away from sender
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         emit Staked(_for, _amount);

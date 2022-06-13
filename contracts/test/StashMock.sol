@@ -9,7 +9,9 @@ contract StashMock is IStash {
     // solhint-disable-next-line
     function processStash() external returns (bool) {}
     // solhint-disable-next-line
-    function claimRewards() external returns (bool) {}
+    function claimRewards() external returns (bool) {
+        return true;
+    }
 
     function initialize(
         uint256 _pid,

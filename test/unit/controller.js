@@ -1144,9 +1144,7 @@ describe("Controller", function () {
             root = setup.roles.root;
             const authorizer_adaptor = setup.roles.authorizer_adaptor;
             staker = setup.roles.staker;
-  
-            // setup.VoterProxy.connect(root).setOperator(setup.root.address);
-            // setup.VoterProxy.connect(root).setDepositor(setup.controller.address);  
+
             await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
             // Deploy implementation contract
             const implementationAddress = await ethers.getContractFactory('ExtraRewardStash')
@@ -1173,7 +1171,7 @@ describe("Controller", function () {
             D2DBal = setup.tokens.D2DBal;
         });
         it("Calls voteGaugeWeight", async () => {
-            expect(await controller.connect(root).voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
+            expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
         });
         it("Fails to call voteGaugeWeight if not auth", async () => {
             await expectRevert(
