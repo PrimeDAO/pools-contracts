@@ -48,6 +48,10 @@ describe("Kovan integration", function () {
         // creates a pool with PID 0
         const pid = 0
 
+        // creates a few more pools
+        await expect(controller.addPool(lpToken, gauge)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
+        await expect(controller.addPool(lpToken, gauge)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
+
         // We impersonate LP token WHALE and make him a signer
         const signer = await impersonateAddress(lpTokenHolderAddress);
         await lpTokenContract.connect(signer).approve(controller.address, ONE_HUNDRED_ETHER)
@@ -66,6 +70,14 @@ describe("Kovan integration", function () {
             .withArgs(treasury);
 
         // deposit from signer
+        await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
+            .to.emit(controller, 'Deposited')
+            .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
+
+        // deposit to a few more pools
+        await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
+            .to.emit(controller, 'Deposited')
+            .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
         await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
             .to.emit(controller, 'Deposited')
             .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
@@ -89,5 +101,24 @@ describe("Kovan integration", function () {
         await expect(balDepositor.initialLock()).to.be.revertedWith('Smart contract depositors not allowed')
     })
 
+    it("It deposit and withdraw WethBal", async () => {
+        expect(await tokens.WethBal.mint(root.address, ONE_HUNDRED_ETHER));
+        expect(await tokens.WethBal.connect(root).approve(balDepositor.address, ONE_HUNDRED_ETHER));
+
+        const before = (await wethBal.balanceOf(balDepositor.address)).toNumber();
+        const depositAmount = ONE_HUNDRED_ETHER;
+        expect(await balDepositor.deposit(depositAmount, false, baseRewardPool.address));
+
+        const after = before.add(ONE_HUNDRED_ETHER.toNumber());
+        expect(await wethBal.balanceOf(balDepositor.address)).to.equals(after);
+
+        await increaseTime(60 * 60 * 24 * 365) // 365 days
+
+        expect(await controller.connect(root).withdrawUnlockedWethBal(pid, ONE_HUNDRED_ETHER));
+        expect(
+            (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
+        ).to.equal(ONE_HUNDRED_ETHER.toString());
+    });
+    
 });
 
