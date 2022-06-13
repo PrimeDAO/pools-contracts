@@ -114,7 +114,7 @@ contract RewardFactory {
             _pid,
             _depositToken,
             bal,
-            operator,
+            msg.sender,
             address(this)
         );
         emit BaseRewardPoolCreated(address(rewardPool));

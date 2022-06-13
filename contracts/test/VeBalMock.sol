@@ -77,7 +77,7 @@ contract VeBalMock is ERC20, ReentrancyGuard {
         string memory  _symbol,
         address _authorizer_adaptor
     ) ERC20(_name, _symbol)
-    public {
+    {
         /**
         @notice Contract constructor
         @param token_addr 80/20 BAL-WETH BPT token address
