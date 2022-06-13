@@ -112,8 +112,6 @@ describe("Controller", function () {
         reward_manager = roles.reward_manager;
     });
     context("» setFeeInfo testing", () => {
-        it("Sets VoterProxy operator ", async () => {
-        });
         it("Sets factories", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
         });
