@@ -298,15 +298,24 @@ contract VoterProxy is IStaker {
         withdraw(_token, _gauge, amount);
     }
 
+    /// @notice Used for withdrawing wethBal tokens to address
+    /// @dev If contract doesn't have asked _amount tokens it will withdraw all tokens
+    /// @param _to send to address
+    /// @param _gauge The gauge
+    /// @param _amount The amount to withdraw
     function withdrawWethBal(
-        address _to, //treasury
+        address _to,
         address _gauge,
         uint256 _amount
     ) public returns (bool) {
         require(msg.sender == operator, "!auth");
         IBalVoteEscrow(veBal).withdraw();
         uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
-        IERC20(wethBal).transfer(_to, _balance);
+        if (_balance < _amount) {
+            _amount = _balance;
+            IBalVoteEscrow(veBal).withdraw();
+        }
+        IERC20(wethBal).transfer(_to, _amount);
         return true;
     }
 }

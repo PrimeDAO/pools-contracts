@@ -279,6 +279,14 @@ const getDistroMock = async (setup) => {
   return await DistroMock.deploy();
 };
 
+const getDistro = async (setup) => {
+  const Distro = await ethers.getContractFactory(
+    "Distro",
+    setup.roles.root
+  );
+  return await Distro.deploy(setup.tokens.BAL.address);
+};
+
 const getExternalContractMock = async (setup) => {
   const DistroMock = await ethers.getContractFactory(
     "ExternalContractMock",
@@ -333,4 +341,5 @@ module.exports = {
   getDistroMock,
   getExternalContractMock,
   getSmartWalletCheckerMock,
+  getDistro,
 };
