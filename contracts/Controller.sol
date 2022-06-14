@@ -19,7 +19,7 @@ contract Controller {
     error PoolIsClosed();
     error InvalidParameters();
 
-    uint256 public constant MAX_FEES = 2000;
+    uint256 public constant MAX_FEES = 3000;
     uint256 public constant FEE_DENOMINATOR = 10000;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
 
@@ -195,8 +195,8 @@ contract Controller {
         if (
             _platformFee >= 500 && //5%
             _platformFee <= 2000 && //20%
-            _profitFee >= 100 &&
-            _profitFee <= 500
+            _profitFee >= 100 && //1%
+            _profitFee <= 1000 //10%
         ) {
             platformFees = _platformFee;
             profitFees = _profitFee;

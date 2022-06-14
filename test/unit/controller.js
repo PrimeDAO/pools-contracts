@@ -175,7 +175,7 @@ describe("Controller", function () {
                 .setFees(platformFee, profitFee);
         });
         it("Should fail if total >MAX_FEES", async () => {
-            platformFee = 1000;
+            platformFee = 2000;
             profitFee = 1001;
             await expectRevert(
                 controller
@@ -212,12 +212,11 @@ describe("Controller", function () {
         });
         it("Should fail if profitFee is too big", async () => {
             platformFee = 500;
-            profitFee = 1000;
+            profitFee = 2000;
             await controller
                 .connect(root)
                 .setFees(platformFee, profitFee);
             expect((await controller.profitFees()).toString()).to.equal("100");
-
         });
     });
     context("» _earmarkRewards testing", () => {
