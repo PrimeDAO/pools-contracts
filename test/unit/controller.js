@@ -1,7 +1,6 @@
 const { expect } = require("chai");
 const { deployments, ethers } = require("hardhat");
 const { time, expectRevert, BN } = require("@openzeppelin/test-helpers");
-const { BigNumber, constants } = require("ethers");
 const { getFutureTimestamp, getCurrentBlockTimestamp } = require('../helpers/helpers')
 const init = require("../test-init.js");
 
@@ -265,6 +264,15 @@ describe("Controller", function () {
             await expectRevert(
                 controller
                     .connect(staker)
+                    .shutdownSystem(),
+                "Unauthorized()"
+            );     
+        });
+
+        it('Should shutdown System', async function () {
+            await expectRevert(
+                controller
+                    .connect(root)
                     .shutdownSystem(),
                 "Unauthorized()"
             );     
