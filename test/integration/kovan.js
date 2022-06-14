@@ -9,6 +9,9 @@ const lpToken = '0x647c1fd457b95b75d0972ff08fe01d7d7bda05df' // LP TOKEN Balance
 const gauge = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for pool 50WBTC 50WETH
 const lpTokenHolderAddress = '0x79613fb99098089e454ca2439eca452d3740391f' // LP token Whale that we impersonate
 
+// because we are doing this on blockchain fork, our root address on that block number has 3327464671702872 BAL
+const startBalanceOfRoot = 3327464671702872; // Root account balance on pinned block number
+
 describe("Kovan integration", function () {
 
     let voterProxy, d2DBal, balDepositor, controller, rewardFactory, lpTokenContract;
@@ -57,7 +60,7 @@ describe("Kovan integration", function () {
         // root is deployer + feeManager
         // it starts with 0 BAL balance
         const { root, treasury } = await getNamedAccounts();
-        expect(await balTokenContract.balanceOf(root)).to.equals(0)
+        expect(await balTokenContract.balanceOf(root)).to.equals(startBalanceOfRoot)
         expect(await balTokenContract.balanceOf(treasury)).to.equals(0)
         
         // add treasury
@@ -75,7 +78,7 @@ describe("Kovan integration", function () {
         await controller.earmarkRewards(pid)
 
         // Fee Manager (root) BAL balance should not be zero anymore
-        expect(await balTokenContract.balanceOf(root)).to.not.equals(0)
+        expect(await balTokenContract.balanceOf(root)).to.be.gt(startBalanceOfRoot)
         // Treasury (root) BAL balance should not be zero anymore
         expect(await balTokenContract.balanceOf(treasury)).to.not.equals(0)
 

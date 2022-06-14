@@ -23,7 +23,7 @@ const contractAddresses = {
         [gaugeController]: "0x28bE1a58A534B281c3A22df28d3720323bfF331D", // wrong address on balancer docs
         [wethBal]: '0xdc2ecfdf2688f92c85064be0b929693acc6dbca6',
         [feeDistro]: '0x2A49c0e4f081f54d9F02d92b580ECf616B86F1ff',
-        [PRIME_MULTISIG]: '0x5F9a7EA6A79Ef04F103bfe7BD45dA65476a5155C', // Benjamin's dev wallet
+        [PRIME_MULTISIG]: '0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f', // Dev wallet
     },
 }
 
