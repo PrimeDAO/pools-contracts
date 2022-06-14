@@ -4,7 +4,7 @@ const init = require("../test-init.js");
 const { ONE_HUNDRED_ETHER, MOCK_INITIAL_SUPPLY } = require('../helpers/constants');
 const { getCurrentBlockTimestamp } = require("../helpers/helpers.js");
 
-describe("Contract: BalDepositor", async () => {
+describe("unit - Contract: BalDepositor", async () => {
 
     let voterProxy, balDepositor, baseRewardPool, wethBal, D2DBal, root, buyer2, veBal;
 

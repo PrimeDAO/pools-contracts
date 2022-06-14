@@ -36,7 +36,7 @@ contract StashFactoryMock {
     function setImplementation(
         address _v1
     ) external {
-        require(msg.sender == IDeposit(operator).owner(), "!auth");
+        require(msg.sender == IController(operator).owner(), "!auth");
 
         v1Implementation = _v1;
     }
@@ -50,28 +50,5 @@ contract StashFactoryMock {
     ) external returns (address) {
         require(msg.sender == operator, "!authorized");
         return address(0);
-    }
-
-    function IsV1(address _gauge) private returns (bool) {
-
-        return true;
-    }
-
-    function IsV2(address _gauge) private returns (bool) {
-
-        return true;
-    }
-
-    function IsV3(address _gauge) private returns (bool) {
-
-        return true;
-    }
-
-    // from Stash.sol
-    function stashRewards() external pure returns (bool) {
-        //after depositing/withdrawing, extra incentive tokens are claimed
-        //but from v3 this is default to off, and this stash is the reward receiver too.
-
-        return true;
     }
 }

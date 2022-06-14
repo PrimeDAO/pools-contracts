@@ -12,7 +12,7 @@ const ZERO = 0;
 const NEW_REWARD_RATIO = 830;
 const ONE_DAY = 1440;
 
-describe("BaseRewardPool", function() {
+describe("unit - BaseRewardPool", function() {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const INITIAL_BAL_BALANCE = ethers.utils.parseEther("10000");

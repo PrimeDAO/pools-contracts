@@ -4,13 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "hardhat test",
-    "test:integration": "npx hardhat test --grep Kovan",
+    "test": "hardhat test --grep 'unit -'",
+    "test:integration-clean": "npx hardhat test --grep 'Kovan clean deployment'",
+    "test:integration-existing": "npx hardhat test --grep 'Kovan integration with deployed contracts'",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
     "coverage": "hardhat coverage",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan",
     "verify:contracts:kovan": "npx hardhat --network kovan etherscan-verify",
-    "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet"
+    "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet",
+    "dry-run:deployment": "npx hardhat node --tags deployment"
   },
   "repository": {
     "type": "git",

@@ -11,9 +11,16 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract VoterProxy is IVoterProxy {
     using MathUtil for uint256;
 
+    // Same address on all chains
+    address public constant SNAPSHOT_REGISTRY =
+        0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446;
+    bytes32 public constant BALANCER_SNAPSHOT_ID =
+        0x62616c616e6365722e6574680000000000000000000000000000000000000000;
+
     event OperatorChanged(address newOperator);
     event DepositorChanged(address newDepositor);
     event OwnerChanged(address newOwner);
+    event StashAccessGranted(address stash);
 
     error BadInput();
     error Unauthorized();
@@ -89,7 +96,7 @@ contract VoterProxy is IVoterProxy {
     ///      Or we can set operator to address(0)
     /// @param _operator The new operator of the contract
     function setOperator(address _operator) external onlyOwner {
-        if (operator != address(0) && !IDeposit(operator).isShutdown()) {
+        if (operator != address(0) && !IController(operator).isShutdown()) {
             revert NeedsShutdown();
         }
         operator = _operator;
@@ -106,14 +113,9 @@ contract VoterProxy is IVoterProxy {
 
     /// @notice Sets `_stash` access to `_status`
     /// @param _stash The address of the stash
-    /// @param _status The new access status
-    function setStashAccess(address _stash, bool _status)
-        external
-        onlyOperator
-    {
-        if (_stash != address(0)) {
-            stashAccess[_stash] = _status;
-        }
+    function grantStashAccess(address _stash) external onlyOperator {
+        stashAccess[_stash] = true;
+        emit StashAccessGranted(_stash);
     }
 
     /// @notice Used to deposit tokens
@@ -153,22 +155,21 @@ contract VoterProxy is IVoterProxy {
         IERC20(_token).transfer(msg.sender, _amount);
     }
 
-    function vote(
-        uint256 _voteId,
-        address _votingAddress,
-        bool _support
-    ) external onlyOperator {
-        IVoting(_votingAddress).vote(_voteId, _support, false);
+    /// @notice Delegates voting power to EOA
+    /// so that it can vote on behalf of DAO off chain (Snapshot)
+    /// @param _delegateTo to whom we delegate voting power
+    function delegateVotingPower(address _delegateTo) external onlyOperator {
+        ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).setDelegate(
+            BALANCER_SNAPSHOT_ID,
+            _delegateTo
+        );
     }
 
-    /// @notice Votes for gauge weight
-    /// @param _gauge The gauge to vote for
-    /// @param _weight The weight for a gauge in basis points (units of 0.01%). Minimal is 0.01%. Ignored if 0
-    function voteGaugeWeight(address _gauge, uint256 _weight)
-        external
-        onlyOperator
-    {
-        IVoting(gaugeController).vote_for_gauge_weights(_gauge, _weight);
+    /// @notice Clears delegation
+    function clearDelegate() external onlyOperator {
+        ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).clearDelegate(
+            BALANCER_SNAPSHOT_ID
+        );
     }
 
     /// @notice Votes for multiple gauge weights
@@ -301,21 +302,16 @@ contract VoterProxy is IVoterProxy {
     /// @notice Used for withdrawing wethBal tokens to address
     /// @dev If contract doesn't have asked _amount tokens it will withdraw all tokens
     /// @param _to send to address
-    /// @param _gauge The gauge
     /// @param _amount The amount to withdraw
-    function withdrawWethBal(
-        address _to,
-        address _gauge,
-        uint256 _amount
-    ) public returns (bool) {
-        require(msg.sender == operator, "!auth");
+    function withdrawWethBal(address _to, uint256 _amount)
+        external
+        onlyOperator
+    {
         IBalVoteEscrow(veBal).withdraw();
-        uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
+        uint256 _balance = IERC20(wethBal).balanceOf(address(this));
         if (_balance < _amount) {
             _amount = _balance;
-            IBalVoteEscrow(veBal).withdraw();
         }
         IERC20(wethBal).transfer(_to, _amount);
-        return true;
     }
 }

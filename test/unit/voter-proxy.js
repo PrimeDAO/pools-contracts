@@ -5,7 +5,7 @@ const init = require("../test-init.js");
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
 const { getFutureTimestamp, getCurrentBlockTimestamp } = require('../helpers/helpers')
 
-describe("VoterProxy", function () {
+describe("unit - VoterProxy", function () {
     let voterProxy, mintr, operator, gauge, distro, gaugeController, externalContract, root, bal, veBal, wethBal, votingMock, B50WBTC50WETH, anotherUser, stash;
 
     const setupTests = deployments.createFixture(async () => {
@@ -85,11 +85,6 @@ describe("VoterProxy", function () {
             .to.be.revertedWith('Unauthorized()')
     });
 
-    it('reverts if not operator', async function () {
-        await expect(voterProxy.connect(anotherUser).voteGaugeWeight(ZERO_ADDRESS, 1))
-            .to.be.revertedWith('Unauthorized()')
-    });
-
     it('reverts if not depositor', async function () {
         await expect(voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365)))
             .to.be.revertedWith('Unauthorized()')
@@ -145,9 +140,9 @@ describe("VoterProxy", function () {
             .withArgs(anotherUser.address);
     });
 
-    it('sets stash access', async function () {
+    it('grants stash access', async function () {
         await changeOperator(voterProxy, anotherUser.address);
-        await voterProxy.connect(anotherUser).setStashAccess(stash.address, true)
+        await voterProxy.connect(anotherUser).grantStashAccess(stash.address)
     });
 
     it('deposits lp tokens', async function () {
@@ -175,7 +170,7 @@ describe("VoterProxy", function () {
 
                 await changeOperator(voterProxy, anotherUser.address);
                 // give access to self
-                await voterProxy.connect(anotherUser).setStashAccess(anotherUser.address, true);
+                await voterProxy.connect(anotherUser).grantStashAccess(anotherUser.address);
 
                 expect(await B50WBTC50WETH.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER);
                 await voterProxy.connect(anotherUser)['withdraw(address)'](B50WBTC50WETH.address);
@@ -185,7 +180,7 @@ describe("VoterProxy", function () {
             it('doesn\'t withdraw protected asset', async function () {
                 await changeOperator(voterProxy, anotherUser.address);
                 // give access to self
-                await voterProxy.connect(anotherUser).setStashAccess(anotherUser.address, true);
+                await voterProxy.connect(anotherUser).grantStashAccess(anotherUser.address);
 
                 await B50WBTC50WETH.mint(voterProxy.address, ONE_HUNDRED_ETHER)
                 expect(await B50WBTC50WETH.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER)
@@ -259,28 +254,6 @@ describe("VoterProxy", function () {
         await changeOperator(voterProxy, anotherUser.address);
         await voterProxy.connect(anotherUser).vote(1, votingMock.address, true);
     });
-
-
-    it('votes on gauge weight', async function () {
-        await changeOperator(voterProxy, anotherUser.address);
-        await voterProxy.setDepositor(anotherUser.address)
-
-        await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(100))
-
-        const currentTimeInSeconds = await getCurrentBlockTimestamp();
-
-        // manipulate future timestamp
-        const nextBlockTimestamp = currentTimeInSeconds + 1000; // current timestamp + 1000 seconds
-        await network.provider.send("evm_setNextBlockTimestamp", [
-            nextBlockTimestamp,
-        ]);
-        
-        const weight = 1000;
-        await expect(voterProxy.connect(anotherUser).voteGaugeWeight(gauge.address, weight))
-            .to.emit(gaugeController, 'VoteForGauge')
-            .withArgs(nextBlockTimestamp, voterProxy.address, gauge.address, weight);
-    });
-
 
     it('reverts if bad input on voteMultipleGauges', async function () {
         await changeOperator(voterProxy, anotherUser.address);

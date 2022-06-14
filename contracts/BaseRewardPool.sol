@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Base Reward Pool contract
 /// @dev Rewards contract for Prime Pools is based on the convex contract
-contract BaseRewardPool {
+contract BaseRewardPool is IBaseRewardsPool {
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
@@ -94,15 +94,12 @@ contract BaseRewardPool {
     /// @notice Adds an extra reward
     /// @dev only `rewardManager` can add extra rewards
     /// @param _reward token address of the reward
-    /// @return true on success
     function addExtraReward(address _reward)
         external
         onlyAddress(rewardManager)
-        returns (bool)
     {
         require(_reward != address(0), "!reward setting");
         extraRewards.push(_reward);
-        return true;
     }
 
     /// @notice Returns last time reward applicable
@@ -138,12 +135,7 @@ contract BaseRewardPool {
 
     /// @notice Stakes `amount` tokens
     /// @param _amount The amount of tokens user wants to stake
-    /// @return true on success
-    function stake(uint256 _amount)
-        public
-        updateReward(msg.sender)
-        returns (bool)
-    {
+    function stake(uint256 _amount) public updateReward(msg.sender) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -155,25 +147,20 @@ contract BaseRewardPool {
 
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         emit Staked(msg.sender, _amount);
-
-        return true;
     }
 
     /// @notice Stakes all BAL tokens
-    /// @return true on success
-    function stakeAll() external returns (bool) {
+    function stakeAll() external {
         uint256 balance = stakingToken.balanceOf(msg.sender);
         stake(balance);
-        return true;
     }
 
     /// @notice Stakes `amount` tokens for `_for`
     /// @param _for Who are we staking for
     /// @param _amount The amount of tokens user wants to stake
     function stakeFor(address _for, uint256 _amount)
-        public
+        external
         updateReward(_for)
-        returns (bool)
     {
         if (_amount < 1) {
             revert InvalidAmount();
@@ -188,8 +175,6 @@ contract BaseRewardPool {
         // take away from sender
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         emit Staked(_for, _amount);
-
-        return true;
     }
 
     /// @notice Unstakes `amount` tokens
@@ -198,7 +183,6 @@ contract BaseRewardPool {
     function withdraw(uint256 _amount, bool _claim)
         public
         updateReward(msg.sender)
-        returns (bool)
     {
         if (_amount < 1) {
             revert InvalidAmount();
@@ -218,8 +202,6 @@ contract BaseRewardPool {
         if (_claim) {
             getReward(msg.sender, true);
         }
-
-        return true;
     }
 
     /// @notice Withdraw all tokens
@@ -233,7 +215,6 @@ contract BaseRewardPool {
     function withdrawAndUnwrap(uint256 _amount, bool _claim)
         public
         updateReward(msg.sender)
-        returns (bool)
     {
         if (_amount < 1) {
             revert InvalidAmount();
@@ -245,14 +226,13 @@ contract BaseRewardPool {
         _balances[msg.sender] = _balances[msg.sender] - (_amount);
 
         // tell operator to withdraw from here directly to user
-        IDeposit(operator).withdrawTo(pid, _amount, msg.sender);
+        IController(operator).withdrawTo(pid, _amount, msg.sender);
         emit Withdrawn(msg.sender, _amount);
 
         //get rewards too
         if (_claim) {
             getReward(msg.sender, true);
         }
-        return true;
     }
 
     /// @notice Withdraw all tokens and unwrap
@@ -267,13 +247,11 @@ contract BaseRewardPool {
     function getReward(address _account, bool _claimExtras)
         public
         updateReward(_account)
-        returns (bool)
     {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
             rewardToken.transfer(_account, reward);
-            IDeposit(operator).rewardClaimed(pid, _account, reward);
             emit RewardPaid(_account, reward);
         }
 
@@ -288,41 +266,31 @@ contract BaseRewardPool {
                 IRewards(extraRewardsMemory[i]).getReward(_account);
             }
         }
-        return true;
     }
 
     /// @notice Claims Reward for signer
-    /// @return true on success
-    function getReward() external returns (bool) {
+    function getReward() external {
         getReward(msg.sender, true);
-        return true;
     }
 
     /// @notice Donates reward token to this contract
     /// @param _amount The amount of tokens to donate
-    /// @return true on success
-    function donate(uint256 _amount) external returns (bool) {
+    function donate(uint256 _amount) external {
         IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards + _amount;
-        return true;
     }
 
     /// @notice Queue new rewards
     /// @dev Only the operator can queue new rewards
     /// @param _rewards The amount of tokens to queue
-    /// @return true on success
-    function queueNewRewards(uint256 _rewards)
-        external
-        onlyAddress(operator)
-        returns (bool)
-    {
+    function queueNewRewards(uint256 _rewards) external onlyAddress(operator) {
         _rewards = _rewards + queuedRewards;
 
         // solhint-disable-next-line
         if (block.timestamp >= periodFinish) {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
-            return true;
+            return;
         }
 
         // solhint-disable-next-line
@@ -336,7 +304,6 @@ contract BaseRewardPool {
         } else {
             queuedRewards = _rewards;
         }
-        return true;
     }
 
     /// @dev Gas optimization for loops that iterate over extra rewards

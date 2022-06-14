@@ -44,7 +44,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract VirtualBalanceWrapper {
-    IDeposit public deposits;
+    IBaseRewardsPool public deposits;
 
     function totalSupply() public view returns (uint256) {
         return deposits.totalSupply();
@@ -82,7 +82,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         address reward_,
         address op_
     ) {
-        deposits = IDeposit(deposit_);
+        deposits = IBaseRewardsPool(deposit_);
         rewardToken = IERC20(reward_);
         operator = op_;
     }
