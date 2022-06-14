@@ -6,7 +6,7 @@ const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
 const { getFutureTimestamp, getCurrentBlockTimestamp } = require('../helpers/helpers')
 
 describe("unit - VoterProxy", function () {
-    let voterProxy, mintr, operator, gauge, distro, gaugeController, externalContract, root, bal, veBal, wethBal, votingMock, B50WBTC50WETH, anotherUser, stash;
+    let voterProxy, mintr, operator, gauge, distro, gaugeController, externalContract, root, bal, veBal, wethBal, B50WBTC50WETH, anotherUser, stash;
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -40,7 +40,6 @@ describe("unit - VoterProxy", function () {
             bal: setup.tokens.BAL,
             veBal: setup.tokens.VeBal,
             wethBal: setup.tokens.WethBal,
-            votingMock: await init.getVotingMock(setup),
             B50WBTC50WETH, // LP token
             anotherUser: signers.pop(),
             stash: signers.pop()
@@ -61,7 +60,6 @@ describe("unit - VoterProxy", function () {
         bal = setup.bal;
         veBal = setup.veBal;
         wethBal = setup.wethBal;
-        votingMock = setup.votingMock;
         B50WBTC50WETH = setup.B50WBTC50WETH;
         anotherUser = setup.anotherUser;
         stash = setup.stash;

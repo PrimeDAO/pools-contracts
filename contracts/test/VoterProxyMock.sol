@@ -100,17 +100,6 @@ contract VoterProxyMock {
         return 1;
     }
 
-
-    function vote(
-        uint256 _voteId,
-        address _votingAddress,
-        bool _support
-    ) external returns (bool) {
-        require(msg.sender == operator, "!auth");
-        IVoting(_votingAddress).vote(_voteId, _support, false);
-        return true;
-    }
-
     function voteGaugeWeight(address _gauge, uint256 _weight)
         external
         returns (bool)

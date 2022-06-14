@@ -245,14 +245,6 @@ const getGaugeMock = async (setup, lpTokenAddress) => {
   return await GaugeMock.deploy(lpTokenAddress);
 };
 
-const getVotingMock = async (setup) => {
-  const VotingMock = await ethers.getContractFactory(
-    "VotingMock",
-    setup.roles.root
-  );
-  return await VotingMock.deploy();
-};
-
 const getDistroMock = async (setup) => {
   const DistroMock = await ethers.getContractFactory(
     "DistroMock",
@@ -318,7 +310,6 @@ module.exports = {
   getControllerMock,
   getRewardFactory,
   getGaugeMock,
-  getVotingMock,
   getDistroMock,
   getExternalContractMock,
   getSmartWalletCheckerMock,
