@@ -1132,11 +1132,8 @@ describe("Controller", function () {
             setup.tokens = await init.getTokens(setup);    
             setup.GaugeController = await init.gaugeController(setup);    
             const lpTokenAddress = setup.tokens.B50WBTC50WETH;
-            setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);        
-            // setup.VoterProxy = await init.getVoterProxyMock(setup);
+            setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address); 
             setup.VoterProxy = await init.getVoterProxy(setup, setup.GaugeController, setup.tokens.D2DBal);
-         
-            // setup.RegistryMock = await init.getRegistryMock(setup);  
             setup.VotingMock = await init.getVotingMock(setup);
             setup.distroMock = await init.getDistro(setup);
             feeDistributor = setup.distroMock;
@@ -1174,7 +1171,7 @@ describe("Controller", function () {
             await setup.controller.connect(root).addPool(lptoken.address, gauge.address);              
             await tokens.WethBal.transfer(staker.address, twentyMillion);
   
-            await smartWalletCheckerMock.allow(VoterProxy.address);
+            smartWalletCheckerMock = setup.smartWalletCheckerMock;
             await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(smartWalletCheckerMock.address);
             await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
@@ -1187,15 +1184,18 @@ describe("Controller", function () {
             GaugeController = setup.GaugeController;
         });
 
-        it("Calls voteGaugeWeight", async () => {            
+        it("Calls voteGaugeWeight", async () => {
+            await GaugeController.add_type('Ethereum', 0);
+            await GaugeController.add_gauge(gauge.address, 0, 0);
+         
             // mint token to proxy and gauge
             await tokens.WethBal.mint(VoterProxy.address, twentyMillion);
             await tokens.WethBal.mint(tokens.VeBal.address, thirtyMillion);
 
+            await smartWalletCheckerMock.allow(VoterProxy.address);
             await VoterProxy.connect(root).setDepositor(root.address);
-            await VoterProxy.connect(root).createLock(twentyMillion, await getFutureTimestamp(100))
+            await VoterProxy.connect(root).createLock(twentyMillion, await getFutureTimestamp(100));
 
-            // expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
             const currentTimeInSeconds = await getCurrentBlockTimestamp();
 
             // manipulate future timestamp
@@ -1205,7 +1205,7 @@ describe("Controller", function () {
             ]);
             
             const weight = 1000;
-            await expect(controller.voteGaugeWeight([gauge.address, gauge.address], [weight, weight]))
+            await expect(controller.voteGaugeWeight([gauge.address], [weight]))
                 .to.emit(GaugeController, 'VoteForGauge')
                 .withArgs(nextBlockTimestamp, VoterProxy.address, gauge.address, weight);
         });
@@ -1275,7 +1275,6 @@ describe("Controller", function () {
             const lpTokenAddress = setup.tokens.B50WBTC50WETH;
             setup.gaugeMock = await init.getGaugeMock(setup, lpTokenAddress.address);        
             setup.VoterProxy = await init.getVoterProxy(setup, setup.GaugeController, setup.tokens.D2DBal);
-            // setup.RegistryMock = await init.getRegistryMock(setup);  
             setup.VotingMock = await init.getVotingMock(setup);  
             setup.distroMock = await init.getDistro(setup);
             feeDistributor = setup.distroMock;
@@ -1307,7 +1306,6 @@ describe("Controller", function () {
             VoterProxy.connect(root).setDepositor(controller.address);  
             await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
 
-            // await setup.RegistryMock.add_new_id(distro.address, "description of registry");
             const lockRewards = baseRewardPool.address; //address of the main reward pool contract --> baseRewardPool
             await controller.setRewardContracts(lockRewards);
 
