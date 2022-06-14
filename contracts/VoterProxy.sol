@@ -312,7 +312,6 @@ contract VoterProxy is IVoterProxy {
         uint256 _balance = IBalVoteEscrow(veBal).balanceOf(address(this), 0);
         if (_balance < _amount) {
             _amount = _balance;
-            IBalVoteEscrow(veBal).withdraw();
         }
         IERC20(wethBal).transfer(_to, _amount);
         return true;
