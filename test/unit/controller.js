@@ -268,15 +268,6 @@ describe("Controller", function () {
                 "Unauthorized()"
             );     
         });
-
-        it('Should shutdown System', async function () {
-            await expectRevert(
-                controller
-                    .connect(root)
-                    .shutdownSystem(),
-                "Unauthorized()"
-            );     
-        });
     });
 
     context("» setFeeInfo testing", () => {
@@ -764,12 +755,12 @@ describe("Controller", function () {
         });
 
         it("It deposit all lp tokens", async () => {
-          await lptoken.mint(staker.address, twentyMillion);
-          await lptoken.connect(staker).approve(controller.address, twentyMillion);
-          const stake = true;
-          
-          await controller.connect(staker).depositAll(pid, stake);
-          expect(await lptoken.balanceOf(gauge.address)).to.equal(twentyMillion);
+            await lptoken.mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+            const stake = true;
+            
+            await controller.connect(staker).depositAll(pid, stake);
+            expect(await lptoken.balanceOf(gauge.address)).to.equal(twentyMillion);
         });
     });
   
