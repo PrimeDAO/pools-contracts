@@ -277,16 +277,20 @@ describe("Controller", function () {
         });
 
         it("Sets factories", async () => {
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
+            expect((await controller.rewardFactory()).toString()).to.equal(rewardFactory.address);
+            expect((await controller.tokenFactory()).toString()).to.equal(tokenFactory.address);
+            expect((await controller.stashFactory()).toString()).to.equal(stashFactory.address);
         });
 
         it("Sets RewardContracts", async () => {
-            expect(await controller.connect(root).setRewardContracts(baseRewardPool.address));
+            await controller.connect(root).setRewardContracts(baseRewardPool.address);
+            expect((await controller.lockRewards()).toString()).to.equal(baseRewardPool.address);
         });
 
         it("Call setFeeInfo", async () => {
             expect((await controller.feeToken()).toString()).to.equal(zero_address);
-            expect(await controller.connect(root).setFeeInfo(tokens.BAL.address));
+            await controller.connect(root).setFeeInfo(tokens.BAL.address);
             expect((await controller.feeToken()).toString()).to.not.equal(zero_address);
         });
 
@@ -372,7 +376,7 @@ describe("Controller", function () {
             const feeToken = tokens.WethBal; // controller.feeToken() = WethBal
             const balance = await feeToken.balanceOf(controller.address);
 
-            expect(await controller.earmarkFees());
+            await controller.earmarkFees();
             const lockFees = await controller.lockFees();
             expect(await feeToken.balanceOf(lockFees)).to.equal(balance);
         });
@@ -390,7 +394,7 @@ describe("Controller", function () {
         });
 
         it("Sets factories", async () => {
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
         });
 
         it("Sets StashFactory implementation ", async () => {
@@ -423,12 +427,12 @@ describe("Controller", function () {
         });
 
         it("Adds pool with stash == address(0)", async () => {
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address));
+            await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address);
             await controller.connect(root).addPool(lptoken.address, gauge.address);
             expect(
                 (await controller.poolLength()).toNumber()
             ).to.equal(2);
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
         });
 
         it("Calls earmarkRewards with existing pool number", async () => {
@@ -437,7 +441,7 @@ describe("Controller", function () {
         });
 
         it("Change feeManager", async () => {
-            expect(await controller.connect(root).setFeeManager(reward_manager.address));
+            await controller.connect(root).setFeeManager(reward_manager.address);
             expect(
                 (await controller.feeManager()).toString()
             ).to.equal(reward_manager.address.toString());
@@ -448,14 +452,13 @@ describe("Controller", function () {
             balBal = await tokens.BAL.balanceOf(controller.address);
 
             await tokens.BAL.transfer(feeManager.address, twentyMillion);
-
             expect(
                 (await tokens.BAL.balanceOf(feeManager.address)).toString()
             ).to.equal(twentyMillion.toString());
         });
 
         it("Add BAL to Controller address", async () => {
-            expect(await tokens.BAL.transfer(controller.address, thirtyMillion));
+            await tokens.BAL.transfer(controller.address, thirtyMillion);
             expect(
                 (await tokens.BAL.balanceOf(controller.address)).toString()
             ).to.equal(thirtyMillion.toString());
@@ -549,7 +552,7 @@ describe("Controller", function () {
         });
 
         it("Sets non-passing treasury", async () => {
-            expect(await controller.connect(feeManager).setTreasury(controller.address));
+            await controller.connect(feeManager).setTreasury(controller.address);
             expect(
                 (await controller.treasury()).toString()
             ).to.equal(controller.address.toString());
@@ -592,7 +595,6 @@ describe("Controller", function () {
             const treasury_amount_expected = (await tokens.BAL.balanceOf(treasury.address)).toNumber() + platform;
 
             await controller.connect(root).earmarkRewards(zeroStashPid);
-
             expect(
                 (await tokens.BAL.balanceOf(treasury.address)).toString()
             ).to.equal(treasury_amount_expected.toString());
@@ -668,27 +670,23 @@ describe("Controller", function () {
             treasury = admin;
             await controller.connect(root).setTreasury(treasury.address);
         });
-
-        it("It deposit lp tokens from operator stake = true", async () => {
-            await lptoken.mint(staker.address, twentyMillion);
-            await lptoken.connect(staker).approve(controller.address, twentyMillion);
-            const stake = true;
-            expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
-        });
     
         it("It deposit lp tokens stake = true", async () => {
             await lptoken.mint(staker.address, twentyMillion);
             await lptoken.connect(staker).approve(controller.address, twentyMillion);
             const stake = true;
-
-            expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
+            await controller.connect(staker).deposit(pid, twentyMillion, stake);
+            expect(await lptoken.balanceOf(gauge.address)).to.equal(twentyMillion);
         });
 
         it("It deposit lp tokens stake = false", async () => {
             await lptoken.mint(staker.address, twentyMillion);
             await lptoken.connect(staker).approve(controller.address, twentyMillion);
             const stake = false;
-            expect(await controller.connect(staker).deposit(pid, twentyMillion, stake));
+            await controller.connect(staker).deposit(pid, twentyMillion, stake);
+
+            const expactedAmount = twentyMillion+ + twentyMillion;
+            expect(await lptoken.balanceOf(gauge.address)).to.equal(expactedAmount);
         });
 
         it("It deposit lp tokens if stash == address(0)", async () => {
@@ -697,7 +695,8 @@ describe("Controller", function () {
             await lptoken.mint(staker.address, twentyMillion);
             await lptoken.connect(staker).approve(controller.address, twentyMillion);
             const stake = false;
-            expect(await controller.connect(staker).deposit(zeroStashPid, twentyMillion, stake));
+            await controller.connect(staker).deposit(zeroStashPid, twentyMillion, stake);
+            expect(await lptoken.balanceOf(gauge.address)).to.equal(sixtyMillion);
         });
 
         it("It can not deposit lp tokens if pool is closed", async () => {
@@ -1064,6 +1063,15 @@ describe("Controller", function () {
             await controller.connect(staker).restake(pid);
         });
 
+        it("It redeposit tokens when stash == address(0)", async () => {
+            await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address);
+            await controller.connect(root).addPool(lptoken.address, gauge.address);
+            const zeroStashPid = 1;
+
+            await VoterProxy.connect(root).setDepositor(controller.address);
+            await controller.connect(staker).restake(zeroStashPid);
+        });
+
         it("It fails redeposit tokens when pool is closed", async () => {
             await controller.connect(root).shutdownPool(pid);
 
@@ -1118,10 +1126,7 @@ describe("Controller", function () {
             const votingAddress = VotingMock.address;
             const support = true;
 
-            await controller.connect(root).vote(voteId, votingAddress, support); //VotingMock
-            // await expect(controller.connect(root).vote(voteId, votingAddress, support))
-            //     .to.emit(VoterProxy, 'vote')
-                // .withArgs(voteId, votingAddress, support);
+            expect(await controller.connect(root).vote(voteId, votingAddress, support)); //VotingMock
         });
     });
 
@@ -1220,31 +1225,6 @@ describe("Controller", function () {
         });
     });
 
-    context("» claimRewards testing", () => {
-        it("Calls claimRewards", async () => {
-            // claimRewards need to be called from StashMock contract directly
-            await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address);
-            // controller(earmarkRewards) -->
-            // controller(_earmarkRewards) -->
-            // stash(claimRewards) --> 
-            // controller(claimRewards) -->        (need to be tested)
-            // VoterProxy(claimRewards) --> 
-            // gauge(claim_rewards) 
-            expect(await controller.connect(root).earmarkRewards(pid));
-            console.log("await tokens.BAL.balanceOf(controller.address) is %s", await tokens.BAL.balanceOf(treasury.address));
-            console.log("await tokens.BAL.balanceOf(controller.address) is %s", await tokens.BAL.balanceOf(controller.address));
-        });
-
-        it("Fails to call claimRewards if not auth", async () => {
-            await expectRevert(
-                controller
-                    .connect(staker)
-                    .claimRewards(pid, gauge.address),
-                "Unauthorized()"
-            );   
-        });
-    });
-
     context("» setGaugeRedirect testing", () => {
         it("Fails to call setGaugeRedirect if not auth", async () => {
             await expectRevert(
@@ -1266,7 +1246,7 @@ describe("Controller", function () {
         });
     });
 
-    context("» rewardClaimed testing", () => {
+    context("» rewardClaimed and claimRewards testing", () => {
         before('>>> setup', async function() {
             const setup = await init.initialize(await ethers.getSigners());
     
@@ -1382,6 +1362,15 @@ describe("Controller", function () {
 
             const balanceAfter = balanceBefore.add(expectedResult);
             expect(await tokens.BAL.balanceOf(root.address)).to.equal(balanceAfter);
+        });
+
+        it("Fails to call claimRewards if not auth", async () => {
+            await expectRevert(
+                controller
+                    .connect(staker)
+                    .claimRewards(pid, gauge.address),
+                "Unauthorized()"
+            );   
         });
     });
 });
