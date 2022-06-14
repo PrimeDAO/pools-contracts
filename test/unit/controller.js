@@ -574,7 +574,7 @@ describe("Controller", function () {
         });
 
         it("Sets correct treasury back", async () => {
-            expect(await controller.connect(feeManager).setTreasury(treasury.address));
+            await controller.connect(feeManager).setTreasury(treasury.address);
             expect(
                 (await controller.treasury()).toString()
             ).to.equal(admin.address.toString());
@@ -702,7 +702,7 @@ describe("Controller", function () {
 
         it("It can not deposit lp tokens if pool is closed", async () => {
             const zeroStashPid = 1;
-            expect(await controller.connect(root).shutdownPool(zeroStashPid));
+            await controller.connect(root).shutdownPool(zeroStashPid);
             const stake = false;
             await expectRevert(
                 controller
@@ -770,7 +770,7 @@ describe("Controller", function () {
         before('>>> setup', async function() {
             await setupTests();
 
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
 
             // Deploy implementation contract
             const implementationAddress = await ethers.getContractFactory('StashMock')
@@ -787,12 +787,12 @@ describe("Controller", function () {
             await controller.connect(root).addPool(lptoken.address, gauge.address);
 
             rewards = rewardFactory;
-            expect(await controller.connect(root).setRewardContracts(rewards.address));
+            await controller.connect(root).setRewardContracts(rewards.address);
 
-            expect(await VoterProxy.connect(root).setDepositor(root.address));
+            await VoterProxy.connect(root).setDepositor(root.address);
 
             treasury = admin;
-            expect(await controller.connect(root).setTreasury(treasury.address));
+            await controller.connect(root).setTreasury(treasury.address);
 
             await lptoken.mint(staker.address, twentyMillion);
             await lptoken.connect(staker).approve(controller.address, twentyMillion);
@@ -803,69 +803,11 @@ describe("Controller", function () {
         it("It withdraw lp tokens", async () => {
             time.increase(lockTime.add(difference));
             
-            expect(await controller.connect(staker).withdraw(pid, tenMillion));
+            await controller.connect(staker).withdraw(pid, tenMillion);
 
             expect(
                 (await lptoken.balanceOf(staker.address)).toString()
             ).to.equal(tenMillion.toString());
-        });
-
-        it("It withdraw Unlocked WethBal when pool is closed", async () => {
-          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, smartWalletCheckerMock_, roles } = await setupTests();
-
-          const root = roles.root;
-          const authorizer_adaptor = roles.authorizer_adaptor;
-          const staker = roles.staker;
-          const treasury = roles.operator;
-
-          await controller_.connect(root).setTreasury(treasury.address);
-
-          const rewardFactory = rewardFactory_;
-          const stashFactory = stashFactory_;
-          const tokenFactory = tokenFactory_;
-          await controller_.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
-          // Deploy implementation contract
-          const implementationAddress = await ethers.getContractFactory('StashMock')
-            .then(x => x.deploy())
-            .then(x => x.address)                      
-          // Set implementation contract
-          await expect(stashFactory.connect(root).setImplementation(implementationAddress))
-            .to.emit(stashFactory, 'ImpelemntationChanged')
-            .withArgs(implementationAddress);
-
-          const lptoken = tokens_.B50WBTC50WETH;
-          const gauge = gaugeMock_;
-          await controller_.connect(root).addPool(lptoken.address, gauge.address);              
-          await tokens_.WethBal.transfer(staker.address, twentyMillion);
-
-          await smartWalletCheckerMock_.allow(VoterProxy_.address);
-          await tokens_.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(smartWalletCheckerMock_.address);
-          await tokens_.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
-
-          await tokens_.WethBal.mint(tokens_.VeBal.address, thirtyMillion);
-          await tokens_.WethBal.mint(VoterProxy_.address, sixtyMillion);
-
-          await VoterProxy_.setDepositor(root.address)
-          await VoterProxy_.connect(root).createLock(twentyMillion, await getFutureTimestamp(100))
-
-          const pid = 0;
-
-          await lptoken.mint(staker.address, twentyMillion);
-          await lptoken.connect(staker).approve(controller.address, twentyMillion);
-          await controller_.connect(staker).deposit(pid, twentyMillion, true);
-
-          time.increase(lockTime.add(difference));
-
-          await controller_.connect(staker).withdrawUnlockedWethBal(pid, twentyMillion);
-          
-console.log("treasury is %s", treasury.address);
-console.log("tokens_.WethBal.address is %s", tokens_.WethBal.address);
-console.log("await tokens_.WethBal.balanceOf(VoterProxy_.address) is %s", await tokens_.WethBal.balanceOf(VoterProxy_.address));
-console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tokens_.WethBal.balanceOf(treasury.address));
-
-          expect(
-            (await tokens_.WethBal.balanceOf(treasury.address)).toString()
-          ).to.equal(twentyMillion.toString());
         });
     });
 
@@ -933,6 +875,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             await rewardPool.connect(root).withdrawAndUnwrap(amount, claim);
         });
     });
+
     context("» withdrawAll testing", () => {
         before('>>> setup', async function() {
             await setupTests();
@@ -967,6 +910,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             
             await controller.connect(staker).depositAll(pid, stake);
         });
+        
         it("It withdraw all lp tokens", async () => {
             time.increase(lockTime.add(difference));
 
@@ -975,6 +919,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 (await lptoken.balanceOf(staker.address)).toString()
             ).to.equal(twentyMillion.toString());
         });
+
         it("It withdrawAll when pool is closed", async () => {
           const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
 
@@ -1014,6 +959,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
           await controller_.connect(staker).withdrawAll(pid);
         });
     });
+
     context("» withdrawUnlockedWethBal testing", () => {
         before('>>> setup', async function() {
             await setupTests();
@@ -1033,10 +979,14 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             lptoken = tokens.B50WBTC50WETH;
             gauge = gaugeMock;
             await controller.connect(root).addPool(lptoken.address, gauge.address);
-
+            
             rewards = rewardFactory;
             await controller.connect(root).setRewardContracts(rewards.address);
+
+            treasury = admin;
+            await controller.connect(root).setTreasury(treasury.address);
         });
+
         it("It configure settings WethBal and VoterProxy", async () => {
             await smartWalletCheckerMock.allow(VoterProxy.address);
             await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(smartWalletCheckerMock.address);
@@ -1047,9 +997,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
 
             await controller.connect(root).setRewardContracts(rewards.address);
             await VoterProxy.connect(root).setDepositor(root.address);
-
-            treasury = admin;
-            await controller.connect(root).setTreasury(treasury.address);
+            await VoterProxy.connect(root).createLock(twentyMillion, await getFutureTimestamp(100));
 
             await lptoken.mint(staker.address, twentyMillion);
             await lptoken.connect(staker).approve(controller.address, twentyMillion);
@@ -1065,52 +1013,24 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             
             await controller.connect(staker).depositAll(pid, stake);
             time.increase(lockTime.add(difference));
-            const unitTest_treasury_amount_expected = 0;
             await controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion);
             expect(
                 (await tokens.WethBal.balanceOf(treasury.address)).toString()
-            ).to.equal(unitTest_treasury_amount_expected.toString());
+            ).to.equal(tenMillion.toString());
         });
 
         it("It withdraw Unlocked WethBal when pool is closed", async () => {
-            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
+            time.increase(lockTime.add(difference));
 
-            const root = roles.root;
-            const authorizer_adaptor = roles.authorizer_adaptor;
-            const staker = roles.staker;
+            await controller.connect(root).shutdownPool(pid);
+            await controller.connect(staker).withdrawUnlockedWethBal(pid, sixtyMillion);
+            expect(
+                (await tokens.WethBal.balanceOf(treasury.address)).toString()
+            ).to.equal(tenMillion.toString());
 
-            await VoterProxy_.connect(root).setDepositor(controller_.address);
-
-            const rewardFactory = rewardFactory_;
-            const stashFactory = stashFactory_;
-            const tokenFactory = tokenFactory_;
-            await controller_.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
-            // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('StashMock')
-                .then(x => x.deploy())
-                .then(x => x.address)
-            // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
-                .to.emit(stashFactory, 'ImpelemntationChanged')
-                .withArgs(implementationAddress);
-
-            const lptoken = tokens_.B50WBTC50WETH;
-            const gauge = gaugeMock_;
-            await controller_.connect(root).addPool(lptoken.address, gauge.address);
-            await tokens_.WethBal.transfer(staker.address, twentyMillion);
-
-            await tokens_.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy_.address);
-            await tokens_.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
-
-            await tokens_.WethBal.mint(tokens_.VeBal.address, thirtyMillion);
-            await tokens_.WethBal.mint(VoterProxy_.address, sixtyMillion);
-
-            const pid = 0;
-
-            await controller_.connect(root).shutdownPool(pid);
-            await controller_.connect(staker).withdrawUnlockedWethBal(pid, twentyMillion);
-        });
+        });        
     });
+
     context("» restake testing", () => {
         before('>>> setup', async function() {
             await setupTests();
@@ -1138,10 +1058,12 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             rewards = rewardFactory;
             await controller.connect(root).setRewardContracts(rewards.address);
         });
+
         it("It redeposit tokens", async () => {
             await VoterProxy.connect(root).setDepositor(controller.address);
             await controller.connect(staker).restake(pid);
         });
+
         it("It fails redeposit tokens when pool is closed", async () => {
             await controller.connect(root).shutdownPool(pid);
 
@@ -1152,6 +1074,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 "PoolIsClosed()"
             );
         });
+
         it("It fails redeposit tokens when shutdownSystem", async () => {
             await controller.connect(root).shutdownSystem();
 
@@ -1163,6 +1086,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             );
         });
     });
+
     context("» vote testing", () => {
         it("Fails to call vote if not auth", async () => {
             const voteId = 1;
@@ -1175,6 +1099,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 "Unauthorized()"
             );   
         });
+
         it("Fails to call vote if not voteAddr", async () => {
             const voteId = 1;
             const votingAddress = staker.address;
@@ -1187,6 +1112,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 "!voteAddr"
             );  
         });
+
         it("Calls vote", async () => {
             const voteId = 1;
             const votingAddress = VotingMock.address;
@@ -1198,6 +1124,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 // .withArgs(voteId, votingAddress, support);
         });
     });
+
     context("» voteGaugeWeight testing", () => {
         before('>>> setup', async function() {
             const setup = await init.initialize(await ethers.getSigners());
@@ -1229,7 +1156,8 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             root = setup.roles.root;
             const authorizer_adaptor = setup.roles.authorizer_adaptor;
             staker = setup.roles.staker;
-
+            treasury = admin;
+            await controller.connect(root).setTreasury(treasury.address);
             await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
             // Deploy implementation contract
             const implementationAddress = await ethers.getContractFactory('ExtraRewardStash')
@@ -1258,14 +1186,14 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             D2DBal = tokens.D2DBal;
             GaugeController = setup.GaugeController;
         });
-        it("Calls voteGaugeWeight", async () => {
+
+        it("Calls voteGaugeWeight", async () => {            
             // mint token to proxy and gauge
-            await tokens.B50WBTC50WETH.mint(VoterProxy.address, twentyMillion);
-            
-            // !!!!!!!!!!!!!!!!!!
-            
+            await tokens.WethBal.mint(VoterProxy.address, twentyMillion);
+            await tokens.WethBal.mint(tokens.VeBal.address, thirtyMillion);
+
             await VoterProxy.connect(root).setDepositor(root.address);
-            await VoterProxy.connect(root).createLock(twentyMillion, await getFutureTimestamp(365));
+            await VoterProxy.connect(root).createLock(twentyMillion, await getFutureTimestamp(100))
 
             // expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
             const currentTimeInSeconds = await getCurrentBlockTimestamp();
@@ -1281,6 +1209,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 .to.emit(GaugeController, 'VoteForGauge')
                 .withArgs(nextBlockTimestamp, VoterProxy.address, gauge.address, weight);
         });
+
         it("Fails to call voteGaugeWeight if not auth", async () => {
             await expectRevert(
                 controller
@@ -1290,13 +1219,22 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             ); 
         });
     });
+
     context("» claimRewards testing", () => {
         it("Calls claimRewards", async () => {
             // claimRewards need to be called from StashMock contract directly
-            expect(await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address));
+            await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address);
+            // controller(earmarkRewards) -->
+            // controller(_earmarkRewards) -->
+            // stash(claimRewards) --> 
+            // controller(claimRewards) -->        (need to be tested)
+            // VoterProxy(claimRewards) --> 
+            // gauge(claim_rewards) 
             expect(await controller.connect(root).earmarkRewards(pid));
+            console.log("await tokens.BAL.balanceOf(controller.address) is %s", await tokens.BAL.balanceOf(treasury.address));
             console.log("await tokens.BAL.balanceOf(controller.address) is %s", await tokens.BAL.balanceOf(controller.address));
         });
+
         it("Fails to call claimRewards if not auth", async () => {
             await expectRevert(
                 controller
@@ -1306,6 +1244,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             );   
         });
     });
+
     context("» setGaugeRedirect testing", () => {
         it("Fails to call setGaugeRedirect if not auth", async () => {
             await expectRevert(
@@ -1315,6 +1254,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 "Unauthorized()"
             );   
         });
+
         it('Should shutdown System ', async function () {
             await controller.connect(root).shutdownSystem();
             await expectRevert(
@@ -1325,6 +1265,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             );    
         });
     });
+
     context("» rewardClaimed testing", () => {
         before('>>> setup', async function() {
             const setup = await init.initialize(await ethers.getSigners());
@@ -1393,6 +1334,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
 
             implementation = implementationAddress;
         });
+
         it('Fails to call rewardClaimed if not auth', async function () {
             await expectRevert(
                 controller
@@ -1401,7 +1343,17 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
                 "!auth"
             );     
         });
-        it("Calls rewardClaimed", async () => {
+
+        it("Calls rewardClaimed and claimRewards", async () => {
+            // claimRewards need to be called from StashMock contract directly
+            await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address);
+            // controller(earmarkRewards) -->
+            // controller(_earmarkRewards) -->
+            // stash(claimRewards) --> 
+            // controller(claimRewards) -->        (need to be tested)
+            // VoterProxy(claimRewards) --> 
+            // gauge(claim_rewards) 
+                        
             const amount = tenMillion;
             const poolInfo = await controller.poolInfo(0);
             const rewardPoolAddress = poolInfo.balRewards.toString();
