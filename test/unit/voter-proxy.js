@@ -250,11 +250,6 @@ describe("unit - VoterProxy", function () {
         await voterProxy.connect(anotherUser).release()
     });
 
-    it('votes', async function () {
-        await changeOperator(voterProxy, anotherUser.address);
-        await voterProxy.connect(anotherUser).vote(1, votingMock.address, true);
-    });
-
     it('reverts if bad input on voteMultipleGauges', async function () {
         await changeOperator(voterProxy, anotherUser.address);
         await expect(voterProxy.connect(anotherUser).voteMultipleGauges([ZERO_ADDRESS], [1, 1]))
