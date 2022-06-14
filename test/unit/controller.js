@@ -1263,6 +1263,8 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             await tokens.B50WBTC50WETH.mint(VoterProxy.address, twentyMillion);
             
             // !!!!!!!!!!!!!!!!!!
+            
+            await VoterProxy.connect(root).setDepositor(root.address);
             await VoterProxy.connect(root).createLock(twentyMillion, await getFutureTimestamp(365));
 
             // expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
