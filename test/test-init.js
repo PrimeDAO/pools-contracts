@@ -90,13 +90,17 @@ const controller = async (setup, feeDistributor) => {
   const staker = setup.VoterProxy;
   const voteOwnership = setup.VotingMock;
   const voteParameter = staker;
-  return await controller.deploy(
+  deployedController = await controller.deploy(
     staker.address,
     bal.address,
     feeDistributor.address,
     voteOwnership.address,
     voteParameter.address
   );
+
+  await staker.connect(setup.roles.root).setOperator(deployedController.address);
+  await staker.connect(setup.roles.root).setDepositor(deployedController.address);
+  return deployedController;
 };
 
 const tokenFactory = async (setup) => {
@@ -235,8 +239,8 @@ const gaugeController = async (setup) => {
 
 const getVoterProxy = async (setup, gaugeController, mintr) => {
   const VoterProxy = await ethers.getContractFactory(
-    "VoterProxy",
-    setup.roles.root
+      "VoterProxy",
+      setup.roles.root
   );
 
   // const mintr = setup.tokens.D2DBal;
@@ -245,11 +249,11 @@ const getVoterProxy = async (setup, gaugeController, mintr) => {
   const veBal = setup.tokens.VeBal;
   // const gaugeController = setup.GaugeController;
   return await VoterProxy.deploy(
-    mintr.address,
-    bal.address,
-    wethBal.address,
-    veBal.address,
-    gaugeController.address
+      mintr.address,
+      bal.address,
+      wethBal.address,
+      veBal.address,
+      gaugeController.address
   );
 };
 

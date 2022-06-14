@@ -276,10 +276,6 @@ describe("Controller", function () {
             await setupTests();
         });
 
-        it("Sets VoterProxy operator ", async () => {
-            
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
-        });
         it("Sets factories", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
         });
@@ -638,7 +634,6 @@ describe("Controller", function () {
         before('>>> setup', async function() {
             await setupTests();
 
-            await VoterProxy.connect(root).setOperator(controller.address);
             await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
 
             // Deploy implementation contract
@@ -733,7 +728,6 @@ describe("Controller", function () {
         before('>>> setup', async function() {
             await setupTests();
 
-            await VoterProxy.connect(root).setOperator(controller.address);
             await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
 
             // Deploy implementation contract
@@ -776,7 +770,6 @@ describe("Controller", function () {
         before('>>> setup', async function() {
             await setupTests();
 
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
 
             // Deploy implementation contract
@@ -823,10 +816,8 @@ describe("Controller", function () {
           const root = roles.root;
           const authorizer_adaptor = roles.authorizer_adaptor;
           const staker = roles.staker;
-          const treasury = roles.operator;//await controller_.treasury();
+          const treasury = roles.operator;
 
-          await VoterProxy_.connect(root).setOperator(controller_.address);
-          await VoterProxy_.connect(root).setDepositor(controller_.address);
           await controller_.connect(root).setTreasury(treasury.address);
 
           const rewardFactory = rewardFactory_;
@@ -882,7 +873,6 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
         before('>>> setup', async function() {
             await setupTests();
 
-            await VoterProxy.connect(root).setOperator(controller.address);
             await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
 
             // Deploy implementation contract
@@ -946,8 +936,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
     context("» withdrawAll testing", () => {
         before('>>> setup', async function() {
             await setupTests();
-
-            await VoterProxy.connect(root).setOperator(controller.address);
+          
             await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
 
             // Deploy implementation contract
@@ -993,7 +982,6 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
           const authorizer_adaptor = roles.authorizer_adaptor;
           const staker = roles.staker;
 
-          await VoterProxy_.connect(root).setOperator(controller_.address);
           await VoterProxy_.connect(root).setDepositor(controller_.address);
 
           const rewardFactory = rewardFactory_;
@@ -1030,9 +1018,6 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
         before('>>> setup', async function() {
             await setupTests();
 
-            await VoterProxy.connect(root).setOperator(controller.address);
-            await VoterProxy.connect(root).setDepositor(controller.address);
-            // await controller.connect(root).setFeeManager(admin.address);
             await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
 
             // Deploy implementation contract
@@ -1094,7 +1079,6 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             const authorizer_adaptor = roles.authorizer_adaptor;
             const staker = roles.staker;
 
-            await VoterProxy_.connect(root).setOperator(controller_.address);
             await VoterProxy_.connect(root).setDepositor(controller_.address);
 
             const rewardFactory = rewardFactory_;
@@ -1131,7 +1115,6 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
         before('>>> setup', async function() {
             await setupTests();
 
-            await VoterProxy.connect(root).setOperator(controller.address);
             await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
 
             // Deploy implementation contract
@@ -1246,9 +1229,7 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             root = setup.roles.root;
             const authorizer_adaptor = setup.roles.authorizer_adaptor;
             staker = setup.roles.staker;
-  
-            await setup.VoterProxy.connect(root).setOperator(setup.controller.address);
-            await setup.VoterProxy.connect(root).setDepositor(root.address);  
+
             await setup.controller.connect(root).setFactories(setup.rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
             // Deploy implementation contract
             const implementationAddress = await ethers.getContractFactory('ExtraRewardStash')
@@ -1282,6 +1263,8 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             await tokens.B50WBTC50WETH.mint(VoterProxy.address, twentyMillion);
             
             // !!!!!!!!!!!!!!!!!!
+            
+            await VoterProxy.connect(root).setDepositor(root.address);
             await VoterProxy.connect(root).createLock(twentyMillion, await getFutureTimestamp(365));
 
             // expect(await controller.voteGaugeWeight([gauge.address, gauge.address], [1, 1]));
@@ -1380,7 +1363,6 @@ console.log("await tokens_.WethBal.balanceOf(treasury.address) is %s", await tok
             D2DBal = setup.tokens.D2DBal;
             baseRewardPool = setup.baseRewardPool;
 
-            VoterProxy.connect(root).setOperator(controller.address);
             VoterProxy.connect(root).setDepositor(controller.address);  
             await setup.controller.connect(root).setFactories(rewardFactory.address, setup.stashFactory.address, setup.tokenFactory.address);
 

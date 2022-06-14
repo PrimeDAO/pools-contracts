@@ -78,7 +78,6 @@ contract Controller {
         address _voteOwnership,
         address _voteParameter
     ) {
-        isShutdown = false;
         bal = _bal;
         feeDistro = _feeDistro;
         voteOwnership = _voteOwnership;
