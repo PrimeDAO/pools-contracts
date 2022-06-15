@@ -930,53 +930,57 @@ describe("Controller", function () {
         });
 
         it("It withdrawAll when pool is closed", async () => {
-          const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
+            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
 
-          const root = roles.root;
-          const authorizer_adaptor = roles.authorizer_adaptor;
-          const staker = roles.staker;
+            const root = roles.root;
+            const authorizer_adaptor = roles.authorizer_adaptor;
+            const staker = roles.staker;
 
-          await VoterProxy_.connect(root).setDepositor(controller_.address);
+            await VoterProxy_.connect(root).setDepositor(controller_.address);
 
-          const rewardFactory = rewardFactory_;
-          const stashFactory = stashFactory_;
-          const tokenFactory = tokenFactory_;
-          await controller_.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
-          // Deploy implementation contract
-          const implementationAddress = await ethers.getContractFactory('StashMock')
-            .then(x => x.deploy())
-            .then(x => x.address)                      
-          // Set implementation contract
-          await expect(stashFactory.connect(root).setImplementation(implementationAddress))
-            .to.emit(stashFactory, 'ImpelemntationChanged')
-            .withArgs(implementationAddress);
+            const rewardFactory = rewardFactory_;
+            const stashFactory = stashFactory_;
+            const tokenFactory = tokenFactory_;
+            await controller_.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
+            // Deploy implementation contract
+            const implementationAddress = await ethers.getContractFactory('StashMock')
+                .then(x => x.deploy())
+                .then(x => x.address)                      
+            // Set implementation contract
+            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+                .to.emit(stashFactory, 'ImpelemntationChanged')
+                .withArgs(implementationAddress);
 
-          const lptoken = tokens_.B50WBTC50WETH;
-          const gauge = gaugeMock_;
-          await controller_.connect(root).addPool(lptoken.address, gauge.address);              
-          await tokens_.WethBal.transfer(staker.address, twentyMillion);
+            const lptoken = tokens_.B50WBTC50WETH;
+            const gauge = gaugeMock_;
+            await controller_.connect(root).addPool(lptoken.address, gauge.address);              
+            await tokens_.WethBal.transfer(staker.address, twentyMillion);
 
-          await tokens_.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy_.address);
-          await tokens_.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
+            await tokens_.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy_.address);
+            await tokens_.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
 
-          await tokens_.WethBal.mint(tokens_.VeBal.address, thirtyMillion);
-          await tokens_.WethBal.mint(VoterProxy_.address, sixtyMillion);
+            await tokens_.WethBal.mint(tokens_.VeBal.address, thirtyMillion);
+            await tokens_.WethBal.mint(VoterProxy_.address, sixtyMillion);
 
-          const pid = 0;
+            const pid = 0;
 
-          await controller_.connect(root).shutdownPool(pid);
+            await controller_.connect(root).shutdownPool(pid);
 
-          const poolInfo = await controller_.poolInfo(pid);
-          const tokenAddress = poolInfo.token.toString();
-          token = await ethers
-              .getContractFactory("DepositToken")
-              .then((x) => x.attach(tokenAddress));
+            const poolInfo = await controller_.poolInfo(pid);
+            const tokenAddress = poolInfo.token.toString();
+            token = await ethers
+                .getContractFactory("DepositToken")
+                .then((x) => x.attach(tokenAddress));
 
-          const expectedAmount = await token.balanceOf(staker.address);
+            const expectedAmount = await token.balanceOf(staker.address);
 
-          await expect(controller_.connect(staker).withdrawAll(pid))
-            .to.emit(controller_, "Withdrawn")
-            .withArgs(staker.address, pid, expectedAmount);
+            await expect(controller_.connect(staker).withdrawAll(pid))
+                .to.emit(controller_, "Withdrawn")
+                .withArgs(staker.address, pid, expectedAmount);
+
+            expect(
+                (await lptoken.balanceOf(staker.address)).toString()
+            ).to.equal(expectedAmount.toString());
         });
     });
 
