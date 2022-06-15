@@ -156,7 +156,7 @@ describe("Controller", function () {
             expect(await controller.owner()).to.equals(admin.address);
         });
 
-        it('Should fail set owner if not auth', async function () {
+        it('setOwner reverts if unauthorized', async function () {
             await expectRevert(
                 controller
                     .connect(staker)
