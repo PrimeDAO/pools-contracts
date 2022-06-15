@@ -1027,7 +1027,13 @@ describe("Controller", function () {
             await lptoken.connect(staker).approve(controller.address, twentyMillion);
             const stake = false;
             
-            await controller.connect(staker).depositAll(pid, stake);
+            const expectedAmount = await lptoken.balanceOf(staker.address);
+            await expect(controller.connect(staker).depositAll(pid, stake))
+                .to.emit(controller, 'Deposited')
+                .withArgs(staker.address, pid, expectedAmount);
+
+            await expect(await lptoken.balanceOf(gauge.address))
+                .to.equal(twentyMillion);
 
             const poolInfo = await controller.poolInfo(pid);
             const tokenAddress = poolInfo.token.toString();
