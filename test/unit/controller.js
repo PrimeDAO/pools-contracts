@@ -170,7 +170,7 @@ describe("Controller", function () {
             expect(await controller.feeManager()).to.equals(admin.address);
         });
 
-        it('Should fail set feeManager if not auth', async function () {
+        it('setFeeManager reverts if unauthroized', async function () {
             await expectRevert(
                 controller
                     .connect(staker)
