@@ -40,7 +40,8 @@ let stashMock;
 let VotingMock;
 let tokens;
 let feeDistributor;
-
+let rewardPool;
+let token;
 describe("Controller", function () {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -870,7 +871,9 @@ describe("Controller", function () {
 
             time.increase(lockTime.add(difference));
             
-            await rewardPool.connect(root).withdrawAndUnwrap(amount, claim);
+            await expect(rewardPool.connect(root).withdrawAndUnwrap(amount, claim))
+                .to.emit(rewardPool, "Withdrawn")
+                .withArgs(root.address, amount);
         });
     });
 
@@ -1055,11 +1058,43 @@ describe("Controller", function () {
 
             rewards = rewardFactory;
             await controller.connect(root).setRewardContracts(rewards.address);
+
+            const poolInfo = await controller.poolInfo(0);
+            const rewardPoolAddress = poolInfo.balRewards.toString();
+            //Get new rewardPool and attach to that address
+            rewardPool = await ethers
+                .getContractFactory("BaseRewardPool")
+                .then((x) => x.attach(rewardPoolAddress));
+
+            await lptoken.connect(root).mint(staker.address, tenMillion);
+            await lptoken.connect(staker).approve(controller.address, tenMillion);
+
+            const stake = true;
+            await controller.connect(staker).deposit(0, tenMillion, stake);
+
+            const tokenAddress = poolInfo.token.toString();
+            //Get new rewardPool and attach to that address
+            token = await ethers
+                .getContractFactory("DepositToken")
+                .then((x) => x.attach(tokenAddress));
+
+            await expect(await token.balanceOf(rewardPool.address))
+                .to.equal(tenMillion);
         });
 
         it("It redeposit tokens", async () => {
-            await VoterProxy.connect(root).setDepositor(controller.address);
-            await controller.connect(staker).restake(pid);
+            time.increase(lockTime.add(difference));
+            const amountExpected = await lptoken.balanceOf(rewardPool.address);
+
+            await expect(controller.connect(staker).restake(pid))
+                .to.emit(controller, 'Deposited')
+                .withArgs(staker.address, pid, amountExpected);
+
+            await expect((await tokens.VeBal.locked__end(VoterProxy.address)).toNumber())
+                .to.be.gte((await time.latest()).toNumber());
+
+            await expect(await token.balanceOf(rewardPool.address))
+                .to.equal(tenMillion);
         });
 
         it("It redeposit tokens when stash == address(0)", async () => {
@@ -1067,8 +1102,37 @@ describe("Controller", function () {
             await controller.connect(root).addPool(lptoken.address, gauge.address);
             const zeroStashPid = 1;
 
-            await VoterProxy.connect(root).setDepositor(controller.address);
-            await controller.connect(staker).restake(zeroStashPid);
+            const poolInfo = await controller.poolInfo(zeroStashPid);
+            const tokenAddress = poolInfo.token.toString();
+            //Get new rewardPool and attach to that address
+            token = await ethers
+                .getContractFactory("DepositToken")
+                .then((x) => x.attach(tokenAddress));
+
+            const rewardPoolAddress = poolInfo.balRewards.toString();
+            //Get new rewardPool and attach to that address
+            rewardPool = await ethers
+                .getContractFactory("BaseRewardPool")
+                .then((x) => x.attach(rewardPoolAddress));
+
+            await lptoken.connect(root).mint(staker.address, twentyMillion);
+            await lptoken.connect(staker).approve(controller.address, twentyMillion);
+    
+            const stake = true;
+            await controller.connect(staker).deposit(zeroStashPid, twentyMillion, stake);
+
+            time.increase(lockTime.add(difference));
+            const secondAmountExpected = await lptoken.balanceOf(rewardPool.address);
+
+            await expect(controller.connect(staker).restake(zeroStashPid))
+                .to.emit(controller, 'Deposited')
+                .withArgs(staker.address, zeroStashPid, secondAmountExpected);
+
+            await expect((await tokens.VeBal.locked__end(VoterProxy.address)).toNumber())
+                .to.be.gte((await time.latest()).toNumber());
+
+            await expect(await token.balanceOf(rewardPool.address))
+                .to.equal(twentyMillion);
         });
 
         it("It fails redeposit tokens when pool is closed", async () => {
@@ -1324,13 +1388,7 @@ describe("Controller", function () {
         it("Calls rewardClaimed and claimRewards", async () => {
             // claimRewards need to be called from StashMock contract directly
             await stashMock.initialize(pid, controller.address, staker.address, gauge.address, rewardFactory.address);
-            // controller(earmarkRewards) -->
-            // controller(_earmarkRewards) -->
-            // stash(claimRewards) --> 
-            // controller(claimRewards) -->        (need to be tested)
-            // VoterProxy(claimRewards) --> 
-            // gauge(claim_rewards) 
-                        
+
             const amount = tenMillion;
             const poolInfo = await controller.poolInfo(0);
             const rewardPoolAddress = poolInfo.balRewards.toString();
@@ -1349,6 +1407,7 @@ describe("Controller", function () {
             
             await tokens.BAL.connect(root).mint(controller.address, amount);
 
+            // _earmarkRewards() --> stash claimRewards calls Controller claimRewards
             // _earmarkRewards() --> queueNewRewards --> notifyRewardAmount --> getReward calls Controller rewardClaimed()
             await controller.earmarkRewards(0);
 
