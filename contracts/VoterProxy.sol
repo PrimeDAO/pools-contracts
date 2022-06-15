@@ -21,6 +21,8 @@ contract VoterProxy is IVoterProxy {
     event DepositorChanged(address newDepositor);
     event OwnerChanged(address newOwner);
     event StashAccessGranted(address stash);
+    event VotingPowerDelegated(address _delegate);
+    event VotingPowerCleared();
 
     error BadInput();
     error Unauthorized();
@@ -163,6 +165,7 @@ contract VoterProxy is IVoterProxy {
             BALANCER_SNAPSHOT_ID,
             _delegateTo
         );
+        emit VotingPowerDelegated(_delegateTo);
     }
 
     /// @notice Clears delegation
@@ -170,6 +173,7 @@ contract VoterProxy is IVoterProxy {
         ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).clearDelegate(
             BALANCER_SNAPSHOT_ID
         );
+        emit VotingPowerCleared();
     }
 
     /// @notice Votes for multiple gauge weights

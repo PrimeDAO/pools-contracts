@@ -497,7 +497,7 @@ describe("unit - Controller", function () {
         it("withdraws unlocked WethBal", async () => {
             time.increase(smallLockTime.add(difference));
             let unitTest_treasury_amount_expected = 0;
-            expect(await controller.connect(staker).withdrawUnlockedWethBal(tenMillion));
+            expect(await controller.connect(staker).withdrawUnlockedWethBal(tenMillion * 100));
             expect(
                 (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
             ).to.equal(unitTest_treasury_amount_expected.toString());

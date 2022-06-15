@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { deployments } = require("hardhat");
-const { ONE_HUNDRED_ETHER } = require("../helpers/constants");
+const { ONE_HUNDRED_ETHER, ONE_ADDRESS } = require("../helpers/constants");
 const { getContract, impersonateAddress, increaseTime } = require("../helpers/helpers");
 const { getAddresses, tags: { deployment } } = require('../../config');
 const { bal } = getAddresses()
@@ -158,4 +158,12 @@ describe("Kovan clean deployment", function () {
         await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
             .to.be.revertedWith('PoolIsClosed()')
     })
+
+    it('delegates voting power, and then clears delegate', async function() {
+        await expect(controller.delegateVotingPower(ONE_ADDRESS))
+        .to.emit(voterProxy, 'VotingPowerDelegated')
+        .withArgs(ONE_ADDRESS);
+
+        await expect(controller.clearDelegation()).to.emit(voterProxy, 'VotingPowerCleared');
+    });
 });

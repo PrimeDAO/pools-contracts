@@ -34,6 +34,8 @@ describe("unit - Contract: BalDepositor", async () => {
         // root is default signer, and he already has some tokens
         await wethBal.approve(balDepositor.address, MOCK_INITIAL_SUPPLY);
 
+        await setup.tokens.D2DBal.transferOwnership(balDepositor.address);
+
         return {
             voterProxy,
             balDepositor,

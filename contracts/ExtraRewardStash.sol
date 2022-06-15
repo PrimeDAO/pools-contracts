@@ -10,6 +10,8 @@ contract ExtraRewardStash is IStash {
     error Unauthorized();
     error AlreadyInitialized();
 
+    event RewardHookSet(address newRewardHook);
+
     uint256 private constant MAX_REWARDS = 8;
     address public immutable bal;
 
@@ -119,6 +121,7 @@ contract ExtraRewardStash is IStash {
             revert Unauthorized();
         }
         rewardHook = _hook;
+        emit RewardHookSet(_hook);
     }
 
     /// @notice Replaces a token on the token list
