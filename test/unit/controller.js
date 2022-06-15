@@ -404,7 +404,7 @@ describe("Controller", function () {
                 .then(x => x.address)
 
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
         });
@@ -644,7 +644,7 @@ describe("Controller", function () {
                 .then(x => x.address)
         
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -735,7 +735,7 @@ describe("Controller", function () {
                 .then(x => x.address)
         
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -777,7 +777,7 @@ describe("Controller", function () {
                 .then(x => x.address)
         
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -822,7 +822,7 @@ describe("Controller", function () {
                 .then(x => x.address)
         
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -875,7 +875,7 @@ describe("Controller", function () {
 
             time.increase(lockTime.add(difference));
             
-            await expect(rewardPool.connect(root).withdrawAndUnwrap(amount, claim))
+            expect(await rewardPool.connect(root).withdrawAndUnwrap(amount, claim))
                 .to.emit(rewardPool, "Withdrawn")
                 .withArgs(root.address, amount);
 
@@ -897,7 +897,7 @@ describe("Controller", function () {
                 .then(x => x.address)
         
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -947,7 +947,7 @@ describe("Controller", function () {
                 .then(x => x.deploy())
                 .then(x => x.address)                      
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -974,7 +974,7 @@ describe("Controller", function () {
 
             const expectedAmount = await token.balanceOf(staker.address);
 
-            await expect(controller_.connect(staker).withdrawAll(pid))
+            expect(await controller_.connect(staker).withdrawAll(pid))
                 .to.emit(controller_, "Withdrawn")
                 .withArgs(staker.address, pid, expectedAmount);
 
@@ -996,7 +996,7 @@ describe("Controller", function () {
                 .then(x => x.address)
 
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -1028,11 +1028,11 @@ describe("Controller", function () {
             const stake = false;
             
             const expectedAmount = await lptoken.balanceOf(staker.address);
-            await expect(controller.connect(staker).depositAll(pid, stake))
+            expect(await controller.connect(staker).depositAll(pid, stake))
                 .to.emit(controller, 'Deposited')
                 .withArgs(staker.address, pid, expectedAmount);
 
-            await expect(await lptoken.balanceOf(gauge.address))
+            expect(await lptoken.balanceOf(gauge.address))
                 .to.equal(twentyMillion);
 
             const poolInfo = await controller.poolInfo(pid);
@@ -1041,7 +1041,7 @@ describe("Controller", function () {
                 .getContractFactory("DepositToken")
                 .then((x) => x.attach(tokenAddress));
 
-            await expect(await token.balanceOf(staker.address))
+            expect(await token.balanceOf(staker.address))
                 .to.equal(twentyMillion);
         });
 
@@ -1082,7 +1082,7 @@ describe("Controller", function () {
                 .then(x => x.address)
 
             // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
                 .to.emit(stashFactory, 'ImpelemntationChanged')
                 .withArgs(implementationAddress);
 
@@ -1115,7 +1115,7 @@ describe("Controller", function () {
                 .getContractFactory("DepositToken")
                 .then((x) => x.attach(tokenAddress));
 
-            await expect(await token.balanceOf(rewardPool.address))
+            expect(await token.balanceOf(rewardPool.address))
                 .to.equal(tenMillion);
         });
 
@@ -1123,14 +1123,14 @@ describe("Controller", function () {
             time.increase(lockTime.add(difference));
             const amountExpected = await lptoken.balanceOf(rewardPool.address);
 
-            await expect(controller.connect(staker).restake(pid))
+            expect(await controller.connect(staker).restake(pid))
                 .to.emit(controller, 'Deposited')
                 .withArgs(staker.address, pid, amountExpected);
 
-            await expect((await tokens.VeBal.locked__end(VoterProxy.address)).toNumber())
+            expect((await tokens.VeBal.locked__end(VoterProxy.address)).toNumber())
                 .to.be.gte((await time.latest()).toNumber());
 
-            await expect(await token.balanceOf(rewardPool.address))
+            expect(await token.balanceOf(rewardPool.address))
                 .to.equal(tenMillion);
         });
 
@@ -1160,14 +1160,14 @@ describe("Controller", function () {
             time.increase(lockTime.add(difference));
             const secondAmountExpected = await lptoken.balanceOf(rewardPool.address);
 
-            await expect(controller.connect(staker).restake(zeroStashPid))
+            expect(await controller.connect(staker).restake(zeroStashPid))
                 .to.emit(controller, 'Deposited')
                 .withArgs(staker.address, zeroStashPid, secondAmountExpected);
 
-            await expect((await tokens.VeBal.locked__end(VoterProxy.address)).toNumber())
+            expect((await tokens.VeBal.locked__end(VoterProxy.address)).toNumber())
                 .to.be.gte((await time.latest()).toNumber());
 
-            await expect(await token.balanceOf(rewardPool.address))
+            expect(await token.balanceOf(rewardPool.address))
                 .to.equal(twentyMillion);
         });
 
@@ -1267,7 +1267,7 @@ describe("Controller", function () {
               .then(x => x.deploy(tokens.BAL.address))
               .then(x => x.address)                      
             // Set implementation contract
-            await expect(setup.stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await setup.stashFactory.connect(root).setImplementation(implementationAddress))
               .to.emit(setup.stashFactory, 'ImpelemntationChanged')
               .withArgs(implementationAddress);
   
@@ -1311,7 +1311,7 @@ describe("Controller", function () {
             ]);
             
             const weight = 1000;
-            await expect(controller.voteGaugeWeight([gauge.address], [weight]))
+            expect(await controller.voteGaugeWeight([gauge.address], [weight]))
                 .to.emit(GaugeController, 'VoteForGauge')
                 .withArgs(nextBlockTimestamp, VoterProxy.address, gauge.address, weight);
         });
@@ -1397,7 +1397,7 @@ describe("Controller", function () {
               .then(x => x.deploy(tokens.BAL.address))
               .then(x => x.address)                      
             // Set implementation contract
-            await expect(setup.stashFactory.connect(root).setImplementation(implementationAddress))
+            expect(await setup.stashFactory.connect(root).setImplementation(implementationAddress))
               .to.emit(setup.stashFactory, 'ImpelemntationChanged')
               .withArgs(implementationAddress);
 
@@ -1452,7 +1452,7 @@ describe("Controller", function () {
             const balanceBefore = await tokens.BAL.balanceOf(root.address);
             const expectedResult = 16;
 
-            await expect(rewardPool.connect(root)["getReward()"]())
+            expect(await rewardPool.connect(root)["getReward()"]())
                 .to.emit(rewardPool, "RewardPaid")
                 .withArgs(root.address, expectedResult);
 
