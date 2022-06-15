@@ -957,7 +957,18 @@ describe("Controller", function () {
           const pid = 0;
 
           await controller_.connect(root).shutdownPool(pid);
-          await controller_.connect(staker).withdrawAll(pid);
+
+          const poolInfo = await controller_.poolInfo(pid);
+          const tokenAddress = poolInfo.token.toString();
+          token = await ethers
+              .getContractFactory("DepositToken")
+              .then((x) => x.attach(tokenAddress));
+
+          const expectedAmount = await token.balanceOf(staker.address);
+
+          await expect(controller_.connect(staker).withdrawAll(pid))
+            .to.emit(controller_, "Withdrawn")
+            .withArgs(staker.address, pid, expectedAmount);
         });
     });
 
@@ -1005,6 +1016,15 @@ describe("Controller", function () {
             const stake = false;
             
             await controller.connect(staker).depositAll(pid, stake);
+
+            const poolInfo = await controller.poolInfo(pid);
+            const tokenAddress = poolInfo.token.toString();
+            token = await ethers
+                .getContractFactory("DepositToken")
+                .then((x) => x.attach(tokenAddress));
+
+            await expect(await token.balanceOf(staker.address))
+                .to.equal(twentyMillion);
         });
 
         it("It withdraw Unlocked WethBal", async () => {
@@ -1073,7 +1093,6 @@ describe("Controller", function () {
             await controller.connect(staker).deposit(0, tenMillion, stake);
 
             const tokenAddress = poolInfo.token.toString();
-            //Get new rewardPool and attach to that address
             token = await ethers
                 .getContractFactory("DepositToken")
                 .then((x) => x.attach(tokenAddress));
@@ -1104,7 +1123,6 @@ describe("Controller", function () {
 
             const poolInfo = await controller.poolInfo(zeroStashPid);
             const tokenAddress = poolInfo.token.toString();
-            //Get new rewardPool and attach to that address
             token = await ethers
                 .getContractFactory("DepositToken")
                 .then((x) => x.attach(tokenAddress));
