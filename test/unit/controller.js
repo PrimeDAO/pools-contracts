@@ -1225,7 +1225,9 @@ describe("Controller", function () {
             const votingAddress = VotingMock.address;
             const support = true;
 
+            expect(await VotingMock.counter()).to.equal(0);
             expect(await controller.connect(root).vote(voteId, votingAddress, support)); //VotingMock
+            expect(await VotingMock.counter()).to.equal(1);
         });
     });
 

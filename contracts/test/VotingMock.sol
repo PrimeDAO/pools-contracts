@@ -4,12 +4,16 @@ pragma solidity 0.8.14;
 import "../utils/Interfaces.sol";
 
 contract VotingMock is IVoting {
+
+    uint256 public counter = 0;
     function vote(
         uint256 _voteId,
         bool _support,
         bool executeIfDecided
     // solhint-disable-next-line no-empty-blocks
-    ) external {}
+    ) external {
+        counter++;
+    }
 
     function getVote(uint256)
         external
