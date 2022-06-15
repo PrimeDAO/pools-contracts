@@ -30,7 +30,7 @@ describe("unit - BaseRewardPool", function() {
 
         // mint BAL to pool so that the pool can give out rewards
         await BAL.mint(setup.baseRewardPool.address, INITIAL_BAL_BALANCE);
-        await D2DBal.mint(setup.roles.root.address, INITIAL_BAL_BALANCE);
+        await D2DBal.mint(setup.roles.root.address, ethers.utils.parseEther('100000'));
 
         return {
             baseRewardPool: setup.baseRewardPool,
