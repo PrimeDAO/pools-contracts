@@ -151,7 +151,7 @@ describe("Controller", function () {
     });
 
     context('» setters', async function () {
-        it('Should set owner', async function () {
+        it('sets owner', async function () {
             await controller.connect(root).setOwner(admin.address);
             expect(await controller.owner()).to.equals(admin.address);
         });
@@ -165,7 +165,7 @@ describe("Controller", function () {
             );   
         });
 
-        it('Should set feeManager', async function () {
+        it('sets feeManager', async function () {
             await controller.connect(root).setFeeManager(admin.address);
             expect(await controller.feeManager()).to.equals(admin.address);
         });
@@ -179,7 +179,7 @@ describe("Controller", function () {
             );     
         });
 
-        it('Should set poolManager', async function () {
+        it('sets poolManager', async function () {
             await controller.connect(root).setPoolManager(admin.address);
             expect(await controller.poolManager()).to.equals(admin.address);
         });
@@ -211,7 +211,7 @@ describe("Controller", function () {
             );     
         });
 
-        it('Should set voteDelegate', async function () {
+        it('sets voteDelegate', async function () {
             expect(await controller.connect(root).setVoteDelegate(admin.address));
             expect(await controller.voteDelegate()).to.equals(admin.address);
         });
