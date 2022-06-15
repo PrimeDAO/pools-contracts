@@ -865,6 +865,10 @@ describe("Controller", function () {
                 .then((x) => x.attach(rewardPoolAddress));
 
             const stake = true;
+
+            const balanceBefore = await lptoken.balanceOf(root.address);
+            const expectedAmount = balanceBefore.add(amount);
+
             await lptoken.connect(root).mint(root.address, amount);
             await lptoken.connect(root).approve(controller.address, amount);
             await controller.connect(root).deposit(0, amount, stake); //from deposit in controller only
@@ -874,6 +878,10 @@ describe("Controller", function () {
             await expect(rewardPool.connect(root).withdrawAndUnwrap(amount, claim))
                 .to.emit(rewardPool, "Withdrawn")
                 .withArgs(root.address, amount);
+
+            expect(
+                (await lptoken.balanceOf(root.address)).toString()
+            ).to.equal(expectedAmount.toString());
         });
     });
 
