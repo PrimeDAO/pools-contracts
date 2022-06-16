@@ -72,7 +72,7 @@ This project uses the hardhat-deploy plugin to deploy contracts. When a contract
 
 Since this is a project that is continuously being extended, it is generally not desirable to always deploy all contracts. Therefore, this project makes use of [deployment tags](https://www.npmjs.com/package/hardhat-deploy#deploy-scripts-tags-and-dependencies). These are specified at the end of each deploy script.
 
-There are two **npm scripts** that facilitate the deployment to _mainnet_, and _kovan_. All require the specification of **tags**. When using these scripts, at the end of the deployment, it automatically exports the addresses & artifacts in one file per network. 
+There are two **npm scripts** that facilitate the deployment to _mainnet_, and _kovan_. All require the specification of **tags**. When using these scripts, at the end of the deployment, it automatically exports the addresses & artifacts in one file per network.
 
 ### Deployment to kovan
 
