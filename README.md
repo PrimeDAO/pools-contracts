@@ -83,6 +83,7 @@ General:
 
 General:
 `npm run deploy:contracts:mainnet`
+
 ## Verify Contracts
 
 To verify contracts, the enviornment variable should contain `ETHERSCAN_API_KEY` set.
