@@ -1,6 +1,9 @@
 ## Prime Pools Smart Contracts
+[![Coverage](https://codecov.io/gh/PrimeDAO/pools-contracts/branch/main/graph/badge.svg?token=J7BVR28SM2)](https://codecov.io/gh/PrimeDAO/pools-contracts)
+![build&tests](https://github.com/PrimeDAO/pools-contracts/actions/workflows/ci-config.yml/badge.svg)
+
 This repo contains the smart contracts making up Prime Pools
- 
+
 ### What is Prime Pools
 Prime Pools is a Balancer reward optimizer that aims to empower DAOs and individuals to contribute to the Balancer ecosystem by providing additional rewards and control.
 
@@ -12,8 +15,6 @@ Prime Pools utilizes all 20% WETH / 80% BAL tokens under its control to vote to 
 
 To learn more about Prime Pools, please see [here](https://medium.com/primedao/prime-pools-a-cooperative-dao-liquidity-management-solution-2948bdb7a118)
 
-## Development
-
 ### Prerequisites
 Make sure you have node.js [Latest LTS Version: 16.15.1](https://nodejs.org/en/)
 
@@ -22,9 +23,6 @@ Install dependencies with the following command:
 ```
 npm i
 ```
-### Build
-The package.json file contains lots of commands for building or serving up the application.
-
 ## Environment setup
 please prepare `.env` file
 
@@ -47,11 +45,27 @@ Run
 ```
 npm run test
 ```
-To run integration tests: 
-*Please note that integration tests are ran on a fork, and require an archive node & moralis key in .env file: 
+To run integration tests:
 ```
-npm run test:integration
+npm run test:integration-existing
 ```
+
+## How to test deployment without deploying
+
+Create Moralis (https://moralis.io/) account and get api key
+
+- add BLOCKCHAIN_FORK=kovan or BLOCKCHAIN_FORK=mainnet to .env
+- add MORALIS_KEY to .env (Moralis has free archive nodes)
+- npx hardhat node
+
+Doing this will create a fork of mainnet / kovan, and try to deploy smart contracts
+
+## How to run integration tests on Kovan fork
+
+- add BLOCKCHAIN_FORK=kovan to .env
+- add MORALIS_KEY to .env (Moralis has free archive nodes)
+- npm run test:integration-clean or test:integration-existing
+
 
 ## Deployment
 This project uses the hardhat-deploy plugin to deploy contracts. When a contract has been deployed, its _ABI_ is saved as JSON to the `/deployments/` directory, including its _address_.
@@ -62,23 +76,19 @@ There are two **npm scripts** that facilitate the deployment to _mainnet_, and _
 
 ### Deployment to kovan
 
-General (one tag):
+General:
 `npm run deploy:contracts:kovan`
 
 ### Deployment to mainnet
 
-General (one tag):
+General:
 `npm run deploy:contracts:mainnet`
 ## Verify Contracts
 
 To verify contracts, the enviornment variable should contain `ETHERSCAN_API_KEY` set.
 
-General (one tag):
+General:
 `npm run verify:contracts:kovan`
-
-General (one tag):
-`npm run verify:contracts:mainnet`
-
 
 Find more information in the documentation of [hardhat-etherscan](https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html)
 
