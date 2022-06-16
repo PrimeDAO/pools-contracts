@@ -11,7 +11,7 @@ Create Moralis (https://moralis.io/) account and get api key
 - add MORALIS_KEY to .env (Moralis has free archive nodes)
 - npx hardhat node
 
-Doing this will create a fork of mainnet / kovan, and try to depoloy smart contracts
+Doing this will create a fork of mainnet / kovan, and try to deploy smart contracts
 
 ## How to run integration tests on Kovan fork
 

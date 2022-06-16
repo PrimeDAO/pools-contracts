@@ -164,7 +164,6 @@ contract Controller is IController {
     /// @notice sets the lockRewards variable
     /// @param _rewards The address of the rewards contract
     function setRewardContracts(address _rewards) external onlyAddress(owner) {
-        //reward contracts are immutable or else the owner
         if (lockRewards == address(0)) {
             lockRewards = _rewards;
         }
