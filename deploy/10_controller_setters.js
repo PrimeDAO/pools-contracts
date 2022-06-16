@@ -1,3 +1,5 @@
+const { tags: { ControllerSetters, deployment, Controller, StashFactory, TokenFactory } } = require('../config');
+
 const deployFunction = async ({ deployments }) => {
     const { execute } = deployments;
     const { root } = await getNamedAccounts();
@@ -14,5 +16,5 @@ const deployFunction = async ({ deployments }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["ControllerSetters"];
-module.exports.dependencies = ['Controller'];
+module.exports.tags = [ControllerSetters, deployment];
+module.exports.dependencies = [Controller, StashFactory, TokenFactory];

@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const init = require("../test-init.js");
 const { ONE_ADDRESS } = require('../helpers/constants')
 
-describe("StashFactory", function () {
+describe("unit - StashFactory", function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();

@@ -31,7 +31,7 @@ const testForking = {
     ...sharedNetworkConfig,
     forking: {
         url: `https://speedy-nodes-nyc.moralis.io/${process.env.MORALIS_KEY}/eth/${process.env.BLOCKCHAIN_FORK}/archive`,
-        blockNumber: process.env.BLOCKCHAIN_FORK == 'kovan' ? 31844292 : 14854404 // Adapt if needed 
+        blockNumber: process.env.BLOCKCHAIN_FORK == 'kovan' ? 32152859 : 14854404 // Adapt if needed 
     },
 }
 

@@ -1,4 +1,4 @@
-const { getAddresses } = require('../config')
+const { getAddresses, tags: { RewardFactory, deployment, Controller } } = require('../config');
 
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
@@ -16,5 +16,5 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["RewardFactory"];
-module.exports.dependencies = ['Controller'];
+module.exports.tags = [RewardFactory, deployment];
+module.exports.dependencies = [Controller]

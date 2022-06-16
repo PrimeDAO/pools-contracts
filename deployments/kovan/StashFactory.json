@@ -1,0 +1,213 @@
+{
+  "address": "0xa172fce60E6eECCa6a5C8e5819009b2cF32Bec5C",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_operator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_rewardFactory",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_proxyFactory",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "Unauthorized",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_newImplementation",
+          "type": "address"
+        }
+      ],
+      "name": "ImpelemntationChanged",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_pid",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_gauge",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_staker",
+          "type": "address"
+        }
+      ],
+      "name": "createStash",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "implementation",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "operator",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "proxyFactory",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rewardFactory",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_newImplementation",
+          "type": "address"
+        }
+      ],
+      "name": "setImplementation",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x3ba1ec713b8d8f015a853c46401982828c3a7abae52b32b1649139e47aa3aaf3",
+  "receipt": {
+    "to": null,
+    "from": "0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f",
+    "contractAddress": "0xa172fce60E6eECCa6a5C8e5819009b2cF32Bec5C",
+    "transactionIndex": 0,
+    "gasUsed": "364247",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x81b6f72687e37d1429e708c64883a8445106c7a9e8214ca6029f60d0df55287c",
+    "transactionHash": "0x3ba1ec713b8d8f015a853c46401982828c3a7abae52b32b1649139e47aa3aaf3",
+    "logs": [],
+    "blockNumber": 32151481,
+    "cumulativeGasUsed": "364247",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xC50F287ec1d60EB89412589f90D807e29Ee4E7fd",
+    "0x8177e4479D0ea3308Bc71Fb3034a2b8af37658f3",
+    "0x673d69b970423eB0884d4217BF43457eDf1a5316"
+  ],
+  "solcInputHash": "e3e766566fe34d0ad4122b4efba89aaf",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.14+commit.80d49f37\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_operator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_rewardFactory\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_proxyFactory\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"Unauthorized\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_newImplementation\",\"type\":\"address\"}],\"name\":\"ImpelemntationChanged\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_pid\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_gauge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_staker\",\"type\":\"address\"}],\"name\":\"createStash\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"implementation\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"operator\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"proxyFactory\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rewardFactory\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_newImplementation\",\"type\":\"address\"}],\"name\":\"setImplementation\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"createStash(uint256,address,address)\":{\"params\":{\"_gauge\":\"Gauge address\",\"_pid\":\"The PID of the pool\",\"_staker\":\"Staker's address\"}},\"setImplementation(address)\":{\"params\":{\"_newImplementation\":\"Address of new implementation contract\"}}},\"title\":\"Stash Factory\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"createStash(uint256,address,address)\":{\"notice\":\"Create a stash contract for the given gauge\"},\"setImplementation(address)\":{\"notice\":\"Used to set address for new implementation contract\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/factories/StashFactory.sol\":\"StashFactory\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":100000},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v4.5.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Returns the amount of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the amount of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves `amount` tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 amount) external returns (bool);\\n\\n    /**\\n     * @dev Moves `amount` tokens from `from` to `to` using the\\n     * allowance mechanism. `amount` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(\\n        address from,\\n        address to,\\n        uint256 amount\\n    ) external returns (bool);\\n\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n}\\n\",\"keccak256\":\"0xbbc8ac883ac3c0078ce5ad3e288fbb3ffcc8a30c3a98c0fda0114d64fc44fca2\",\"license\":\"MIT\"},\"contracts/factories/StashFactory.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.14;\\n\\nimport \\\"../utils/Interfaces.sol\\\";\\n\\n/// @title Stash Factory\\ncontract StashFactory {\\n    event ImpelemntationChanged(address _newImplementation);\\n\\n    error Unauthorized();\\n\\n    address public immutable operator;\\n    address public immutable rewardFactory;\\n    address public immutable proxyFactory;\\n\\n    address public implementation;\\n\\n    constructor(\\n        address _operator,\\n        address _rewardFactory,\\n        address _proxyFactory\\n    ) {\\n        operator = _operator;\\n        rewardFactory = _rewardFactory;\\n        proxyFactory = _proxyFactory;\\n    }\\n\\n    /// @notice Used to set address for new implementation contract\\n    /// @param _newImplementation Address of new implementation contract\\n    function setImplementation(address _newImplementation) external {\\n        if (msg.sender != IDeposit(operator).owner()) {\\n            revert Unauthorized();\\n        }\\n        implementation = _newImplementation;\\n        emit ImpelemntationChanged(_newImplementation);\\n    }\\n\\n    /// @notice Create a stash contract for the given gauge\\n    /// @param _pid The PID of the pool\\n    /// @param _gauge Gauge address\\n    /// @param _staker Staker's address\\n    function createStash(\\n        uint256 _pid,\\n        address _gauge,\\n        address _staker\\n    ) external returns (address) {\\n        if (msg.sender != operator) {\\n            revert Unauthorized();\\n        }\\n        address stash = IProxyFactory(proxyFactory).clone(implementation);\\n        IStash(stash).initialize(\\n            _pid,\\n            msg.sender,\\n            _staker,\\n            _gauge,\\n            rewardFactory\\n        );\\n        return stash;\\n    }\\n}\\n\",\"keccak256\":\"0xbc9b170f1bebc181a6bbc1f0160c5a80ee4c2c04c1763a2109b1ffadc2ed5c28\",\"license\":\"MIT\"},\"contracts/utils/Interfaces.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.14;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\ninterface IBalGauge {\\n    function deposit(uint256) external;\\n\\n    function balanceOf(address) external view returns (uint256);\\n\\n    function withdraw(uint256) external;\\n\\n    function claim_rewards() external;\\n\\n    function reward_tokens(uint256) external view returns (address);\\n\\n    function lp_token() external view returns (address);\\n}\\n\\ninterface IBalVoteEscrow {\\n    function create_lock(uint256, uint256) external;\\n\\n    function increase_amount(uint256) external;\\n\\n    function increase_unlock_time(uint256) external;\\n\\n    function withdraw() external;\\n\\n    function smart_wallet_checker() external view returns (address);\\n\\n    function balanceOf(address, uint256) external view returns (uint256);\\n\\n    function balanceOfAt(address, uint256) external view returns (uint256);\\n}\\n\\ninterface IWalletChecker {\\n    function check(address) external view returns (bool);\\n}\\n\\ninterface IVoting {\\n    function vote(\\n        uint256,\\n        bool,\\n        bool\\n    ) external; //voteId, support, executeIfDecided\\n\\n    function vote_for_gauge_weights(address, uint256) external;\\n}\\n\\ninterface IMinter {\\n    function mint(address) external;\\n}\\n\\ninterface IVoterProxy {\\n    function deposit(address _token, address _gauge) external;\\n\\n    function withdrawWethBal(\\n        address,\\n        address,\\n        uint256\\n    ) external returns (bool);\\n\\n    function withdraw(IERC20 _asset) external returns (uint256 balance);\\n\\n    function withdraw(\\n        address _token,\\n        address _gauge,\\n        uint256 _amount\\n    ) external;\\n\\n    function withdrawAll(address _token, address _gauge) external;\\n\\n    function createLock(uint256 _value, uint256 _unlockTime) external;\\n\\n    function increaseAmount(uint256 _value) external;\\n\\n    function increaseTime(uint256 _unlockTimestamp) external;\\n\\n    function release() external;\\n\\n    function claimBal(address _gauge) external returns (uint256);\\n\\n    function claimRewards(address _gauge) external;\\n\\n    function claimFees(address _distroContract, IERC20 _token)\\n        external\\n        returns (uint256);\\n\\n    function setStashAccess(address _stash, bool _status) external;\\n\\n    function vote(\\n        uint256 _voteId,\\n        address _votingAddress,\\n        bool _support\\n    ) external;\\n\\n    function voteGaugeWeight(address _gauge, uint256 _weight) external;\\n\\n    function balanceOfPool(address _gauge) external view returns (uint256);\\n\\n    function operator() external view returns (address);\\n\\n    function execute(\\n        address _to,\\n        uint256 _value,\\n        bytes calldata _data\\n    ) external returns (bool, bytes memory);\\n}\\n\\ninterface IRewards {\\n    function stake(address, uint256) external;\\n\\n    function stakeFor(address, uint256) external;\\n\\n    function withdraw(address, uint256) external;\\n\\n    function exit(address) external;\\n\\n    function getReward(address) external;\\n\\n    function queueNewRewards(uint256) external;\\n\\n    function notifyRewardAmount(uint256) external;\\n\\n    function addExtraReward(address) external;\\n\\n    function stakingToken() external view returns (address);\\n\\n    function rewardToken() external view returns (address);\\n\\n    function earned(address account) external view returns (uint256);\\n}\\n\\ninterface IStash {\\n    function stashRewards() external returns (bool);\\n\\n    function processStash() external returns (bool);\\n\\n    function claimRewards() external returns (bool);\\n\\n    function initialize(\\n        uint256 _pid,\\n        address _operator,\\n        address _staker,\\n        address _gauge,\\n        address _rewardFactory\\n    ) external;\\n}\\n\\ninterface IFeeDistro {\\n    /**\\n     * @notice Claims all pending distributions of the provided token for a user.\\n     * @dev It's not necessary to explicitly checkpoint before calling this function, it will ensure the FeeDistributor\\n     * is up to date before calculating the amount of tokens to be claimed.\\n     * @param user - The user on behalf of which to claim.\\n     * @param token - The ERC20 token address to be claimed.\\n     * @return The amount of `token` sent to `user` as a result of claiming.\\n     */\\n    function claimToken(address user, IERC20 token) external returns (uint256);\\n\\n    /**\\n     * @notice Claims a number of tokens on behalf of a user.\\n     * @dev A version of `claimToken` which supports claiming multiple `tokens` on behalf of `user`.\\n     * See `claimToken` for more details.\\n     * @param user - The user on behalf of which to claim.\\n     * @param tokens - An array of ERC20 token addresses to be claimed.\\n     * @return An array of the amounts of each token in `tokens` sent to `user` as a result of claiming.\\n     */\\n    function claimTokens(address user, IERC20[] calldata tokens)\\n        external\\n        returns (uint256[] memory);\\n}\\n\\ninterface ITokenMinter {\\n    function mint(address, uint256) external;\\n\\n    function burn(address, uint256) external;\\n}\\n\\ninterface IDeposit {\\n    function isShutdown() external view returns (bool);\\n\\n    function balanceOf(address _account) external view returns (uint256);\\n\\n    function totalSupply() external view returns (uint256);\\n\\n    function poolInfo(uint256)\\n        external\\n        view\\n        returns (\\n            address,\\n            address,\\n            address,\\n            address,\\n            address,\\n            bool\\n        );\\n\\n    function rewardClaimed(\\n        uint256,\\n        address,\\n        uint256\\n    ) external;\\n\\n    function withdrawTo(\\n        uint256,\\n        uint256,\\n        address\\n    ) external;\\n\\n    function claimRewards(uint256, address) external returns (bool);\\n\\n    function rewardArbitrator() external returns (address);\\n\\n    function setGaugeRedirect(uint256 _pid) external returns (bool);\\n\\n    function owner() external returns (address);\\n}\\n\\ninterface ICrvDeposit {\\n    function deposit(uint256, bool) external;\\n\\n    function lockIncentive() external view returns (uint256);\\n}\\n\\ninterface IRewardFactory {\\n    function setAccess(address, bool) external;\\n\\n    function createBalRewards(uint256, address) external returns (address);\\n\\n    function createTokenRewards(\\n        address,\\n        address,\\n        address\\n    ) external returns (address);\\n\\n    function activeRewardCount(address) external view returns (uint256);\\n\\n    function addActiveReward(address, uint256) external returns (bool);\\n\\n    function removeActiveReward(address, uint256) external returns (bool);\\n}\\n\\ninterface IStashFactory {\\n    function createStash(\\n        uint256,\\n        address,\\n        address\\n    ) external returns (address);\\n}\\n\\ninterface ITokenFactory {\\n    function createDepositToken(address) external returns (address);\\n}\\n\\ninterface IPools {\\n    function addPool(address, address) external returns (bool);\\n\\n    function forceAddPool(address, address) external returns (bool);\\n\\n    function shutdownPool(uint256) external returns (bool);\\n\\n    function poolInfo(uint256)\\n        external\\n        view\\n        returns (\\n            address,\\n            address,\\n            address,\\n            address,\\n            address,\\n            bool\\n        );\\n\\n    function poolLength() external view returns (uint256);\\n\\n    function gaugeMap(address) external view returns (bool);\\n\\n    function setPoolManager(address _poolM) external;\\n}\\n\\ninterface IVestedEscrow {\\n    function fund(address[] calldata _recipient, uint256[] calldata _amount)\\n        external\\n        returns (bool);\\n}\\n\\ninterface GaugeController {\\n    function gauge_types(address _addr) external returns (int128);\\n}\\n\\ninterface LiquidityGauge {\\n    function integrate_fraction(address _address) external returns (uint256);\\n\\n    function user_checkpoint(address _address) external returns (bool);\\n}\\n\\ninterface IProxyFactory {\\n    function clone(address _target) external returns (address);\\n}\\n\\ninterface IRewardHook {\\n    function onRewardClaim() external;\\n}\\n\",\"keccak256\":\"0xcd7740e1d1cdc1e4e4e34d3d122877418b32ee8aa42f27b497d194d651cb1b0b\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60e060405234801561001057600080fd5b5060405161069138038061069183398101604081905261002f91610068565b6001600160a01b0392831660805290821660a0521660c0526100ab565b80516001600160a01b038116811461006357600080fd5b919050565b60008060006060848603121561007d57600080fd5b6100868461004c565b92506100946020850161004c565b91506100a26040850161004c565b90509250925092565b60805160a05160c05161059d6100f4600039600081816101260152610217015260008181607c01526102e001526000818160cc015281816101770152610353015261059d6000f3fe608060405234801561001057600080fd5b50600436106100725760003560e01c8063b92d538711610050578063b92d53871461010e578063c10f1a7514610121578063d784d4261461014857600080fd5b8063245e4bf014610077578063570ca735146100c75780635c60da1b146100ee575b600080fd5b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b60405173ffffffffffffffffffffffffffffffffffffffff909116815260200160405180910390f35b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b60005461009e9073ffffffffffffffffffffffffffffffffffffffff1681565b61009e61011c3660046104e4565b61015d565b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b61015b610156366004610526565b610351565b005b60003373ffffffffffffffffffffffffffffffffffffffff7f000000000000000000000000000000000000000000000000000000000000000016146101ce576040517f82b4290000000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b600080546040517f8124b78e00000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff91821660048201527f000000000000000000000000000000000000000000000000000000000000000090911690638124b78e906024016020604051808303816000875af1158015610262573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610286919061054a565b6040517f3641e0830000000000000000000000000000000000000000000000000000000081526004810187905233602482015273ffffffffffffffffffffffffffffffffffffffff858116604483015286811660648301527f00000000000000000000000000000000000000000000000000000000000000008116608483015291925090821690633641e0839060a401600060405180830381600087803b15801561033057600080fd5b505af1158015610344573d6000803e3d6000fd5b5092979650505050505050565b7f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff16638da5cb5b6040518163ffffffff1660e01b81526004016020604051808303816000875af11580156103be573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906103e2919061054a565b73ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614610446576040517f82b4290000000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b600080547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff83169081179091556040519081527f7257141c42cbfb2d9a0e100abb7adaed82a5b3c36107b22bc02efe8122ae81479060200160405180910390a150565b73ffffffffffffffffffffffffffffffffffffffff811681146104e157600080fd5b50565b6000806000606084860312156104f957600080fd5b83359250602084013561050b816104bf565b9150604084013561051b816104bf565b809150509250925092565b60006020828403121561053857600080fd5b8135610543816104bf565b9392505050565b60006020828403121561055c57600080fd5b8151610543816104bf56fea2646970667358221220b6c48651ef3c60f6d80bd15715f03bf0edb2735c76c51768f17adf22e44c420e64736f6c634300080e0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100725760003560e01c8063b92d538711610050578063b92d53871461010e578063c10f1a7514610121578063d784d4261461014857600080fd5b8063245e4bf014610077578063570ca735146100c75780635c60da1b146100ee575b600080fd5b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b60405173ffffffffffffffffffffffffffffffffffffffff909116815260200160405180910390f35b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b60005461009e9073ffffffffffffffffffffffffffffffffffffffff1681565b61009e61011c3660046104e4565b61015d565b61009e7f000000000000000000000000000000000000000000000000000000000000000081565b61015b610156366004610526565b610351565b005b60003373ffffffffffffffffffffffffffffffffffffffff7f000000000000000000000000000000000000000000000000000000000000000016146101ce576040517f82b4290000000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b600080546040517f8124b78e00000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff91821660048201527f000000000000000000000000000000000000000000000000000000000000000090911690638124b78e906024016020604051808303816000875af1158015610262573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190610286919061054a565b6040517f3641e0830000000000000000000000000000000000000000000000000000000081526004810187905233602482015273ffffffffffffffffffffffffffffffffffffffff858116604483015286811660648301527f00000000000000000000000000000000000000000000000000000000000000008116608483015291925090821690633641e0839060a401600060405180830381600087803b15801561033057600080fd5b505af1158015610344573d6000803e3d6000fd5b5092979650505050505050565b7f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff16638da5cb5b6040518163ffffffff1660e01b81526004016020604051808303816000875af11580156103be573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906103e2919061054a565b73ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614610446576040517f82b4290000000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b600080547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff83169081179091556040519081527f7257141c42cbfb2d9a0e100abb7adaed82a5b3c36107b22bc02efe8122ae81479060200160405180910390a150565b73ffffffffffffffffffffffffffffffffffffffff811681146104e157600080fd5b50565b6000806000606084860312156104f957600080fd5b83359250602084013561050b816104bf565b9150604084013561051b816104bf565b809150509250925092565b60006020828403121561053857600080fd5b8135610543816104bf565b9392505050565b60006020828403121561055c57600080fd5b8151610543816104bf56fea2646970667358221220b6c48651ef3c60f6d80bd15715f03bf0edb2735c76c51768f17adf22e44c420e64736f6c634300080e0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "createStash(uint256,address,address)": {
+        "params": {
+          "_gauge": "Gauge address",
+          "_pid": "The PID of the pool",
+          "_staker": "Staker's address"
+        }
+      },
+      "setImplementation(address)": {
+        "params": {
+          "_newImplementation": "Address of new implementation contract"
+        }
+      }
+    },
+    "title": "Stash Factory",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "createStash(uint256,address,address)": {
+        "notice": "Create a stash contract for the given gauge"
+      },
+      "setImplementation(address)": {
+        "notice": "Used to set address for new implementation contract"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 7795,
+        "contract": "contracts/factories/StashFactory.sol:StashFactory",
+        "label": "implementation",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    }
+  }
+}

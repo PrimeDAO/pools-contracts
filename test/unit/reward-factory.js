@@ -4,7 +4,7 @@ const { deployments, ethers } = require("hardhat");
 const { ONE_ADDRESS, TWO_ADDRESS } = require("../helpers/constants.js");
 const init = require("../test-init.js");
 
-describe("RewardFactory", function () {
+describe("unit - RewardFactory", function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -30,9 +30,9 @@ describe("RewardFactory", function () {
         it('sets access', async function () {
             const { rewardFactoryContract, anotherUser, operator } = await setupTests();
 
-            await expect(rewardFactoryContract.connect(operator).setAccess(anotherUser.address, true))
-                .to.emit(rewardFactoryContract, 'AccessChanged')
-                .withArgs(anotherUser.address, true);
+            await expect(rewardFactoryContract.connect(operator).grantRewardStashAccess(anotherUser.address))
+                .to.emit(rewardFactoryContract, 'StashAccessGranted')
+                .withArgs(anotherUser.address);
         });
     });
 
@@ -41,7 +41,7 @@ describe("RewardFactory", function () {
             const { rewardFactoryContract, anotherUser, operator } = await setupTests();
 
             // Give access to somebody
-            await expect(rewardFactoryContract.connect(operator).setAccess(anotherUser.address, true))
+            await expect(rewardFactoryContract.connect(operator).grantRewardStashAccess(anotherUser.address))
 
             const pid = 1
 
@@ -68,7 +68,7 @@ describe("RewardFactory", function () {
             const { rewardFactoryContract, anotherUser } = await setupTests();
 
             await expect(
-                rewardFactoryContract.setAccess(anotherUser.address, true)
+                rewardFactoryContract.grantRewardStashAccess(anotherUser.address)
             ).to.be.revertedWith("Unauthorized()");
         });
 
@@ -76,7 +76,7 @@ describe("RewardFactory", function () {
             const { rewardFactoryContract, anotherUser, operator } = await setupTests();
 
             // Give access to somebody
-            await expect(rewardFactoryContract.connect(operator).setAccess(anotherUser.address, true))
+            await expect(rewardFactoryContract.connect(operator).grantRewardStashAccess(anotherUser.address))
 
             const pid = 1
 
@@ -97,7 +97,7 @@ describe("RewardFactory", function () {
             const { rewardFactoryContract, anotherUser, operator } = await setupTests();
 
             // Give access to somebody
-            await expect(rewardFactoryContract.connect(operator).setAccess(anotherUser.address, true))
+            await expect(rewardFactoryContract.connect(operator).grantRewardStashAccess(anotherUser.address))
 
             const pid = 1
 
@@ -164,7 +164,7 @@ describe("RewardFactory", function () {
             await expect(
                 rewardFactoryContract
                     .connect(operator)
-                    .setAccess(anotherUser.address, true)
+                    .grantRewardStashAccess(anotherUser.address)
             );
 
             await expect(rewardFactoryContract.connect(anotherUser).createTokenRewards(ONE_ADDRESS, mainPoolAddress, operator.address)).to.emit(rewardFactoryContract, 'VirtualBalanceRewardPoolCreated');

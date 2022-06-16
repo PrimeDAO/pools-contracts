@@ -1,4 +1,4 @@
-const { getAddresses } = require('../config');
+const { getAddresses, tags: { BaseRewardPool, deployment, Controller, D2DBal, RewardFactory } } = require('../config');
 
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
     // This is our cvxCRV Rewards equivalent
@@ -23,5 +23,5 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["BaseRewardPool"];
-module.exports.dependencies = ['Controller', 'D2DBal', 'RewardFactory'];
+module.exports.tags = [BaseRewardPool, deployment];
+module.exports.dependencies = [Controller, D2DBal, RewardFactory];
