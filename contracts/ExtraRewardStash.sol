@@ -6,9 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/Interfaces.sol";
 
 /// @title ExtraRewardStash
-contract ExtraRewardStash {
+contract ExtraRewardStash is IStash {
     error Unauthorized();
     error AlreadyInitialized();
+
+    event RewardHookSet(address newRewardHook);
 
     uint256 private constant MAX_REWARDS = 8;
     address public immutable bal;
@@ -60,7 +62,7 @@ contract ExtraRewardStash {
     }
 
     /// @notice Claims registered reward tokens
-    function claimRewards() external returns (bool) {
+    function claimRewards() external {
         if (msg.sender != operator) {
             revert Unauthorized();
         }
@@ -69,14 +71,14 @@ contract ExtraRewardStash {
 
         // make sure we're redirected
         if (!hasRedirected) {
-            IDeposit(operator).setGaugeRedirect(pid);
+            IController(operator).setGaugeRedirect(pid);
             hasRedirected = true;
         }
 
         if (hasBalRewards) {
             // claim rewards on gauge for staker
             // using reward_receiver so all rewards will be moved to this stash
-            IDeposit(operator).claimRewards(pid, gauge);
+            IController(operator).claimRewards(pid, gauge);
         }
 
         // hook for reward pulls
@@ -84,7 +86,6 @@ contract ExtraRewardStash {
             // solhint-disable-next-line
             try IRewardHook(rewardHook).onRewardClaim() {} catch {}
         }
-        return true;
     }
 
     /// @notice Checks if the gauge rewards have changed
@@ -106,7 +107,7 @@ contract ExtraRewardStash {
     /// @dev Used for any new incentive that is not directly on curve gauges
     function setExtraReward(address _token) external {
         // owner of booster can set extra rewards
-        if (msg.sender != IDeposit(operator).owner()) {
+        if (msg.sender != IController(operator).owner()) {
             revert Unauthorized();
         }
         setToken(_token);
@@ -116,10 +117,11 @@ contract ExtraRewardStash {
     /// @param _hook The address of the reward hook
     function setRewardHook(address _hook) external {
         // owner of booster can set reward hook
-        if (msg.sender != IDeposit(operator).owner()) {
+        if (msg.sender != IController(operator).owner()) {
             revert Unauthorized();
         }
         rewardHook = _hook;
+        emit RewardHookSet(_hook);
     }
 
     /// @notice Replaces a token on the token list
@@ -134,7 +136,7 @@ contract ExtraRewardStash {
             //check if BAL
             if (_token != bal) {
                 //create new reward contract (for NON-BAL tokens only)
-                (, , , address mainRewardContract, , ) = IDeposit(operator)
+                (, , , address mainRewardContract, , ) = IController(operator)
                     .poolInfo(pid);
                 address rewardContract = IRewardFactory(rewardFactory)
                     .createTokenRewards(
@@ -150,15 +152,8 @@ contract ExtraRewardStash {
         }
     }
 
-    /// @notice Pulls assigned tokens from staker to stash
-    function stashRewards() external pure returns (bool) {
-        //after depositing/withdrawing, extra incentive tokens are claimed
-        //but from v3 this is default to off, and this stash is the reward receiver too.
-        return true;
-    }
-
     /// @notice Sends all of the extra rewards to the reward contracts
-    function processStash() external returns (bool) {
+    function processStash() external {
         if (msg.sender != operator) {
             revert Unauthorized();
         }
@@ -183,6 +178,5 @@ contract ExtraRewardStash {
                 IRewards(rewards).queueNewRewards(amount);
             }
         }
-        return true;
     }
 }

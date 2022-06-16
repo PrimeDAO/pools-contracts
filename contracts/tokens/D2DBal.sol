@@ -10,11 +10,11 @@ contract D2DBal is ERC20Permit, Ownable {
     // solhint-disable-next-line
     constructor() ERC20Permit("D2DBal") ERC20("D2DBal", "D2DBAL") {}
 
-    function mint(address _to, uint256 _amount) public onlyOwner {
+    function mint(address _to, uint256 _amount) external onlyOwner {
         _mint(_to, _amount);
     }
 
-    function burn(address _from, uint256 _amount) public onlyOwner {
+    function burn(address _from, uint256 _amount) external onlyOwner {
         _burn(_from, _amount);
     }
 }

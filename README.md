@@ -66,7 +66,6 @@ Doing this will create a fork of mainnet / kovan, and try to deploy smart contra
 - add MORALIS_KEY to .env (Moralis has free archive nodes)
 - npm run test:integration-clean or test:integration-existing
 
-
 ## Deployment
 This project uses the hardhat-deploy plugin to deploy contracts. When a contract has been deployed, its _ABI_ is saved as JSON to the `/deployments/` directory, including its _address_.
 
@@ -94,3 +93,4 @@ General:
 Find more information in the documentation of [hardhat-etherscan](https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html)
 
 Additional useful links include: [Prime Pools Medium Article](https://medium.com/primedao/prime-pools-a-cooperative-dao-liquidity-management-solution-2948bdb7a118)
+

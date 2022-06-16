@@ -3,8 +3,9 @@
 pragma solidity 0.8.14;
 
 import "../tokens/DepositToken.sol";
+import "../utils/Interfaces.sol";
 
-contract TokenFactory {
+contract TokenFactory is ITokenFactory {
     error Unauthorized();
 
     address public immutable operator;

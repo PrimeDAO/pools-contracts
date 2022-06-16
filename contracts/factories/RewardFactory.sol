@@ -7,12 +7,12 @@ import "../VirtualBalanceRewardPool.sol";
 import "../utils/MathUtil.sol";
 
 /// @title RewardFactory contract
-contract RewardFactory {
+contract RewardFactory is IRewardFactory {
     using MathUtil for uint256;
 
     event ExtraRewardAdded(address reward, uint256 pid);
     event ExtraRewardRemoved(address reward, uint256 pid);
-    event AccessChanged(address stash, bool status);
+    event StashAccessGranted(address stash);
     event BaseRewardPoolCreated(address poolAddress);
     event VirtualBalanceRewardPoolCreated(address poolAddress);
 
@@ -88,14 +88,14 @@ contract RewardFactory {
         return true;
     }
 
-    /// @notice Sets rewardAccess to stash
+    /// @notice Grants rewardAccess to stash
     /// @dev Stash contracts need access to create new Virtual balance pools for extra gauge incentives(ex. snx)
-    function setAccess(address _stash, bool _status) external {
+    function grantRewardStashAccess(address _stash) external {
         if (msg.sender != operator) {
             revert Unauthorized();
         }
-        rewardAccess[_stash] = _status;
-        emit AccessChanged(_stash, _status);
+        rewardAccess[_stash] = true;
+        emit StashAccessGranted(_stash);
     }
 
     //Create a Managed Reward Pool to handle distribution of all bal mined in a pool
