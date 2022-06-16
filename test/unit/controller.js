@@ -258,13 +258,9 @@ describe("unit - Controller", function () {
                 (poolInfo.gauge).toString()
             ).to.equal(gauge.address.toString());
         });
-        it("Adds pool with stash == address(0)", async () => {
+        it("reverts if factory returns address(0) for stash", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address));
-            await controller.connect(root).addPool(lptoken.address, gauge.address);
-            expect(
-                (await controller.poolLength()).toNumber()
-            ).to.equal(2);
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            await expect(controller.connect(root).addPool(lptoken.address, gauge.address)).to.be.revertedWith('InvalidStash()');
         });
         it("Calls earmarkRewards with existing pool number", async () => {
             pid = 0;

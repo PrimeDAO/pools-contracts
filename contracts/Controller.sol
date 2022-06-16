@@ -21,6 +21,7 @@ contract Controller is IController {
     error Shutdown();
     error PoolIsClosed();
     error InvalidParameters();
+    error InvalidStash();
 
     uint256 public constant MAX_FEES = 3000;
     uint256 public constant FEE_DENOMINATOR = 10000;
@@ -248,6 +249,11 @@ contract Controller is IController {
             _gauge,
             staker
         );
+
+        if (stash == address(0)) {
+            revert InvalidStash();
+        }
+
         //add the new pool
         poolInfo.push(
             PoolInfo({
