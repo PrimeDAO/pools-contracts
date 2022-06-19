@@ -5,10 +5,6 @@ const { getContract, impersonateAddress } = require("../helpers/helpers");
 const { getAddresses } = require('../../config');
 const { wethBal } = getAddresses()
 
-const gauge = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for pool 50WBTC 50WETH
-const gaugeTwo = '0x5E7B7B41377Ce4B76d6008F7a91ff9346551c853' // Gauge for pool 17WBTC-50BAL-33USDC
-
-
 /*
                                         IMPORTANT
         In this test we are using already deployed smart contracts on Kovan that have permission
@@ -17,11 +13,10 @@ const gaugeTwo = '0x5E7B7B41377Ce4B76d6008F7a91ff9346551c853' // Gauge for pool 
 
 describe("Kovan integration with deployed contracts", function () {
 
-    let voterProxy, balDepositor, controller, wethBalContract, gaugeController;
+    let voterProxy, balDepositor, controller, wethBalContract;
 
     const setupTests = deployments.createFixture(async () => {
         voterProxy = await getContract('VoterProxy', require('../../deployments/kovan/VoterProxy.json').address)
-        gaugeController = await getContract('GaugeControllerMock', await voterProxy.gaugeController())
         balDepositor = await getContract('BalDepositor', require('../../deployments/kovan/Baldepositor.json').address)
         controller = await getContract('Controller', require('../../deployments/kovan/Controller.json').address)
         wethBalContract = await getContract('ERC20Mock', wethBal)
@@ -40,7 +35,7 @@ describe("Kovan integration with deployed contracts", function () {
         await initialLockWethBal(wethBalContract, balDepositor, voterProxy)
 
         const pid = 0;
-        
+
         await lpTokenContract.connect(signer).approve(controller.address, ONE_HUNDRED_ETHER)
         await wethBalContract.connect(signer).approve(balDepositor.address, ONE_HUNDRED_ETHER)
 
