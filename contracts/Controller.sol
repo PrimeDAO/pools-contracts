@@ -154,7 +154,10 @@ contract Controller is IController {
 
     /// @notice sets the voteDelegate variable
     /// @param _voteDelegate The address of whom votes will be delegated to
-    function setVoteDelegate(address _voteDelegate) external onlyAddress(voteDelegate) {
+    function setVoteDelegate(address _voteDelegate)
+        external
+        onlyAddress(voteDelegate)
+    {
         voteDelegate = _voteDelegate;
         emit VoteDelegateChanged(_voteDelegate);
     }

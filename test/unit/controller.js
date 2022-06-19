@@ -19,8 +19,6 @@ describe("unit - Controller", function () {
         B50WBTC50WETH = setup.tokens.B50WBTC50WETH;
         gaugeMock = await init.getGaugeMock(setup, B50WBTC50WETH.address);
 
-        const GaugeController = await init.gaugeController(setup);
-        // voterProxy = await init.getVoterProxy(setup, GaugeController, setup.tokens.D2DBal);
         feeDistributor = await init.getDistroMock(setup)
         bal = setup.tokens.BAL;
         root = setup.roles.root;
