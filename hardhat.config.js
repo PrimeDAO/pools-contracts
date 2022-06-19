@@ -31,7 +31,7 @@ const testForking = {
     ...sharedNetworkConfig,
     forking: {
         url: `https://speedy-nodes-nyc.moralis.io/${process.env.MORALIS_KEY}/eth/${process.env.BLOCKCHAIN_FORK}/archive`,
-        blockNumber: process.env.BLOCKCHAIN_FORK == 'kovan' ? 31844292 : 14854404 // Adapt if needed 
+        blockNumber: process.env.BLOCKCHAIN_FORK == 'kovan' ? 32152859 : 14854404 // Adapt if needed 
     },
 }
 
@@ -46,11 +46,11 @@ module.exports = {
     gasReporter: {
         currency: "USD",
         token: "ETH",
-        gasPriceApi:
-            "https://api.etherscan.com/api?module=proxy&action=eth_gasPrice&apikey=" +
-            process.env.ETHERSCAN_API_KEY,
+        gasPrice: 100, // Leaving gas price constant so that we can see results better
+        // gasPriceApi:
+        //     "https://api.etherscan.com/api?module=proxy&action=eth_gasPrice&apikey=" +
+        //     process.env.ETHERSCAN_API_KEY,
         enabled: process.env.REPORT_GAS ? true : false,
-        excludeContracts: [],
         src: "./contracts",
         coinmarketcap: process.env.COINMARKETCAP_API_KEY,
     },
@@ -114,10 +114,10 @@ module.exports = {
             {
                 version: "0.8.14",
                 settings: {
-                    // viaIR: true, // TODO: experiment with this option
+                    viaIR: false, // false gives us better results
                     optimizer: {
                         enabled: true,
-                        runs: 100000,
+                        runs: 100000, // 100k gives better results than 10k
                     },
                 },
             },

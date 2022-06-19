@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import "../utils/Interfaces.sol";
+
 /// @title ProxyFactory contract
-contract ProxyFactory {
+contract ProxyFactory is IProxyFactory {
     /// @notice Creates a new contract based on the target contract address provided
     /// @param target contract address to be cloned
     /// @return result address of the new contract

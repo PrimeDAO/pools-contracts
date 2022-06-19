@@ -32,12 +32,11 @@ let treasury;
 let VoterProxy;
 let controller;
 let gaugeMock;
-let smartWalletCheckerMock;
 let baseRewardPool;
 let tokens;
 let feeDistributor;
 
-describe("Controller", function () {
+describe("unit - Controller", function () {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(await ethers.getSigners());
@@ -175,7 +174,7 @@ describe("Controller", function () {
                 .setFees(platformFee, profitFee);
         });
         it("Should fail if total >MAX_FEES", async () => {
-            platformFee = 1000;
+            platformFee = 2000;
             profitFee = 1001;
             await expectRevert(
                 controller
@@ -212,12 +211,11 @@ describe("Controller", function () {
         });
         it("Should fail if profitFee is too big", async () => {
             platformFee = 500;
-            profitFee = 1000;
+            profitFee = 2000;
             await controller
                 .connect(root)
                 .setFees(platformFee, profitFee);
             expect((await controller.profitFees()).toString()).to.equal("100");
-
         });
     });
     context("» _earmarkRewards testing", () => {
@@ -260,13 +258,9 @@ describe("Controller", function () {
                 (poolInfo.gauge).toString()
             ).to.equal(gauge.address.toString());
         });
-        it("Adds pool with stash == address(0)", async () => {
+        it("reverts if factory returns address(0) for stash", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address));
-            await controller.connect(root).addPool(lptoken.address, gauge.address);
-            expect(
-                (await controller.poolLength()).toNumber()
-            ).to.equal(2);
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
+            await expect(controller.connect(root).addPool(lptoken.address, gauge.address)).to.be.revertedWith('InvalidStash()');
         });
         it("Calls earmarkRewards with existing pool number", async () => {
             pid = 0;
@@ -496,120 +490,13 @@ describe("Controller", function () {
             expect(await controller.connect(root).setTreasury(treasury.address));
         });
 
-        it("It withdraw Unlocked WethBal", async () => {
+        it("withdraws unlocked WethBal", async () => {
             time.increase(smallLockTime.add(difference));
             let unitTest_treasury_amount_expected = 0;
-            expect(await controller.connect(staker).withdrawUnlockedWethBal(pid, tenMillion));
+            expect(await controller.connect(staker).withdrawUnlockedWethBal(tenMillion * 100));
             expect(
                 (await tokens.VeBal["balanceOf(address,uint256)"](treasury.address, 0)).toString()
             ).to.equal(unitTest_treasury_amount_expected.toString());
-        });
-
-        it("It withdraw Unlocked WethBal when pool is closed", async () => {
-            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, gaugeMock_, tokenFactory_, tokens_, roles } = await setupTests();
-
-            const root = roles.root;
-            const authorizer_adaptor = roles.authorizer_adaptor;
-            const staker = roles.staker;
-
-            await expect(VoterProxy_.connect(root).setOperator(controller_.address));
-            await expect(VoterProxy_.connect(root).setDepositor(controller_.address));
-
-            const rewardFactory = rewardFactory_;
-            const stashFactory = stashFactory_;
-            const tokenFactory = tokenFactory_;
-            await controller_.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
-            // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('StashMock')
-                .then(x => x.deploy())
-                .then(x => x.address)
-            // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
-                .to.emit(stashFactory, 'ImpelemntationChanged')
-                .withArgs(implementationAddress);
-
-            const lptoken = tokens_.B50WBTC50WETH;
-            const gauge = gaugeMock_;
-            await controller_.connect(root).addPool(lptoken.address, gauge.address);
-            await tokens_.WethBal.transfer(staker.address, twentyMillion);
-
-            await tokens_.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(VoterProxy_.address);
-            await tokens_.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
-
-            await tokens_.WethBal.mint(tokens_.VeBal.address, thirtyMillion);
-            await tokens_.WethBal.mint(VoterProxy_.address, sixtyMillion);
-
-            const pid = 0;
-
-            expect(await controller_.connect(root).shutdownPool(pid));
-            expect(await controller_.connect(staker).withdrawUnlockedWethBal(pid, twentyMillion));
-        });
-    });
-    context("» restake testing", () => {
-        before('>>> setup', async function () {
-            const { VoterProxy_, controller_, rewardFactory_, stashFactory_, stashFactoryMock_, tokenFactory_, smartWalletCheckerMock_, GaugeController_, tokens_, roles } = await setupTests();
-            VoterProxy = VoterProxy_;
-            rewardFactory = rewardFactory_;
-            stashFactory = stashFactory_;
-            stashFactoryMock = stashFactoryMock_;
-            tokenFactory = tokenFactory_;
-            GaugeController = GaugeController_;
-            smartWalletCheckerMock = smartWalletCheckerMock_;
-            tokens = tokens_;
-            controller = controller_;
-            root = roles.root;
-            staker = roles.staker;
-            admin = roles.prime;
-            reward_manager = roles.reward_manager;
-
-            expect(await VoterProxy.connect(root).setOperator(controller.address));
-            expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address));
-
-            // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('StashMock')
-                .then(x => x.deploy())
-                .then(x => x.address)
-
-            // Set implementation contract
-            await expect(stashFactory.connect(root).setImplementation(implementationAddress))
-                .to.emit(stashFactory, 'ImpelemntationChanged')
-                .withArgs(implementationAddress);
-
-            lptoken = tokens.B50WBTC50WETH;
-            gauge = gaugeMock;
-            await controller.connect(root).addPool(lptoken.address, gauge.address);
-
-            await smartWalletCheckerMock.allow(VoterProxy.address);
-            await tokens.VeBal.connect(authorizer_adaptor).commit_smart_wallet_checker(smartWalletCheckerMock.address);
-            await tokens.VeBal.connect(authorizer_adaptor).apply_smart_wallet_checker();
-
-            rewards = rewardFactory;
-            stakerRewards = stashFactory;
-            expect(await controller.connect(root).setRewardContracts(rewards.address));
-        });
-        it("It redeposit tokens", async () => {
-            expect(await VoterProxy.connect(root).setDepositor(controller.address));
-            expect(await controller.connect(staker).restake(pid));
-        });
-        it("It fails redeposit tokens when pool is closed", async () => {
-            expect(await controller.connect(root).shutdownPool(pid));
-
-            await expectRevert(
-                controller
-                    .connect(staker)
-                    .restake(pid),
-                "PoolIsClosed()"
-            );
-        });
-        it("It fails redeposit tokens when shutdownSystem", async () => {
-            expect(await controller.connect(root).shutdownSystem());
-
-            await expectRevert(
-                controller
-                    .connect(staker)
-                    .restake(pid),
-                "Shutdown()"
-            );
         });
     });
 });

@@ -1,0 +1,73 @@
+{
+  "address": "0x673d69b970423eB0884d4217BF43457eDf1a5316",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        }
+      ],
+      "name": "clone",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "result",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x23a15f0e334a5ba1856c2c1515fd82bf80fe71cc0fd38c0b9e155afe45f5ae6c",
+  "receipt": {
+    "to": null,
+    "from": "0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f",
+    "contractAddress": "0x673d69b970423eB0884d4217BF43457eDf1a5316",
+    "transactionIndex": 1,
+    "gasUsed": "123853",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x0643d04e9b81b33ee5fa85bdacdace682d3f23fff0d8f21c976dba80fb30fc36",
+    "transactionHash": "0x23a15f0e334a5ba1856c2c1515fd82bf80fe71cc0fd38c0b9e155afe45f5ae6c",
+    "logs": [],
+    "blockNumber": 32151477,
+    "cumulativeGasUsed": "248454",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "1a87188c0a6b56585c62182f4a34d8cf",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.14+commit.80d49f37\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"}],\"name\":\"clone\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"result\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"clone(address)\":{\"params\":{\"target\":\"contract address to be cloned\"},\"returns\":{\"result\":\"address of the new contract\"}}},\"title\":\"ProxyFactory contract\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"clone(address)\":{\"notice\":\"Creates a new contract based on the target contract address provided\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/factories/ProxyFactory.sol\":\"ProxyFactory\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":100000},\"remappings\":[]},\"sources\":{\"contracts/factories/ProxyFactory.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity 0.8.14;\\n\\n/// @title ProxyFactory contract\\ncontract ProxyFactory {\\n    /// @notice Creates a new contract based on the target contract address provided\\n    /// @param target contract address to be cloned\\n    /// @return result address of the new contract\\n    function clone(address target) external returns (address result) {\\n        bytes20 targetBytes = bytes20(target);\\n        // solhint-disable-next-line\\n        assembly {\\n            let clone := mload(0x40)\\n            mstore(\\n                clone,\\n                0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000\\n            )\\n            mstore(add(clone, 0x14), targetBytes)\\n            mstore(\\n                add(clone, 0x28),\\n                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000\\n            )\\n            result := create(0, clone, 0x37)\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x10f7a014ccbee0d806f9a42b50fdb169cfe71cee3695a23abf4fe39b0269e9ad\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50610148806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80638124b78e14610030575b600080fd5b61004361003e3660046100d5565b61006c565b60405173ffffffffffffffffffffffffffffffffffffffff909116815260200160405180910390f35b6000808260601b90506040517f3d602d80600a3d3981f3363d3d373d3d3d363d7300000000000000000000000081528160148201527f5af43d82803e903d91602b57fd5bf3000000000000000000000000000000000060288201526037816000f0949350505050565b6000602082840312156100e757600080fd5b813573ffffffffffffffffffffffffffffffffffffffff8116811461010b57600080fd5b939250505056fea2646970667358221220ace637bf05b23dc40748055c80872dbb4cc6315c9735c8daa3e2baff5ee806de64736f6c634300080e0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061002b5760003560e01c80638124b78e14610030575b600080fd5b61004361003e3660046100d5565b61006c565b60405173ffffffffffffffffffffffffffffffffffffffff909116815260200160405180910390f35b6000808260601b90506040517f3d602d80600a3d3981f3363d3d373d3d3d363d7300000000000000000000000081528160148201527f5af43d82803e903d91602b57fd5bf3000000000000000000000000000000000060288201526037816000f0949350505050565b6000602082840312156100e757600080fd5b813573ffffffffffffffffffffffffffffffffffffffff8116811461010b57600080fd5b939250505056fea2646970667358221220ace637bf05b23dc40748055c80872dbb4cc6315c9735c8daa3e2baff5ee806de64736f6c634300080e0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "clone(address)": {
+        "params": {
+          "target": "contract address to be cloned"
+        },
+        "returns": {
+          "result": "address of the new contract"
+        }
+      }
+    },
+    "title": "ProxyFactory contract",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "clone(address)": {
+        "notice": "Creates a new contract based on the target contract address provided"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}

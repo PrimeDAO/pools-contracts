@@ -4,7 +4,7 @@ const init = require("../test-init.js");
 const { ONE_HUNDRED_ETHER, MOCK_INITIAL_SUPPLY } = require('../helpers/constants');
 const { getCurrentBlockTimestamp } = require("../helpers/helpers.js");
 
-describe("Contract: BalDepositor", async () => {
+describe("unit - Contract: BalDepositor", async () => {
 
     let voterProxy, balDepositor, baseRewardPool, wethBal, D2DBal, root, buyer2, veBal;
 
@@ -33,6 +33,8 @@ describe("Contract: BalDepositor", async () => {
 
         // root is default signer, and he already has some tokens
         await wethBal.approve(balDepositor.address, MOCK_INITIAL_SUPPLY);
+
+        await setup.tokens.D2DBal.transferOwnership(balDepositor.address);
 
         return {
             voterProxy,
