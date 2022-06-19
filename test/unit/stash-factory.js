@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const init = require("../test-init.js");
 const { ONE_ADDRESS } = require('../helpers/constants')
 
-describe("StashFactory", function () {
+describe("unit - StashFactory", function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
@@ -16,13 +16,13 @@ describe("StashFactory", function () {
       
         setup.controller = await init.getControllerMock(setup);
       
-        setup.rewardFactory = await init.rewardFactory(setup);
+        setup.rewardFactory = await init.rewardFactory(setup, setup.controller);
 
-        setup.baseRewardPool = await init.baseRewardPool(setup);
+        setup.baseRewardPool = await init.baseRewardPool(setup, setup.controller, setup.rewardFactory);
             
         setup.proxyFactory = await init.proxyFactory(setup);
 
-        const stashFactory = await init.stashFactory(setup);
+        const stashFactory = await init.stashFactory(setup, setup.controller, setup.rewardFactory, setup.proxyFactory);
         return {
             stashFactory,
             root: setup.roles.root,

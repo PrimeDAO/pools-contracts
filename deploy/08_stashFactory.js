@@ -1,3 +1,5 @@
+const { tags: { StashFactory, deployment, Controller, RewardFactory, ProxyFactory, ExtraRewardStash } } = require("../config");
+
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy, execute } = deployments;
   const { root } = await getNamedAccounts();
@@ -19,5 +21,5 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["StashFactory"];
-module.exports.dependencies = ['Controller', 'RewardFactory', 'ProxyFactory', 'ExtraRewardStash'];
+module.exports.tags = [StashFactory, deployment];
+module.exports.dependencies = [Controller, RewardFactory, ProxyFactory, ExtraRewardStash];

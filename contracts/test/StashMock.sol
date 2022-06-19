@@ -5,13 +5,9 @@ import "../utils/Interfaces.sol";
 
 contract StashMock is IStash {
     // solhint-disable-next-line
-    function stashRewards() external returns (bool) {}
+    function processStash() external {}
     // solhint-disable-next-line
-    function processStash() external returns (bool) {}
-    // solhint-disable-next-line
-    function claimRewards() external returns (bool) {
-        return true;
-    }
+    function claimRewards() external {}
 
     function initialize(
         uint256 _pid,

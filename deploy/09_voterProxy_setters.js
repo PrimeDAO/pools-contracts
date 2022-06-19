@@ -1,4 +1,4 @@
-const { getAddresses } = require('../config')
+const { getAddresses, tags: { VoterProxySetters, deployment, VoterProxy } } = require('../config');
 
 const deployFunction = async ({ deployments }) => {
     const { root } = await getNamedAccounts();
@@ -25,5 +25,5 @@ const deployFunction = async ({ deployments }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["VoterProxySetters"];
-module.exports.dependencies = ['VoterProxy'];
+module.exports.tags = [VoterProxySetters, deployment];
+module.exports.dependencies = [VoterProxy];

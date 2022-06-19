@@ -1,3 +1,4 @@
+const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat')
 
 const initialize = async (accounts) => {
@@ -10,7 +11,7 @@ const initialize = async (accounts) => {
     operator: accounts[4],
     buyer1: accounts[5],
     buyer2: accounts[6],
-    staker: accounts[7]
+    staker: accounts[7],
   };
 
   return setup;
@@ -27,9 +28,20 @@ const getTokens = async (setup) => {
     setup.roles.root
   );
 
+  const D2DBalFactory = await ethers.getContractFactory(
+    "D2DBal",
+    setup.roles.root
+  );
+
+  const DepositTokenFactory = await ethers.getContractFactory(
+    "DepositToken",
+    setup.roles.root
+  );
+
   const B50WBTC50WETH = await ERC20Factory.deploy("Balancer 50 WBTC 50 WETH", "B-50WBTC-50WETH"); // LP token
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
-  const D2DBal = await ERC20Factory.deploy("D2DBal", "D2DBAL");
+  const D2DBal = await D2DBalFactory.deploy();
+  const depositToken = await DepositTokenFactory.deploy(setup.roles.root.address, B50WBTC50WETH.address);
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL"); // Balancer80BAL20WETH LP token
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
@@ -47,7 +59,8 @@ const getTokens = async (setup) => {
     WethBal,
     VeBal,
     B50WBTC50WETH,
-    StashMock
+    StashMock,
+    depositToken,
   };
 
   setup.tokens = tokens;
@@ -59,9 +72,8 @@ const getVoterProxyMock = async (setup) => {
   const mintr = setup.tokens.D2DBal;
   const bal = setup.tokens.BAL;
   const veBal = setup.tokens.VeBal;
-  const gaugeController = await setup.GaugeController;
 
-  return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, gaugeController.address)
+  return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, ZERO_ADDRESS)
 };
 
 const getStashMock = async (setup) => {
@@ -80,61 +92,55 @@ const getStash = async (setup) => {
   return await Stash.deploy(setup.tokens.BAL.address);
 }
 
-const controller = async (setup, feeDistributor) => {
-  const controller = await ethers.getContractFactory(
+const controller = async (setup, voterProxy, feeDistributor, voteOwnership, voteParameter) => {
+  const controllerFactory = await ethers.getContractFactory(
     "Controller",
     setup.roles.root
   );
 
-  const bal = setup.tokens.BAL;
-  const staker = setup.VoterProxy;
-  const voteOwnership = setup.VotingMock;
-  const voteParameter = staker;
-  deployedController = await controller.deploy(
-    staker.address,
-    bal.address,
+  const controller = await controllerFactory.deploy(
+    voterProxy.address,
+    setup.tokens.BAL.address,
     feeDistributor.address,
     voteOwnership.address,
     voteParameter.address
   );
 
-  await staker.connect(setup.roles.root).setOperator(deployedController.address);
-  await staker.connect(setup.roles.root).setDepositor(deployedController.address);
-  return deployedController;
+  await voterProxy.setOperator(controller.address);
+  await voterProxy.setDepositor(controller.address);
+
+  return controller;
 };
 
-const tokenFactory = async (setup) => {
+const tokenFactory = async (setup, controller) => {
   const tokenFactory = await ethers.getContractFactory(
     "TokenFactory",
     setup.roles.root
   );
-  const operator = setup.controller;
-  return await tokenFactory.deploy(operator.address);
+
+  return await tokenFactory.deploy(controller.address);
 };
 
-const rewardFactory = async (setup) => {
+const rewardFactory = async (setup, controller) => {
   const RewardFactory = await ethers.getContractFactory(
     "RewardFactory",
     setup.roles.root
   );
-  const bal = setup.tokens.BAL;
-  const operator = setup.controller;
 
-  return await RewardFactory.deploy(operator.address, bal.address);
+  return await RewardFactory.deploy(controller.address, setup.tokens.BAL.address);
 };
 
-const baseRewardPool = async (setup) => {
+const baseRewardPool = async (setup, controller, rewardFactory) => {
   const baseRewardPool = await ethers.getContractFactory(
     "BaseRewardPool",
     setup.roles.root
   );
-  const pid = 1;
+  
+  const pid = 0;
   const stakingToken = setup.tokens.D2DBal;
   const rewardToken = setup.tokens.BAL;
-  const operator = setup.controller;
-  const rewardManager = setup.rewardFactory;
 
-  return await baseRewardPool.deploy(pid, stakingToken.address, rewardToken.address, operator.address, rewardManager.address);
+  return await baseRewardPool.deploy(pid, stakingToken.address, rewardToken.address, controller.address, rewardFactory.address);
 };
 
 const proxyFactory = async (setup) => {
@@ -144,11 +150,6 @@ const proxyFactory = async (setup) => {
   );
   return await ProxyFactory.deploy();
 };
-
-// const getMintrMock = async (setup) => {
-//   const MintrMock = await ethers.getContractFactory("MintrMock");
-//   return await MintrMock.deploy(setup.tokens.BAL.address, ZERO_ADDRESS);
-// }
 
 const balDepositor = async (setup, voterProxy) => {
   const balDepositor = await ethers.getContractFactory(
@@ -172,26 +173,21 @@ const getMintrMock = async (setup) => {
   return await MintrMock.deploy(setup.tokens.BAL.address, controllerMock.address);
 }
 
-const stashFactory = async (setup) => {
+const stashFactory = async (setup, controller, rewardFactory, proxyFactory) => {
   const StashFactory = await ethers.getContractFactory(
     "StashFactory",
     setup.roles.root
   );
-  const operator = setup.controller;
-  const rewardFactory = setup.rewardFactory;
-  const proxyFactory = setup.proxyFactory;
-  return await StashFactory.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+
+  return await StashFactory.deploy(controller.address, rewardFactory.address, proxyFactory.address);
 };
 
-const getStashFactoryMock = async (setup) => {
+const getStashFactoryMock = async (setup, controller, rewardFactory, proxyFactory) => {
   const StashFactoryMock = await ethers.getContractFactory(
     "StashFactoryMock",
     setup.roles.root
   );
-  const operator = setup.controller;
-  const rewardFactory = setup.rewardFactory;
-  const proxyFactory = setup.proxyFactory;
-  return await StashFactoryMock.deploy(operator.address, rewardFactory.address, proxyFactory.address);
+  return await StashFactoryMock.deploy(controller.address, rewardFactory.address, proxyFactory.address);
 };
 
 const getBaseRewardPool = async (setup) => {
@@ -243,16 +239,11 @@ const getVoterProxy = async (setup, gaugeController, mintr) => {
       setup.roles.root
   );
 
-  // const mintr = setup.tokens.D2DBal;
-  const wethBal = setup.tokens.WethBal;
-  const bal = setup.tokens.BAL;
-  const veBal = setup.tokens.VeBal;
-  // const gaugeController = setup.GaugeController;
   return await VoterProxy.deploy(
       mintr.address,
-      bal.address,
-      wethBal.address,
-      veBal.address,
+      setup.tokens.BAL.address,
+      setup.tokens.WethBal.address,
+      setup.tokens.VeBal.address,
       gaugeController.address
   );
 };
@@ -263,14 +254,6 @@ const getGaugeMock = async (setup, lpTokenAddress) => {
     setup.roles.root
   );
   return await GaugeMock.deploy(lpTokenAddress);
-};
-
-const getVotingMock = async (setup) => {
-  const VotingMock = await ethers.getContractFactory(
-    "VotingMock",
-    setup.roles.root
-  );
-  return await VotingMock.deploy();
 };
 
 const getDistroMock = async (setup) => {
@@ -338,7 +321,6 @@ module.exports = {
   getControllerMock,
   getRewardFactory,
   getGaugeMock,
-  getVotingMock,
   getDistroMock,
   getExternalContractMock,
   getSmartWalletCheckerMock,

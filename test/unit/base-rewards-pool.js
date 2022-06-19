@@ -12,7 +12,7 @@ const ZERO = 0;
 const NEW_REWARD_RATIO = 830;
 const ONE_DAY = 1440;
 
-describe("BaseRewardPool", function() {
+describe("unit - BaseRewardPool", function() {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const INITIAL_BAL_BALANCE = ethers.utils.parseEther("10000");
@@ -30,6 +30,7 @@ describe("BaseRewardPool", function() {
 
         // mint BAL to pool so that the pool can give out rewards
         await BAL.mint(setup.baseRewardPool.address, INITIAL_BAL_BALANCE);
+        await D2DBal.mint(setup.roles.root.address, ethers.utils.parseEther('100000'));
 
         return {
             baseRewardPool: setup.baseRewardPool,

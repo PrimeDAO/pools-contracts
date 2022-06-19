@@ -6,7 +6,14 @@ import "../utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract VoterProxyMock {
+interface IMint {
+    function mint(address _address, uint256 amount) external;
+}
+
+contract VoterProxyMock is IVoterProxy {
+    event VotingPowerDelegated(address _delegate);
+    event VotingPowerCleared();
+
     using Address for address;
 
     address public immutable mintr;
@@ -44,6 +51,18 @@ contract VoterProxyMock {
 
     }
 
+    function release() external {}
+
+    function withdrawWethBal(address, uint256) external {}
+
+    function delegateVotingPower(address _to) external {
+        emit VotingPowerDelegated(_to);
+    }
+
+    function clearDelegate() external {
+        emit VotingPowerCleared();
+    }
+
     function setOperator(address _operator) external {
 
     }
@@ -52,22 +71,14 @@ contract VoterProxyMock {
 
     }
 
-    function setStashAccess(address _stash, bool _status)
+    function grantStashAccess(address _stash)
         external
-        returns (bool)
-    {
+    {}
 
-        return true;
-    }
-
-    function deposit(address _token, address _gauge) external returns (bool) {
-        
-        return true;
-    }
+    function deposit(address _token, address _gauge) external {}
 
     //stash only function for pulling extra incentive reward tokens out
     function withdraw(IERC20 _asset) external returns (uint256 balance) {
-
         return 1;
     }
 
@@ -76,44 +87,26 @@ contract VoterProxyMock {
         address _token,
         address _gauge,
         uint256 _amount
-    ) public returns (bool) {
-
-        return true;
-    }
+    ) public {}
 
     function withdrawAll(address _token, address _gauge)
         external
-        returns (bool)
-    {
-
-        return true;
-    }
+    {}
 
     function _withdrawSome(address _gauge, uint256 _amount)
         internal
         returns (uint256)
     {
-
         return _amount;
     }
 
     function createLock(uint256 _value, uint256 _unlockTime)
         external
-        returns (bool)
-    {
+    {}
 
-        return true;
-    }
+    function increaseAmount(uint256 _value) external {}
 
-    function increaseAmount(uint256 _value) external returns (bool) {
-
-        return true;
-    }
-
-    function increaseTime(uint256 _value) external returns (bool) {
-
-        return true;
-    }
+    function increaseTime(uint256 _value) external {}
 
     // Withdraw partial funds
     function withdrawWethBal(
@@ -125,32 +118,14 @@ contract VoterProxyMock {
         return 1;
     }
 
-
-    function vote(
-        uint256 _voteId,
-        address _votingAddress,
-        bool _support
-    ) external returns (bool) {
-        IVoting(_votingAddress).vote(_voteId, _support, false);
-        return true;
-    }
-
-    function voteGaugeWeight(address _gauge, uint256 _weight)
-        external
-        returns (bool)
-    {
-        return true;
-    }
+    function voteMultipleGauges(address[] calldata _gauges, uint256[] calldata _weights) external {}
 
     function claimBal(address _gauge) external returns (uint256) {
-
-        return 1;
+        IMint(bal).mint(msg.sender, 100 ether);
+        return 100 ether;
     }
 
-    function claimRewards(address _gauge) external returns (bool) {
-
-        return true;
-    }
+    function claimRewards(address _gauge) external {}
 
     function claimFees(address _distroContract, IERC20 _token)
         external

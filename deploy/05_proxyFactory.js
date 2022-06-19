@@ -1,3 +1,5 @@
+const { tags: { ProxyFactory, deployment } } = require('../config');
+
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
   const { root } = await getNamedAccounts();
@@ -9,4 +11,4 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 };
 
 module.exports = deployFunction;
-module.exports.tags = ["ProxyFactory"];
+module.exports.tags = [ProxyFactory, deployment];

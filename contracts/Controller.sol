@@ -7,19 +7,23 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Controller contract
 /// @dev Controller contract for Prime Pools is based on the convex Booster.sol contract
-contract Controller {
+contract Controller is IController {
     event OwnerChanged(address _newOwner);
     event FeeManagerChanged(address _newFeeManager);
     event PoolManagerChanged(address _newPoolManager);
     event TreasuryChanged(address _newTreasury);
+    event VoteDelegateChanged(address _newVoteDelegate);
     event FeesChanged(uint256 _newPlatformFee, uint256 _newProfitFee);
+    event PoolShutDown(uint256 _pid);
+    event SystemShutdown();
 
     error Unauthorized();
     error Shutdown();
     error PoolIsClosed();
     error InvalidParameters();
+    error InvalidStash();
 
-    uint256 public constant MAX_FEES = 2000;
+    uint256 public constant MAX_FEES = 3000;
     uint256 public constant FEE_DENOMINATOR = 10000;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
 
@@ -150,18 +154,14 @@ contract Controller {
 
     /// @notice sets the voteDelegate variable
     /// @param _voteDelegate The address of whom votes will be delegated to
-    function setVoteDelegate(address _voteDelegate) external {
-        if (msg.sender != voteDelegate) {
-            revert Unauthorized();
-        }
+    function setVoteDelegate(address _voteDelegate) external onlyAddress(voteDelegate) {
         voteDelegate = _voteDelegate;
+        emit VoteDelegateChanged(_voteDelegate);
     }
 
     /// @notice sets the lockRewards variable
     /// @param _rewards The address of the rewards contract
     function setRewardContracts(address _rewards) external onlyAddress(owner) {
-        //reward contracts are immutable or else the owner
-        //has a means to redeploy and mint bal via rewardClaimed()
         if (lockRewards == address(0)) {
             lockRewards = _rewards;
         }
@@ -195,8 +195,8 @@ contract Controller {
         if (
             _platformFee >= 500 && //5%
             _platformFee <= 2000 && //20%
-            _profitFee >= 100 &&
-            _profitFee <= 500
+            _profitFee >= 100 && //1%
+            _profitFee <= 1000 //10%
         ) {
             platformFees = _platformFee;
             profitFees = _profitFee;
@@ -213,7 +213,7 @@ contract Controller {
 
     /// END SETTER SECTION ///
 
-    /// @notice returns the length of the pool
+    /// @inheritdoc IController
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
     }
@@ -225,7 +225,6 @@ contract Controller {
         external
         onlyAddress(poolManager)
         isNotShutDown
-        returns (bool)
     {
         if (_gauge == address(0) || _lptoken == address(0)) {
             revert InvalidParameters();
@@ -247,6 +246,11 @@ contract Controller {
             _gauge,
             staker
         );
+
+        if (stash == address(0)) {
+            revert InvalidStash();
+        }
+
         //add the new pool
         poolInfo.push(
             PoolInfo({
@@ -259,24 +263,17 @@ contract Controller {
             })
         );
         gaugeMap[_gauge] = true;
-        //give stashes access to rewardfactory and voteproxy
-        //   voteproxy so it can grab the incentive tokens off the contract after claiming rewards
-        //   reward factory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
-        if (stash != address(0)) {
-            poolInfo[pid].stash = stash;
-            IVoterProxy(staker).setStashAccess(stash, true);
-            IRewardFactory(rewardFactory).setAccess(stash, true);
-        }
-        return true;
+        // give stashes access to RewardFactory and VoterProxy
+        // VoterProxy so that it can grab the incentive tokens off the contract after claiming rewards
+        // RewardFactory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
+        poolInfo[pid].stash = stash;
+        IVoterProxy(staker).grantStashAccess(stash);
+        IRewardFactory(rewardFactory).grantRewardStashAccess(stash);
     }
 
     /// @notice shuts down a currently active pool
     /// @param _pid The id of the pool to shutdown
-    function shutdownPool(uint256 _pid)
-        external
-        onlyAddress(poolManager)
-        returns (bool)
-    {
+    function shutdownPool(uint256 _pid) external onlyAddress(poolManager) {
         PoolInfo storage pool = poolInfo[_pid];
 
         //withdraw from gauge
@@ -287,7 +284,7 @@ contract Controller {
 
         pool.shutdown = true;
         gaugeMap[pool.gauge] = false;
-        return true;
+        emit PoolShutDown(_pid);
     }
 
     /// @notice shuts down all pools
@@ -308,17 +305,15 @@ contract Controller {
                 // solhint-disable-next-line
             } catch {}
         }
+        emit SystemShutdown();
     }
 
-    /// @notice deposits an amount into a specific pool, mints reward tokens and stakes them into the reward contract
-    /// @param _pid The pool id to deposit lp tokens into
-    /// @param _amount The amount of lp tokens to be deposited
-    /// @param _stake bool for wheather the tokens should be staked
+    /// @inheritdoc IController
     function deposit(
         uint256 _pid,
         uint256 _amount,
         bool _stake
-    ) public isNotShutDown returns (bool) {
+    ) public isNotShutDown {
         PoolInfo storage pool = poolInfo[_pid];
         if (pool.shutdown) {
             revert PoolIsClosed();
@@ -330,12 +325,6 @@ contract Controller {
         //stake
         address gauge = pool.gauge;
         IVoterProxy(staker).deposit(lptoken, gauge); // VoterProxy
-
-        //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
-        address stash = pool.stash;
-        if (stash != address(0)) {
-            IStash(stash).stashRewards();
-        }
 
         address token = pool.token; //D2DPool token
         if (_stake) {
@@ -350,17 +339,13 @@ contract Controller {
         }
 
         emit Deposited(msg.sender, _pid, _amount);
-        return true;
     }
 
-    /// @notice deposits and stakes all LP tokens
-    /// @param _pid The pool id to deposit lp tokens into
-    /// @param _stake bool for wheather the tokens should be staked
-    function depositAll(uint256 _pid, bool _stake) external returns (bool) {
+    /// @inheritdoc IController
+    function depositAll(uint256 _pid, bool _stake) external {
         address lptoken = poolInfo[_pid].lptoken;
         uint256 balance = IERC20(lptoken).balanceOf(msg.sender);
         deposit(_pid, balance, _stake);
-        return true;
     }
 
     /// @notice internal function that withdraws lp tokens from the pool
@@ -387,142 +372,80 @@ contract Controller {
         if (!pool.shutdown) {
             IVoterProxy(staker).withdraw(lptoken, gauge, _amount);
         }
-
-        //some gauges claim rewards when withdrawing, stash them in a seperate contract until next claim
-        //do not call if shutdown since stashes wont have access
-        address stash = pool.stash;
-        if (stash != address(0) && !isShutdown && !pool.shutdown) {
-            IStash(stash).stashRewards();
-        }
-
         //return lp tokens
         IERC20(lptoken).transfer(_to, _amount);
 
         emit Withdrawn(_to, _pid, _amount);
     }
 
-    /// @notice withdraws lp tokens from the pool
-    /// @param _pid The pool id to withdraw lp tokens from
-    /// @param _amount amount of LP tokens to withdraw
-    function withdraw(uint256 _pid, uint256 _amount) public returns (bool) {
+    /// @inheritdoc IController
+    function withdraw(uint256 _pid, uint256 _amount) public {
         _withdraw(_pid, _amount, msg.sender, msg.sender);
-        return true;
     }
 
-    /// @notice withdraws all of the lp tokens in the pool
-    /// @param _pid The pool id to withdraw lp tokens from
-    function withdrawAll(uint256 _pid) public returns (bool) {
+    /// @inheritdoc IController
+    function withdrawAll(uint256 _pid) public {
         address token = poolInfo[_pid].token;
         uint256 userBal = IERC20(token).balanceOf(msg.sender);
         withdraw(_pid, userBal);
-        return true;
     }
 
-    /// @notice withdraws LP tokens and sends rewards to a specified address
-    /// @param _pid The pool id to deposit lp tokens into
-    /// @param _amount amount of LP tokens to withdraw
+    /// @inheritdoc IController
     function withdrawTo(
         uint256 _pid,
         uint256 _amount,
         address _to
-    ) external returns (bool) {
+    ) external {
         address rewardContract = poolInfo[_pid].balRewards;
         if (msg.sender != rewardContract) {
             revert Unauthorized();
         }
         _withdraw(_pid, _amount, msg.sender, _to);
-        return true;
     }
 
-    //withdraw WethBal, which was unlocked after a year of usage
-    function withdrawUnlockedWethBal(uint256 _pid, uint256 _amount)
-        public
-        returns (bool)
+    /// @inheritdoc IController
+    function withdrawUnlockedWethBal(uint256 _amount) external {
+        IVoterProxy(staker).withdrawWethBal(treasury, _amount);
+    }
+
+    /// @notice Delegates voting power from VoterProxy
+    /// @param _delegateTo to whom we delegate voting power
+    function delegateVotingPower(address _delegateTo)
+        external
+        onlyAddress(owner)
     {
-        PoolInfo storage pool = poolInfo[_pid];
-        address gauge = pool.gauge;
-
-        //pull from gauge if not shutdown
-        // if shutdown tokens will be in this contract
-        if (!pool.shutdown) {
-            IVoterProxy(staker).withdrawWethBal(treasury, gauge, _amount);
-        }
-
-        return true;
+        IVoterProxy(staker).delegateVotingPower(_delegateTo);
     }
 
-    // restake wethBAL, which was unlocked after a year of usage
-    function restake(uint256 _pid) public isNotShutDown returns (bool) {
-        PoolInfo storage pool = poolInfo[_pid];
-        if (pool.shutdown) {
-            revert PoolIsClosed();
-        }
-        //some gauges claim rewards when depositing, stash them in a seperate contract until next claim
-        address stash = pool.stash;
-
-        if (stash != address(0)) {
-            IStash(stash).stashRewards();
-        }
-
-        address token = pool.token;
-
-        uint256 _amount = IERC20(token).balanceOf(msg.sender); //need to get current balance; user could withdraw some amount earlier
-        // solhint-disable-next-line
-        IVoterProxy(staker).increaseTime(block.timestamp + MAX_LOCK_TIME);
-
-        emit Deposited(msg.sender, _pid, _amount);
-        return true;
+    /// @notice Clears delegation of voting power from EOA for VoterProxy
+    function clearDelegation() external onlyAddress(owner) {
+        IVoterProxy(staker).clearDelegate();
     }
 
-    /// @notice submits votes for proposals
-    /// @param _voteId the id of the vote
-    /// @param _votingAddress the address placing the vote
-    /// @param _support boolean for the vote support
-    function vote(
-        uint256 _voteId,
-        address _votingAddress,
-        bool _support
-    ) external onlyAddress(voteDelegate) returns (bool) {
-        require(
-            _votingAddress == voteOwnership || _votingAddress == voteParameter,
-            "!voteAddr"
-        );
-
-        IVoterProxy(staker).vote(_voteId, _votingAddress, _support);
-        return true;
-    }
-
-    /// @notice sets the voteGaugeWeight
-    /// @param _gauge array of gauge addresses
-    /// @param _weight array of vote weights
+    /// @notice Votes for multiple gauges
+    /// @param _gauges array of gauge addresses
+    /// @param _weights array of vote weights
     function voteGaugeWeight(
-        address[] calldata _gauge,
-        uint256[] calldata _weight
-    ) external onlyAddress(voteDelegate) returns (bool) {
-        for (uint256 i = 0; i < _gauge.length; i++) {
-            IVoterProxy(staker).voteGaugeWeight(_gauge[i], _weight[i]);
-        }
-        return true;
+        address[] calldata _gauges,
+        uint256[] calldata _weights
+    ) external onlyAddress(voteDelegate) {
+        IVoterProxy(staker).voteMultipleGauges(_gauges, _weights);
     }
 
     /// @notice claims rewards from a specific pool
     /// @param _pid the id of the pool
     /// @param _gauge address of the gauge
-    function claimRewards(uint256 _pid, address _gauge)
-        external
-        returns (bool)
-    {
+    function claimRewards(uint256 _pid, address _gauge) external {
         address stash = poolInfo[_pid].stash;
         if (msg.sender != stash) {
             revert Unauthorized();
         }
         IVoterProxy(staker).claimRewards(_gauge);
-        return true;
     }
 
     /// @notice sets the gauge redirect address
     /// @param _pid the id of the pool
-    function setGaugeRedirect(uint256 _pid) external returns (bool) {
+    function setGaugeRedirect(uint256 _pid) external {
         address stash = poolInfo[_pid].stash;
         if (msg.sender != stash) {
             revert Unauthorized();
@@ -533,7 +456,6 @@ contract Controller {
             stash
         );
         IVoterProxy(staker).execute(gauge, uint256(0), data);
-        return true;
     }
 
     /// @notice internal function that claims rewards from a pool and disperses them to the rewards contract
@@ -586,40 +508,18 @@ contract Controller {
         }
     }
 
-    /// @notice external function that claims rewards from a pool and disperses them to the rewards contract
-    /// @param _pid the id of the pool where lp tokens are held
-    function earmarkRewards(uint256 _pid)
-        external
-        isNotShutDown
-        returns (bool)
-    {
+    /// @inheritdoc IController
+    function earmarkRewards(uint256 _pid) external isNotShutDown {
         _earmarkRewards(_pid);
-        return true;
     }
 
-    /// @notice claims fees from the feeDistro contract, transfers the lockfees into the rewards contract
-    function earmarkFees() external returns (bool) {
+    /// @inheritdoc IController
+    function earmarkFees() external {
         //claim fee rewards
         IVoterProxy(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = feeToken.balanceOf(address(this));
         feeToken.transfer(lockFees, _balance);
         IRewards(lockFees).queueNewRewards(_balance);
-        return true;
-    }
-
-    /// @notice  callback function that gets called when a reward is claimed and recieved
-    /// @param _pid the id of the pool
-    function rewardClaimed(
-        uint256 _pid,
-        address,
-        uint256
-    ) external view returns (bool) {
-        address rewardContract = poolInfo[_pid].balRewards;
-        require(
-            msg.sender == rewardContract || msg.sender == lockRewards,
-            "!auth"
-        );
-        return true;
     }
 }
