@@ -28,9 +28,19 @@ describe("unit - Controller", function () {
         voterProxy = await init.getVoterProxyMock(setup)
         controller = await init.controller(setup, voterProxy, feeDistributor, setup.roles.root, setup.roles.root);
 
+        // Deploy implementation contract
+        const implementationAddress = await ethers.getContractFactory('StashMock')
+            .then(x => x.deploy())
+            .then(x => x.address)
+
         proxyFactory = await init.proxyFactory(setup);
         rewardFactory = await init.rewardFactory(setup, controller);
+
         stashFactory = await init.stashFactory(setup, controller, rewardFactory, proxyFactory);
+        // Set implementation contract to mock
+        expect(await stashFactory.connect(root).setImplementation(implementationAddress))
+            .to.emit(stashFactory, 'ImpelemntationChanged')
+            .withArgs(implementationAddress);
         tokenFactory = await init.tokenFactory(setup, controller);
 
         baseRewardPool = await init.baseRewardPool(setup, controller, rewardFactory);
@@ -168,18 +178,6 @@ describe("unit - Controller", function () {
     });
 
     context("» _earmarkRewards testing", () => {
-        it("Sets StashFactory implementation ", async () => {
-            // Deploy implementation contract
-            const implementationAddress = await ethers.getContractFactory('StashMock')
-                .then(x => x.deploy())
-                .then(x => x.address)
-
-            // Set implementation contract
-            expect(await stashFactory.connect(root).setImplementation(implementationAddress))
-                .to.emit(stashFactory, 'ImpelemntationChanged')
-                .withArgs(implementationAddress);
-        });
-
         it("Adds pool", async () => {
             await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
             expect(await controller.poolLength()).to.equal(1);
@@ -187,6 +185,7 @@ describe("unit - Controller", function () {
             expect((poolInfo.lptoken)).to.equal(tokens.B50WBTC50WETH.address);
             expect(poolInfo.gauge).to.equal(gaugeMock.address);
         });
+
         it("reverts if stash factory returns address(0) for stash", async () => {
             expect(await controller.connect(root).setFactories(rewardFactory.address, stashFactoryMock.address, tokenFactory.address));
             await expect(controller.connect(root).addPool(tokens.B50WBTC50WETH.address, gaugeMock.address)).to.be.revertedWith('InvalidStash()');
@@ -252,32 +251,41 @@ describe("unit - Controller", function () {
             .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
     });
 
-    it('withdrawsUnlockedWethBal', async function() {
+    it('withdrawsUnlockedWethBal', async function () {
         await controller.withdrawUnlockedWethBal(ONE_HUNDRED_ETHER)
     });
 
-    it('voteGaugeWeight', async function() {
+    it('voteGaugeWeight', async function () {
         await controller.voteGaugeWeight([gaugeMock.address], [1000])
     });
 
-    it('delegateVotingPower', async function() {
+    it('delegateVotingPower', async function () {
         await expect(controller.delegateVotingPower(ONE_ADDRESS))
             .to.emit(voterProxy, 'VotingPowerDelegated')
             .withArgs(ONE_ADDRESS);
     });
-    
-    it('clearDelegation', async function() {
+
+    it('clearDelegation', async function () {
         await expect(controller.clearDelegation())
             .to.emit(voterProxy, 'VotingPowerCleared');
     });
 
-    // it('claims rewards', async function() {
-    //     await controller.claimRewards(0, gaugeMock.address)
-    // });
+    it('claims rewards', async function () {
+        // add pool
+        await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
 
-    // it('', async function () {
-    //     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
-    //     await expect(controller.connect(staker).withdrawTo(0, ONE_HUNDRED_ETHER, ONE_ADDRESS))
-    //         .to.be.revertedWith('Unauthorized()');
-    // });
+        const { stash } = await controller.poolInfo(0)
+
+        // revert if unauthorized
+        await expect(controller.setGaugeRedirect(0)).to.be.revertedWith('Unauthorized()');
+
+        const contract = await ethers.getContractFactory('StashMock').then(x => x.attach(stash))
+
+        await contract.claimRewards()
+    });
+
+    it('reverts claimRewards() if unauthorized', async function () {
+        await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
+        await expect(controller.claimRewards(0, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
+    });
 });
