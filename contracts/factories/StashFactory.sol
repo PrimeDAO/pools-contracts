@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import "../utils/Interfaces.sol";
 
 /// @title Stash Factory
-contract StashFactory {
+contract StashFactory is IStashFactory {
     event ImpelemntationChanged(address _newImplementation);
 
     error Unauthorized();
@@ -28,7 +28,7 @@ contract StashFactory {
     /// @notice Used to set address for new implementation contract
     /// @param _newImplementation Address of new implementation contract
     function setImplementation(address _newImplementation) external {
-        if (msg.sender != IDeposit(operator).owner()) {
+        if (msg.sender != IController(operator).owner()) {
             revert Unauthorized();
         }
         implementation = _newImplementation;

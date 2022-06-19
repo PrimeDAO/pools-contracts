@@ -166,5 +166,4 @@ describe("Kovan clean deployment", function () {
 
         await expect(controller.clearDelegation()).to.emit(voterProxy, 'VotingPowerCleared');
     });
-    
 });

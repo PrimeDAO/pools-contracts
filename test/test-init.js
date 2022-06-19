@@ -27,9 +27,20 @@ const getTokens = async (setup) => {
     setup.roles.root
   );
 
+  const D2DBalFactory = await ethers.getContractFactory(
+    "D2DBal",
+    setup.roles.root
+  );
+
+  const DepositTokenFactory = await ethers.getContractFactory(
+    "DepositToken",
+    setup.roles.root
+  );
+
   const B50WBTC50WETH = await ERC20Factory.deploy("Balancer 50 WBTC 50 WETH", "B-50WBTC-50WETH"); // LP token
   const BAL = await ERC20Factory.deploy("Bal", "BAL");
-  const D2DBal = await ERC20Factory.deploy("D2DBal", "D2DBAL");
+  const D2DBal = await D2DBalFactory.deploy();
+  const depositToken = await DepositTokenFactory.deploy(setup.roles.root.address, B50WBTC50WETH.address);
   const PoolContract = await ERC20Factory.deploy("PoolToken", "BALP");
   const WethBal = await ERC20Factory.deploy("WethBal", "WethBAL"); // Balancer80BAL20WETH LP token
   const VeBal = await VeBalFactory.deploy(WethBal.address, "VeBal", "VeBAL", setup.roles.authorizer_adaptor.address);
@@ -47,7 +58,8 @@ const getTokens = async (setup) => {
     WethBal,
     VeBal,
     B50WBTC50WETH,
-    StashMock
+    StashMock,
+    depositToken,
   };
 
   setup.tokens = tokens;
@@ -245,14 +257,6 @@ const getGaugeMock = async (setup, lpTokenAddress) => {
   return await GaugeMock.deploy(lpTokenAddress);
 };
 
-const getVotingMock = async (setup) => {
-  const VotingMock = await ethers.getContractFactory(
-    "VotingMock",
-    setup.roles.root
-  );
-  return await VotingMock.deploy();
-};
-
 const getDistroMock = async (setup) => {
   const DistroMock = await ethers.getContractFactory(
     "DistroMock",
@@ -318,7 +322,6 @@ module.exports = {
   getControllerMock,
   getRewardFactory,
   getGaugeMock,
-  getVotingMock,
   getDistroMock,
   getExternalContractMock,
   getSmartWalletCheckerMock,

@@ -52,18 +52,11 @@ contract VoterProxyMock {
 
     }
 
-    function setStashAccess(address _stash, bool _status)
+    function grantStashAccess(address _stash)
         external
-        returns (bool)
-    {
+    {}
 
-        return true;
-    }
-
-    function deposit(address _token, address _gauge) external returns (bool) {
-        
-        return true;
-    }
+    function deposit(address _token, address _gauge) external {}
 
     //stash only function for pulling extra incentive reward tokens out
     function withdraw(IERC20 _asset) external returns (uint256 balance) {
@@ -76,44 +69,26 @@ contract VoterProxyMock {
         address _token,
         address _gauge,
         uint256 _amount
-    ) public returns (bool) {
-
-        return true;
-    }
+    ) public {}
 
     function withdrawAll(address _token, address _gauge)
         external
-        returns (bool)
-    {
-
-        return true;
-    }
+    {}
 
     function _withdrawSome(address _gauge, uint256 _amount)
         internal
         returns (uint256)
     {
-
         return _amount;
     }
 
     function createLock(uint256 _value, uint256 _unlockTime)
         external
-        returns (bool)
-    {
+    {}
 
-        return true;
-    }
+    function increaseAmount(uint256 _value) external {}
 
-    function increaseAmount(uint256 _value) external returns (bool) {
-
-        return true;
-    }
-
-    function increaseTime(uint256 _value) external returns (bool) {
-
-        return true;
-    }
+    function increaseTime(uint256 _value) external {}
 
     // Withdraw partial funds
     function withdrawWethBal(
@@ -123,17 +98,6 @@ contract VoterProxyMock {
     ) public returns (uint256) {
 
         return 1;
-    }
-
-
-    function vote(
-        uint256 _voteId,
-        address _votingAddress,
-        bool _support
-    ) external returns (bool) {
-        require(msg.sender == operator, "!auth");
-        IVoting(_votingAddress).vote(_voteId, _support, false);
-        return true;
     }
 
     function voteGaugeWeight(address _gauge, uint256 _weight)
@@ -152,10 +116,7 @@ contract VoterProxyMock {
         return 1;
     }
 
-    function claimRewards(address _gauge) external returns (bool) {
-
-        return true;
-    }
+    function claimRewards(address _gauge) external {}
 
     function claimFees(address _distroContract, IERC20 _token)
         external
