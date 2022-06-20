@@ -58,7 +58,7 @@ describe("Kovan integration with deployed contracts", function () {
 
         await increaseTime(60 * 60 * 24 * 365) // 365 days
 
-        await expect(controller.connect(root).withdrawUnlockedWethBal(pid, ONE_HUNDRED_ETHER))
+        await expect(controller.connect(wethBalWhaleSigner).withdrawUnlockedWethBal(pid, ONE_HUNDRED_ETHER))
         expect(
             (await wethBalContract.balanceOf(treasury.address)).toNumber()
         ).to.equal(ONE_HUNDRED_ETHER.toNumber());
