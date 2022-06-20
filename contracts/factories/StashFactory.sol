@@ -48,13 +48,7 @@ contract StashFactory is IStashFactory {
             revert Unauthorized();
         }
         address stash = IProxyFactory(proxyFactory).clone(implementation);
-        IStash(stash).initialize(
-            _pid,
-            msg.sender,
-            _staker,
-            _gauge,
-            rewardFactory
-        );
+        IStash(stash).initialize(_pid, msg.sender, _staker, _gauge, rewardFactory);
         return stash;
     }
 }

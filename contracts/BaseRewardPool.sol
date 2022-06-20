@@ -94,10 +94,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Adds an extra reward
     /// @dev only `rewardManager` can add extra rewards
     /// @param _reward token address of the reward
-    function addExtraReward(address _reward)
-        external
-        onlyAddress(rewardManager)
-    {
+    function addExtraReward(address _reward) external onlyAddress(rewardManager) {
         require(_reward != address(0), "!reward setting");
         extraRewards.push(_reward);
     }
@@ -117,20 +114,14 @@ contract BaseRewardPool is IBaseRewardsPool {
         }
         return
             rewardPerTokenStored +
-            (((lastTimeRewardApplicable() - lastUpdateTime) *
-                rewardRate *
-                1e18) / totalSupply());
+            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupply());
     }
 
     /// @notice Returns the `account`'s earned rewards
     /// @param account The address of the token holder
     /// @return The `account`'s earned rewards
     function earned(address account) public view returns (uint256) {
-        return
-            (balanceOf(account) *
-                (rewardPerToken() - userRewardPerTokenPaid[account])) /
-            1e18 +
-            rewards[account];
+        return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
     /// @notice Stakes `amount` tokens
@@ -157,10 +148,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Stakes `amount` tokens for `_for`
     /// @param _for Who are we staking for
     /// @param _amount The amount of tokens user wants to stake
-    function stakeFor(address _for, uint256 _amount)
-        external
-        updateReward(_for)
-    {
+    function stakeFor(address _for, uint256 _amount) external updateReward(_for) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -178,10 +166,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Unstakes `amount` tokens
     /// @param _amount The amount of tokens that the user wants to withdraw
     /// @param _claim Whether or not the user wants to claim their rewards
-    function withdraw(uint256 _amount, bool _claim)
-        public
-        updateReward(msg.sender)
-    {
+    function withdraw(uint256 _amount, bool _claim) public updateReward(msg.sender) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -210,10 +195,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Withdraw `amount` tokens and unwrap
     /// @param _amount The amount of tokens that the user wants to withdraw
     /// @param _claim Whether or not the user wants to claim their rewards
-    function withdrawAndUnwrap(uint256 _amount, bool _claim)
-        public
-        updateReward(msg.sender)
-    {
+    function withdrawAndUnwrap(uint256 _amount, bool _claim) public updateReward(msg.sender) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -242,10 +224,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Claims Rewards for `_account`
     /// @param _account The account to claim rewards for
     /// @param _claimExtras Whether or not the user wants to claim extra rewards
-    function getReward(address _account, bool _claimExtras)
-        public
-        updateReward(_account)
-    {
+    function getReward(address _account, bool _claimExtras) public updateReward(_account) {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
@@ -256,11 +235,7 @@ contract BaseRewardPool is IBaseRewardsPool {
         // also get rewards from linked rewards
         if (_claimExtras) {
             address[] memory extraRewardsMemory = extraRewards;
-            for (
-                uint256 i = 0;
-                i < extraRewardsMemory.length;
-                i = unsafeInc(i)
-            ) {
+            for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
                 IRewards(extraRewardsMemory[i]).getReward(_account);
             }
         }
@@ -334,10 +309,7 @@ contract BaseRewardPool is IBaseRewardsPool {
         }
     }
 
-    function notifyRewardAmount(uint256 reward)
-        internal
-        updateReward(address(0))
-    {
+    function notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {
         historicalRewards = historicalRewards + reward;
         // solhint-disable-next-line
         if (block.timestamp >= periodFinish) {

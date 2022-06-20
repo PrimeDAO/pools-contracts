@@ -12,10 +12,8 @@ contract VoterProxy is IVoterProxy {
     using MathUtil for uint256;
 
     // Same address on all chains
-    address public constant SNAPSHOT_REGISTRY =
-        0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446;
-    bytes32 public constant BALANCER_SNAPSHOT_ID =
-        0x62616c616e6365722e6574680000000000000000000000000000000000000000;
+    address public constant SNAPSHOT_REGISTRY = 0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446;
+    bytes32 public constant BALANCER_SNAPSHOT_ID = 0x62616c616e6365722e6574680000000000000000000000000000000000000000;
 
     event OperatorChanged(address newOperator);
     event DepositorChanged(address newDepositor);
@@ -160,18 +158,13 @@ contract VoterProxy is IVoterProxy {
     /// so that it can vote on behalf of DAO off chain (Snapshot)
     /// @param _delegateTo to whom we delegate voting power
     function delegateVotingPower(address _delegateTo) external onlyOperator {
-        ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).setDelegate(
-            BALANCER_SNAPSHOT_ID,
-            _delegateTo
-        );
+        ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).setDelegate(BALANCER_SNAPSHOT_ID, _delegateTo);
         emit VotingPowerDelegated(_delegateTo);
     }
 
     /// @notice Clears delegation
     function clearDelegate() external onlyOperator {
-        ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).clearDelegate(
-            BALANCER_SNAPSHOT_ID
-        );
+        ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).clearDelegate(BALANCER_SNAPSHOT_ID);
         emit VotingPowerCleared();
     }
 
@@ -179,18 +172,12 @@ contract VoterProxy is IVoterProxy {
     /// @dev Input arrays must have same length
     /// @param _gauges The gauges to vote for
     /// @param _weights The weights for a gauge in basis points (units of 0.01%). Minimal is 0.01%. Ignored if 0
-    function voteMultipleGauges(
-        address[] calldata _gauges,
-        uint256[] calldata _weights
-    ) external onlyOperator {
+    function voteMultipleGauges(address[] calldata _gauges, uint256[] calldata _weights) external onlyOperator {
         if (_gauges.length != _weights.length) {
             revert BadInput();
         }
         for (uint256 i = 0; i < _gauges.length; i = i.unsafeInc()) {
-            IVoting(gaugeController).vote_for_gauge_weights(
-                _gauges[i],
-                _weights[i]
-            );
+            IVoting(gaugeController).vote_for_gauge_weights(_gauges[i], _weights[i]);
         }
     }
 
@@ -219,11 +206,7 @@ contract VoterProxy is IVoterProxy {
     /// @param _distroContract The distro contract to claim from
     /// @param _token The token to claim from
     /// @return uint256 amaunt claimed
-    function claimFees(address _distroContract, IERC20 _token)
-        external
-        onlyOperator
-        returns (uint256)
-    {
+    function claimFees(address _distroContract, IERC20 _token) external onlyOperator returns (uint256) {
         IFeeDistro(_distroContract).claimToken(address(this), _token);
         uint256 _balance = _token.balanceOf(address(this));
         _token.transfer(operator, _balance);
@@ -241,7 +224,7 @@ contract VoterProxy is IVoterProxy {
         bytes calldata _data
     ) external onlyOperator returns (bool, bytes memory) {
         // solhint-disable-next-line
-        (bool success, bytes memory result) = _to.call{value: _value}(_data);
+        (bool success, bytes memory result) = _to.call{ value: _value }(_data);
 
         return (success, result);
     }
@@ -249,10 +232,7 @@ contract VoterProxy is IVoterProxy {
     /// @notice Locks BAL tokens to veBal
     /// @param _value The amount of BAL tokens to lock
     /// @param _unlockTime Epoch time when tokens unlock, rounded down to whole weeks
-    function createLock(uint256 _value, uint256 _unlockTime)
-        external
-        onlyDepositor
-    {
+    function createLock(uint256 _value, uint256 _unlockTime) external onlyDepositor {
         IBalVoteEscrow(veBal).create_lock(_value, _unlockTime);
     }
 
@@ -297,8 +277,7 @@ contract VoterProxy is IVoterProxy {
     /// @param _gauge The gauge to withdraw from
     function withdrawAll(address _token, address _gauge) external {
         // withdraw has authorization check, so we don't need to check here
-        uint256 amount = balanceOfPool(_gauge) +
-            (IERC20(_token).balanceOf(address(this)));
+        uint256 amount = balanceOfPool(_gauge) + (IERC20(_token).balanceOf(address(this)));
         withdraw(_token, _gauge, amount);
     }
 
@@ -306,10 +285,7 @@ contract VoterProxy is IVoterProxy {
     /// @dev If contract doesn't have asked _amount tokens it will withdraw all tokens
     /// @param _to send to address
     /// @param _amount The amount to withdraw
-    function withdrawWethBal(address _to, uint256 _amount)
-        external
-        onlyOperator
-    {
+    function withdrawWethBal(address _to, uint256 _amount) external onlyOperator {
         IBalVoteEscrow(veBal).withdraw();
         uint256 _balance = IERC20(wethBal).balanceOf(address(this));
         if (_balance < _amount) {
