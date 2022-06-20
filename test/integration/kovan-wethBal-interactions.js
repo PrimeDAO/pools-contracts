@@ -8,6 +8,7 @@ const { wethBal } = getAddresses()
 const lpTokenWbtcWeth = '0x647c1fd457b95b75d0972ff08fe01d7d7bda05df' // LP TOKEN Balancer 50 WBTC 50 WETH 
 const gaugeWbtcWeth = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for pool 50WBTC 50WETH
 
+
 /*
                                         IMPORTANT
         In this test we are using already deployed smart contracts on Kovan that have permission
@@ -16,14 +17,15 @@ const gaugeWbtcWeth = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for 
 
 describe("Kovan integration with deployed contracts", function () {
 
-    let voterProxy, balDepositor, controller, wethBalContract, ;
+    let voterProxy, d2DBal, balDepositor, controller, wethBalContract, rewardFactory, lpTokenContract;
 
     const setupTests = deployments.createFixture(async () => {
         voterProxy = await getContract('VoterProxy', require('../../deployments/kovan/VoterProxy.json').address)
+        d2DBal = await getContract('D2DBal', require('../../deployments/kovan/D2DBal.json').address)
         balDepositor = await getContract('BalDepositor', require('../../deployments/kovan/BalDepositor.json').address)
         controller = await getContract('Controller', require('../../deployments/kovan/Controller.json').address)
         wethBalContract = await getContract('ERC20Mock', wethBal)
-        rewardFactory = await getContract('RewardFactory', setup.RewardFactory.address)
+        rewardFactory = await getContract('RewardFactory', require('../../deployments/kovan/RewardFactory.json').address)
         lpTokenContract = await getContract('ERC20Mock', lpTokenWbtcWeth)
     });
 
@@ -34,26 +36,30 @@ describe("Kovan integration with deployed contracts", function () {
         }
         await setupTests();
     });
-
+    
     it("It deposit and withdraw WethBal", async () => {
         await expect(controller.addPool(lpTokenWbtcWeth, gaugeWbtcWeth)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
-        await initialLockWethBal(wethBalContract, balDepositor, voterProxy)
-
+        expect(await controller.poolLength()).to.equals(1);
         const pid = 0;
+
+        // We impersonate LP token WHALE and make him a signer
+        const signer = await impersonateAddress(lpTokenHolderAddress);
+
+        await initialLockWethBal(wethBalContract, balDepositor, voterProxy)
 
         await lpTokenContract.connect(signer).approve(controller.address, ONE_HUNDRED_ETHER)
         await wethBalContract.connect(signer).approve(balDepositor.address, ONE_HUNDRED_ETHER)
 
         const before = (await wethBalContract.balanceOf(balDepositor.address)).toNumber()
         const depositAmount = ONE_HUNDRED_ETHER;
-        expect(await balDepositor.deposit(depositAmount, false, baseRewardPool.address))
+        await expect(balDepositor.deposit(depositAmount, false, baseRewardPool.address))
 
         const after = before.add(ONE_HUNDRED_ETHER.toNumber())
-        expect(await wethBalContract.balanceOf(balDepositor.address)).to.equals(after)
+        await expect(wethBalContract.balanceOf(balDepositor.address)).to.equals(after)
 
         await increaseTime(60 * 60 * 24 * 365) // 365 days
 
-        expect(await controller.connect(root).withdrawUnlockedWethBal(pid, ONE_HUNDRED_ETHER))
+        await expect(controller.connect(root).withdrawUnlockedWethBal(pid, ONE_HUNDRED_ETHER))
         expect(
             (await wethBalContract.balanceOf(treasury.address)).toNumber()
         ).to.equal(ONE_HUNDRED_ETHER.toNumber());
