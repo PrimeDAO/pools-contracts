@@ -6,7 +6,14 @@ import "../utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract VoterProxyMock {
+interface IMint {
+    function mint(address _address, uint256 amount) external;
+}
+
+contract VoterProxyMock is IVoterProxy {
+    event VotingPowerDelegated(address _delegate);
+    event VotingPowerCleared();
+
     using Address for address;
 
     address public immutable mintr;
@@ -44,6 +51,18 @@ contract VoterProxyMock {
 
     }
 
+    function release() external {}
+
+    function withdrawWethBal(address, uint256) external {}
+
+    function delegateVotingPower(address _to) external {
+        emit VotingPowerDelegated(_to);
+    }
+
+    function clearDelegate() external {
+        emit VotingPowerCleared();
+    }
+
     function setOperator(address _operator) external {
 
     }
@@ -60,7 +79,6 @@ contract VoterProxyMock {
 
     //stash only function for pulling extra incentive reward tokens out
     function withdraw(IERC20 _asset) external returns (uint256 balance) {
-
         return 1;
     }
 
@@ -100,20 +118,11 @@ contract VoterProxyMock {
         return 1;
     }
 
-    function voteGaugeWeight(address _gauge, uint256 _weight)
-        external
-        returns (bool)
-    {
-        require(msg.sender == operator, "!auth");
-
-        //vote
-        IVoting(gaugeController).vote_for_gauge_weights(_gauge, _weight);
-        return true;
-    }
+    function voteMultipleGauges(address[] calldata _gauges, uint256[] calldata _weights) external {}
 
     function claimBal(address _gauge) external returns (uint256) {
-
-        return 1;
+        IMint(bal).mint(msg.sender, 100 ether);
+        return 100 ether;
     }
 
     function claimRewards(address _gauge) external {}
@@ -135,8 +144,6 @@ contract VoterProxyMock {
         uint256 _value,
         bytes calldata _data
     ) external returns (bool, bytes memory) {
-        require(msg.sender == operator, "!auth");
-
         // solhint-disable-next-line
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
 
