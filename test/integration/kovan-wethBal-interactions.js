@@ -5,6 +5,9 @@ const { getContract, impersonateAddress } = require("../helpers/helpers");
 const { getAddresses } = require('../../config');
 const { wethBal } = getAddresses()
 
+const lpTokenWbtcWeth = '0x647c1fd457b95b75d0972ff08fe01d7d7bda05df' // LP TOKEN Balancer 50 WBTC 50 WETH 
+const gaugeWbtcWeth = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for pool 50WBTC 50WETH
+
 /*
                                         IMPORTANT
         In this test we are using already deployed smart contracts on Kovan that have permission
@@ -13,13 +16,15 @@ const { wethBal } = getAddresses()
 
 describe("Kovan integration with deployed contracts", function () {
 
-    let voterProxy, balDepositor, controller, wethBalContract;
+    let voterProxy, balDepositor, controller, wethBalContract, ;
 
     const setupTests = deployments.createFixture(async () => {
         voterProxy = await getContract('VoterProxy', require('../../deployments/kovan/VoterProxy.json').address)
-        balDepositor = await getContract('BalDepositor', require('../../deployments/kovan/Baldepositor.json').address)
+        balDepositor = await getContract('BalDepositor', require('../../deployments/kovan/BalDepositor.json').address)
         controller = await getContract('Controller', require('../../deployments/kovan/Controller.json').address)
         wethBalContract = await getContract('ERC20Mock', wethBal)
+        rewardFactory = await getContract('RewardFactory', setup.RewardFactory.address)
+        lpTokenContract = await getContract('ERC20Mock', lpTokenWbtcWeth)
     });
 
     beforeEach(async function () {
