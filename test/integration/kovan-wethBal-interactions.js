@@ -41,13 +41,13 @@ describe("Kovan integration with deployed contracts", function () {
         expect(await controller.poolLength()).to.equals(1);
         const pid = 0;
 
-        // We impersonate LP token WHALE and make him a signer
         const signer = await impersonateAddress(lpTokenHolderAddress);
+        const wethBalWhaleSigner = await impersonateAddress('0x77777512272eda91589b62fc8506e607dea0bb08')
 
         await initialLockWethBal(wethBalContract, balDepositor, voterProxy)
 
         await lpTokenContract.connect(signer).approve(controller.address, ONE_HUNDRED_ETHER)
-        await wethBalContract.connect(signer).approve(balDepositor.address, ONE_HUNDRED_ETHER)
+        await wethBalContract.connect(wethBalWhaleSigner).approve(balDepositor.address, ONE_HUNDRED_ETHER)
 
         const before = (await wethBalContract.balanceOf(balDepositor.address)).toNumber()
         const depositAmount = ONE_HUNDRED_ETHER;
