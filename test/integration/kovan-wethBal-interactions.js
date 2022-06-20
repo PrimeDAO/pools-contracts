@@ -17,11 +17,10 @@ const gaugeWbtcWeth = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for 
 
 describe("Kovan integration with deployed contracts", function () {
 
-    let voterProxy, d2DBal, balDepositor, controller, wethBalContract, rewardFactory, lpTokenContract;
+    let voterProxy, balDepositor, controller, wethBalContract, rewardFactory, lpTokenContract;
 
     const setupTests = deployments.createFixture(async () => {
         voterProxy = await getContract('VoterProxy', require('../../deployments/kovan/VoterProxy.json').address)
-        d2DBal = await getContract('D2DBal', require('../../deployments/kovan/D2DBal.json').address)
         balDepositor = await getContract('BalDepositor', require('../../deployments/kovan/BalDepositor.json').address)
         controller = await getContract('Controller', require('../../deployments/kovan/Controller.json').address)
         wethBalContract = await getContract('ERC20Mock', wethBal)
