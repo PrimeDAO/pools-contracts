@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { deployments } = require("hardhat");
 const { ONE_HUNDRED_ETHER } = require("../helpers/constants");
-const { getContract, impersonateAddress } = require("../helpers/helpers");
+const { getContract, impersonateAddress, increaseTime } = require("../helpers/helpers");
 const { getAddresses } = require('../../config');
 const { wethBal } = getAddresses()
 
@@ -38,6 +38,8 @@ describe("Kovan integration with deployed contracts", function () {
     it("It deposit and withdraw WethBal", async () => {
         const { treasury } = await getNamedAccounts();
 
+        await expect(controller.setTreasury(treasury))
+
         const signer = await impersonateAddress(lpTokenHolderAddress);
         await lpTokenContract.connect(signer).approve(controller.address, ONE_HUNDRED_ETHER)
         const wethBalWhaleSigner = await impersonateAddress('0x77777512272eda91589b62fc8506e607dea0bb08')
@@ -45,22 +47,16 @@ describe("Kovan integration with deployed contracts", function () {
         expect(await wethBalContract.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER)
         expect(await wethBalContract.balanceOf(treasury)).to.equals(0)
 
-        // set treasury
-        await expect(controller.setTreasury(treasury))
-            .to.emit(controller, 'TreasuryChanged')
-            .withArgs(treasury);
         await wethBalContract.connect(wethBalWhaleSigner).approve(balDepositor.address, ONE_HUNDRED_ETHER)
 
         // deposit from signer
         await expect(controller.connect(wethBalWhaleSigner).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
-            .to.emit(controller, 'Deposited')
-            .withArgs(wethBalWhaleSigner.address, pid, ONE_HUNDRED_ETHER);
 
         await increaseTime(60 * 60 * 24 * 365) // 365 days
 
         expect(await controller.withdrawUnlockedWethBal(ONE_HUNDRED_ETHER))
         expect(
-            (await wethBalContract.balanceOf(treasury.address)).toNumber()
-        ).to.equal(ONE_HUNDRED_ETHER.toNumber());
+            (await wethBalContract.balanceOf(treasury))
+        ).to.equal(ONE_HUNDRED_ETHER);
     })
 });
