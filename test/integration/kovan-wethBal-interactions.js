@@ -6,7 +6,6 @@ const { getAddresses } = require('../../config');
 const { wethBal } = getAddresses()
 
 const lpTokenWbtcWeth = '0x647c1fd457b95b75d0972ff08fe01d7d7bda05df' // LP TOKEN Balancer 50 WBTC 50 WETH 
-const gaugeWbtcWeth = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for pool 50WBTC 50WETH
 const lpTokenHolderAddress = '0x79613fb99098089e454ca2439eca452d3740391f' // LP token Whale that we impersonate
 const pid = 0
 
@@ -18,15 +17,13 @@ const pid = 0
 
 describe("Kovan integration with deployed contracts", function () {
 
-    let voterProxy, balDepositor, baseRewardPool, controller, wethBalContract, rewardFactory, lpTokenContract;
+    let voterProxy, balDepositor, controller, wethBalContract, lpTokenContract;
 
     const setupTests = deployments.createFixture(async () => {
         voterProxy = await getContract('VoterProxy', require('../../deployments/kovan/VoterProxy.json').address)
         balDepositor = await getContract('BalDepositor', require('../../deployments/kovan/BalDepositor.json').address)
-        baseRewardPool = await getContract('BaseRewardPool', require('../../deployments/kovan/BaseRewardPool.json').address)
         controller = await getContract('Controller', require('../../deployments/kovan/Controller.json').address)
         wethBalContract = await getContract('ERC20Mock', wethBal)
-        rewardFactory = await getContract('RewardFactory', require('../../deployments/kovan/RewardFactory.json').address)
         lpTokenContract = await getContract('ERC20Mock', lpTokenWbtcWeth)
     });
 
