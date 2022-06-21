@@ -51,7 +51,7 @@ describe("Kovan clean deployment", function () {
         expect(await d2DBal.name()).to.equals('D2DBal')
     });
 
-    it("adds two pools, deposits LP tokens, earmarks rewards, fee manager, treasury get BAL, staker withdraws", async function () {
+    it("adds two pools, deposits LP tokens, earmarks rewards, fee manager, treasury get BAL, staker withdraws, withdraws unlocked WethBAL", async function () {
         await expect(controller.addPool(lpTokenWbtcWeth, gaugeWbtcWeth)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
         await expect(controller.addPool(lpToken17WBTC50BAL33USDC, gauge17WBTC50BAL33USDC)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
 
