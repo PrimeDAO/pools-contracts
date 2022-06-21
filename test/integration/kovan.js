@@ -3,7 +3,7 @@ const { deployments } = require("hardhat");
 const { ONE_HUNDRED_ETHER, ONE_ADDRESS } = require("../helpers/constants");
 const { getContract, impersonateAddress, increaseTime } = require("../helpers/helpers");
 const { getAddresses, tags: { deployment } } = require('../../config');
-const { bal } = getAddresses()
+const { bal, wethBal } = getAddresses()
 
 const lpTokenWbtcWeth = '0x647c1fd457b95b75d0972ff08fe01d7d7bda05df' // LP TOKEN Balancer 50 WBTC 50 WETH 
 const gaugeWbtcWeth = '0xE190E5363C925513228Bf25E4633C8cca4809C9a' // Gauge for pool 50WBTC 50WETH
@@ -17,7 +17,7 @@ const startBalanceOfRoot = 3327464671702872; // Root account balance on pinned b
 
 describe("Kovan clean deployment", function () {
 
-    let voterProxy, d2DBal, balDepositor, controller, rewardFactory, lpTokenContract, lpTokenContractTwo;
+    let voterProxy, d2DBal, balDepositor, controller, wethBalContract, rewardFactory, lpTokenContract, lpTokenContractTwo;
 
     const setupTests = deployments.createFixture(async () => {
         // deploy contract to local fork
@@ -27,6 +27,7 @@ describe("Kovan clean deployment", function () {
         d2DBal = await getContract('D2DBal', setup.D2DBal.address)
         balDepositor = await getContract('BalDepositor', setup.BalDepositor.address)
         controller = await getContract('Controller', setup.Controller.address)
+        wethBalContract = await getContract('ERC20Mock', wethBal)
         rewardFactory = await getContract('RewardFactory', setup.RewardFactory.address)
         lpTokenContract = await getContract('ERC20Mock', lpTokenWbtcWeth)
         lpTokenContractTwo = await getContract('ERC20Mock', lpToken17WBTC50BAL33USDC)
@@ -88,7 +89,15 @@ describe("Kovan clean deployment", function () {
             .to.emit(controller, 'Deposited')
             .withArgs(signerTwo.address, pidOne, ONE_HUNDRED_ETHER);
 
-        await increaseTime(60 * 60 * 24 * 10) // 10 days
+        await increaseTime(60 * 60 * 24 * 10) // 10 day
+
+        const wethBalWhaleSigner = await impersonateAddress('0x77777512272eda91589b62fc8506e607dea0bb08')
+        await wethBalContract.connect(wethBalWhaleSigner).transfer(voterProxy.address, ONE_HUNDRED_ETHER);
+        expect(await wethBalContract.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER)
+        
+        expect(await controller.connect(signerTwo).withdrawUnlockedWethBal(ONE_HUNDRED_ETHER))
+        const treasuryWethBalBalanceAfterFirstEarmark = await wethBalContract.balanceOf(treasury)
+        expect(treasuryWethBalBalanceAfterFirstEarmark).to.not.equals(0)
 
         await controller.earmarkRewards(pid)
         // Fee Manager (root) BAL balance should not be zero anymore
