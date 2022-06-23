@@ -59,7 +59,7 @@ jobs:
         id: slither
         continue-on-error: true
         with:
-          slither-args: --hardhat-artifacts-directory="./build/artifacts"
+          slither-args: --hardhat-artifacts-directory="./build/artifacts" --filter-paths "test"
           sarif: results.sarif
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
