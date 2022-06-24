@@ -136,14 +136,12 @@ contract ExtraRewardStash is IStash {
             //check if BAL
             if (_token != bal) {
                 //create new reward contract (for NON-BAL tokens only)
-                (, , , address mainRewardContract, , ) = IController(operator)
-                    .poolInfo(pid);
-                address rewardContract = IRewardFactory(rewardFactory)
-                    .createTokenRewards(
-                        _token,
-                        mainRewardContract,
-                        address(this)
-                    );
+                (, , , address mainRewardContract, , ) = IController(operator).poolInfo(pid);
+                address rewardContract = IRewardFactory(rewardFactory).createTokenRewards(
+                    _token,
+                    mainRewardContract,
+                    address(this)
+                );
 
                 t.rewardAddress = rewardContract;
             }

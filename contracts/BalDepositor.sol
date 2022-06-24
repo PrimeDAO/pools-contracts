@@ -126,8 +126,7 @@ contract BalDepositor {
             // move tokens here
             IERC20(wethBal).transferFrom(msg.sender, address(this), _amount);
             // defer lock cost to another user
-            uint256 callIncentive = ((_amount * lockIncentive) /
-                FEE_DENOMINATOR);
+            uint256 callIncentive = ((_amount * lockIncentive) / FEE_DENOMINATOR);
             _amount = _amount - callIncentive;
 
             // add to a pool for lock caller
@@ -152,9 +151,7 @@ contract BalDepositor {
             IERC20(wethBalMemory).transfer(stakerMemory, wethBalBalance);
         }
 
-        uint256 wethBalBalanceStaker = IERC20(wethBalMemory).balanceOf(
-            stakerMemory
-        );
+        uint256 wethBalBalanceStaker = IERC20(wethBalMemory).balanceOf(stakerMemory);
         if (wethBalBalanceStaker == 0) {
             return;
         }

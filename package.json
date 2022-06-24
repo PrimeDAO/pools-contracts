@@ -9,6 +9,7 @@
     "test:integration-existing": "npx hardhat test --grep 'Kovan integration with deployed contracts'",
     "compile": "hardhat compile",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
+    "prettier": "prettier --write \"**/*.{js,json,md,sol,ts}\"",
     "coverage": "hardhat coverage",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan",
     "verify:contracts:kovan": "npx hardhat --network kovan etherscan-verify",

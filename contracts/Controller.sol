@@ -63,17 +63,9 @@ contract Controller is IController {
     PoolInfo[] public poolInfo;
     mapping(address => bool) public gaugeMap;
 
-    event Deposited(
-        address indexed user,
-        uint256 indexed poolid,
-        uint256 amount
-    );
+    event Deposited(address indexed user, uint256 indexed poolid, uint256 amount);
 
-    event Withdrawn(
-        address indexed user,
-        uint256 indexed poolid,
-        uint256 amount
-    );
+    event Withdrawn(address indexed user, uint256 indexed poolid, uint256 amount);
 
     constructor(
         address _staker,
@@ -154,10 +146,7 @@ contract Controller is IController {
 
     /// @notice sets the voteDelegate variable
     /// @param _voteDelegate The address of whom votes will be delegated to
-    function setVoteDelegate(address _voteDelegate)
-        external
-        onlyAddress(voteDelegate)
-    {
+    function setVoteDelegate(address _voteDelegate) external onlyAddress(voteDelegate) {
         voteDelegate = _voteDelegate;
         emit VoteDelegateChanged(_voteDelegate);
     }
@@ -174,21 +163,14 @@ contract Controller is IController {
     /// @param _feeToken feeToken
     function setFeeInfo(IERC20 _feeToken) external onlyAddress(feeManager) {
         //create a new reward contract for the new token
-        lockFees = IRewardFactory(rewardFactory).createTokenRewards(
-            address(_feeToken),
-            lockRewards,
-            address(this)
-        );
+        lockFees = IRewardFactory(rewardFactory).createTokenRewards(address(_feeToken), lockRewards, address(this));
         feeToken = _feeToken;
     }
 
     /// @notice sets the lock, staker, caller, platform fees and profit fees
     /// @param _profitFee The amount to set for the profit fees
     /// @param _platformFee The amount to set for the platform fees
-    function setFees(uint256 _platformFee, uint256 _profitFee)
-        external
-        onlyAddress(feeManager)
-    {
+    function setFees(uint256 _platformFee, uint256 _profitFee) external onlyAddress(feeManager) {
         uint256 total = _profitFee + _platformFee;
         if (total > MAX_FEES) {
             revert InvalidParameters();
@@ -224,31 +206,18 @@ contract Controller is IController {
     /// @notice creates a new pool
     /// @param _lptoken The address of the lp token
     /// @param _gauge The address of the gauge controller
-    function addPool(address _lptoken, address _gauge)
-        external
-        onlyAddress(poolManager)
-        isNotShutDown
-    {
+    function addPool(address _lptoken, address _gauge) external onlyAddress(poolManager) isNotShutDown {
         if (_gauge == address(0) || _lptoken == address(0)) {
             revert InvalidParameters();
         }
         //the next pool's pid
         uint256 pid = poolInfo.length;
         //create a tokenized deposit
-        address token = ITokenFactory(tokenFactory).createDepositToken(
-            _lptoken
-        );
+        address token = ITokenFactory(tokenFactory).createDepositToken(_lptoken);
         //create a reward contract for bal rewards
-        address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(
-            pid,
-            token
-        );
+        address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(pid, token);
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).createStash(
-            pid,
-            _gauge,
-            staker
-        );
+        address stash = IStashFactory(stashFactory).createStash(pid, _gauge, staker);
 
         if (stash == address(0)) {
             revert InvalidStash();
@@ -413,10 +382,7 @@ contract Controller is IController {
 
     /// @notice Delegates voting power from VoterProxy
     /// @param _delegateTo to whom we delegate voting power
-    function delegateVotingPower(address _delegateTo)
-        external
-        onlyAddress(owner)
-    {
+    function delegateVotingPower(address _delegateTo) external onlyAddress(owner) {
         IVoterProxy(staker).delegateVotingPower(_delegateTo);
     }
 
@@ -428,10 +394,10 @@ contract Controller is IController {
     /// @notice Votes for multiple gauges
     /// @param _gauges array of gauge addresses
     /// @param _weights array of vote weights
-    function voteGaugeWeight(
-        address[] calldata _gauges,
-        uint256[] calldata _weights
-    ) external onlyAddress(voteDelegate) {
+    function voteGaugeWeight(address[] calldata _gauges, uint256[] calldata _weights)
+        external
+        onlyAddress(voteDelegate)
+    {
         IVoterProxy(staker).voteMultipleGauges(_gauges, _weights);
     }
 
@@ -454,10 +420,7 @@ contract Controller is IController {
             revert Unauthorized();
         }
         address gauge = poolInfo[_pid].gauge;
-        bytes memory data = abi.encodeWithSelector(
-            bytes4(keccak256("set_rewards_receiver(address)")),
-            stash
-        );
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
         IVoterProxy(staker).execute(gauge, uint256(0), data);
     }
 
@@ -492,11 +455,7 @@ contract Controller is IController {
             IERC20(bal).transfer(feeManager, _profit);
 
             //send treasury
-            if (
-                treasury != address(0) &&
-                treasury != address(this) &&
-                platformFees > 0
-            ) {
+            if (treasury != address(0) && treasury != address(this) && platformFees > 0) {
                 //only subtract after address condition check
                 uint256 _platform = (balBal * platformFees) / FEE_DENOMINATOR;
                 balBal = balBal - _platform;

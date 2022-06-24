@@ -107,33 +107,21 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         }
         return
             rewardPerTokenStored +
-            (((lastTimeRewardApplicable() - lastUpdateTime) *
-                rewardRate *
-                1e18) / totalSupply());
+            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupply());
     }
 
     function earned(address account) public view returns (uint256) {
-        return
-            (balanceOf(account) *
-                (rewardPerToken() - userRewardPerTokenPaid[account])) /
-            1e18 +
-            rewards[account];
+        return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
     //update reward, emit, call linked reward's stake
-    function stake(address _account, uint256 amount)
-        external
-        updateReward(_account)
-    {
+    function stake(address _account, uint256 amount) external updateReward(_account) {
         require(msg.sender == address(deposits), "!authorized");
         require(amount > 0, "VirtualDepositRewardPool: Cannot stake 0");
         emit Staked(_account, amount);
     }
 
-    function withdraw(address _account, uint256 amount)
-        public
-        updateReward(_account)
-    {
+    function withdraw(address _account, uint256 amount) public updateReward(_account) {
         require(msg.sender == address(deposits), "!authorized");
         //require(amount > 0, 'VirtualDepositRewardPool : Cannot withdraw 0');
 
@@ -182,10 +170,7 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         }
     }
 
-    function notifyRewardAmount(uint256 reward)
-        internal
-        updateReward(address(0))
-    {
+    function notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {
         historicalRewards = historicalRewards + reward;
         if (block.timestamp >= periodFinish) {
             rewardRate = reward / duration;

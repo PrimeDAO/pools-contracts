@@ -72,9 +72,7 @@ interface IVoterProxy {
 
     function claimRewards(address _gauge) external;
 
-    function claimFees(address _distroContract, IERC20 _token)
-        external
-        returns (uint256);
+    function claimFees(address _distroContract, IERC20 _token) external returns (uint256);
 
     function grantStashAccess(address _stash) external;
 
@@ -82,10 +80,7 @@ interface IVoterProxy {
 
     function clearDelegate() external;
 
-    function voteMultipleGauges(
-        address[] calldata _gauges,
-        uint256[] calldata _weights
-    ) external;
+    function voteMultipleGauges(address[] calldata _gauges, uint256[] calldata _weights) external;
 
     function balanceOfPool(address _gauge) external view returns (uint256);
 
@@ -161,9 +156,7 @@ interface IFeeDistro {
      * @param tokens - An array of ERC20 token addresses to be claimed.
      * @return An array of the amounts of each token in `tokens` sent to `user` as a result of claiming.
      */
-    function claimTokens(address user, IERC20[] calldata tokens)
-        external
-        returns (uint256[] memory);
+    function claimTokens(address user, IERC20[] calldata tokens) external returns (uint256[] memory);
 }
 
 interface ITokenMinter {
@@ -313,9 +306,7 @@ interface IPools {
 }
 
 interface IVestedEscrow {
-    function fund(address[] calldata _recipient, uint256[] calldata _amount)
-        external
-        returns (bool);
+    function fund(address[] calldata _recipient, uint256[] calldata _amount) external returns (bool);
 }
 
 interface GaugeController {
