@@ -5,6 +5,8 @@ const init = require('../test-init.js');
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
 const { getFutureTimestamp, getCurrentBlockTimestamp } = require('../helpers/helpers');
 
+const wethBalBalanceOfVoterProxy = ONE_HUNDRED_ETHER.mul(5);
+
 describe('unit - VoterProxy', function () {
   let voterProxy,
     mintr,
@@ -33,7 +35,7 @@ describe('unit - VoterProxy', function () {
     const externalContractMock = await init.getExternalContractMock(setup);
     const B50WBTC50WETH = setup.tokens.B50WBTC50WETH;
     const gaugeMock = await init.getGaugeMock(setup, B50WBTC50WETH.address);
-    await setup.tokens.WethBal.mint(voterProxy.address, ONE_HUNDRED_ETHER.mul(5));
+    await setup.tokens.WethBal.mint(voterProxy.address, wethBalBalanceOfVoterProxy);
     const smartWalletChecker = await init.getSmartWalletCheckerMock(setup);
     await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).commit_smart_wallet_checker(
       smartWalletChecker.address
@@ -42,6 +44,7 @@ describe('unit - VoterProxy', function () {
     await smartWalletChecker.allow(voterProxy.address);
     await gaugeControllerMock.add_type('Ethereum', 0);
     await gaugeControllerMock.add_gauge(gaugeMock.address, 0, 0);
+    await init.getDelegateRegistry(setup);
 
     return {
       voterProxy,
@@ -319,6 +322,34 @@ describe('unit - VoterProxy', function () {
     await expect(voterProxy.connect(anotherUser).execute(externalContract.address, 0, tx))
       .to.emit(externalContract, 'Yay')
       .withArgs(number);
+  });
+
+  it('delegates voting power and then clears it', async function () {
+    await changeOperator(voterProxy, anotherUser.address);
+
+    await expect(voterProxy.connect(anotherUser).delegateVotingPower(ONE_ADDRESS))
+      .to.emit(voterProxy, 'VotingPowerDelegated')
+      .withArgs(ONE_ADDRESS);
+
+    await expect(voterProxy.clearDelegate()).to.be.revertedWith('Unauthorized()');
+
+    await expect(voterProxy.connect(anotherUser).clearDelegate()).to.emit(voterProxy, 'VotingPowerCleared');
+  });
+
+  it('withdraws unlocked wethbal', async function () {
+    expect(await wethBal.balanceOf(ONE_ADDRESS)).to.equals(0);
+    await voterProxy.setDepositor(anotherUser.address);
+    await changeOperator(voterProxy, anotherUser.address);
+
+    await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365));
+
+    const timestampBefore = await getCurrentBlockTimestamp();
+    const nextBlockTimestamp = timestampBefore + 366 * 24 * 60 * 60; // 366 days
+    await network.provider.send('evm_setNextBlockTimestamp', [nextBlockTimestamp]);
+
+    await voterProxy.connect(anotherUser).withdrawWethBal(ONE_ADDRESS, wethBalBalanceOfVoterProxy.mul(2));
+    // withdraws 100 (max amount)
+    expect(await wethBal.balanceOf(ONE_ADDRESS)).to.equals(wethBalBalanceOfVoterProxy);
   });
 });
 

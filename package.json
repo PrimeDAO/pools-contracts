@@ -12,6 +12,8 @@
     "prettier": "prettier --write \"**/*.{js,json,md,sol,ts}\"",
     "coverage": "hardhat coverage",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan",
+    "deploy:contracts:goerli": "npx hardhat deploy --network goerli",
+    "verify:contracts:goerli": "npx hardhat --network goerli etherscan-verify",
     "verify:contracts:kovan": "npx hardhat --network kovan etherscan-verify",
     "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet",
     "dry-run:deployment": "npx hardhat node --tags deployment"

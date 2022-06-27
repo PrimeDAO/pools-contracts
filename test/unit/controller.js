@@ -259,9 +259,6 @@ describe('unit - Controller', function () {
 
     const { stash } = await controller.poolInfo(0);
 
-    // revert if unauthorized
-    await expect(controller.setGaugeRedirect(0)).to.be.revertedWith('Unauthorized()');
-
     const contract = await ethers.getContractFactory('StashMock').then((x) => x.attach(stash));
 
     await contract.claimRewards();

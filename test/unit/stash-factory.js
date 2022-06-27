@@ -62,8 +62,6 @@ describe('unit - StashFactory', function () {
   it('reverts if unauthorized on createStash', async function () {
     const { stashFactory, randomUser } = await setupTests();
 
-    await expect(stashFactory.connect(randomUser).createStash(1, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith(
-      'Unauthorized()'
-    );
+    await expect(stashFactory.connect(randomUser).createStash(1, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
   });
 });

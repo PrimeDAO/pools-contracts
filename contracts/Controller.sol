@@ -217,7 +217,7 @@ contract Controller is IController {
         //create a reward contract for bal rewards
         address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(pid, token);
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).createStash(pid, _gauge, staker);
+        address stash = IStashFactory(stashFactory).createStash(pid, _gauge);
 
         if (stash == address(0)) {
             revert InvalidStash();
@@ -241,6 +241,7 @@ contract Controller is IController {
         poolInfo[pid].stash = stash;
         IVoterProxy(staker).grantStashAccess(stash);
         IRewardFactory(rewardFactory).grantRewardStashAccess(stash);
+        redirectGaugeRewards(pid);
     }
 
     /// @notice shuts down a currently active pool
@@ -412,18 +413,6 @@ contract Controller is IController {
         IVoterProxy(staker).claimRewards(_gauge);
     }
 
-    /// @notice sets the gauge redirect address
-    /// @param _pid the id of the pool
-    function setGaugeRedirect(uint256 _pid) external {
-        address stash = poolInfo[_pid].stash;
-        if (msg.sender != stash) {
-            revert Unauthorized();
-        }
-        address gauge = poolInfo[_pid].gauge;
-        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
-        IVoterProxy(staker).execute(gauge, uint256(0), data);
-    }
-
     /// @notice internal function that claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held
     function _earmarkRewards(uint256 _pid) internal {
@@ -483,5 +472,14 @@ contract Controller is IController {
         uint256 _balance = feeToken.balanceOf(address(this));
         feeToken.transfer(lockFees, _balance);
         IRewards(lockFees).queueNewRewards(_balance);
+    }
+
+    /// @notice redirects rewards from gauge to rewards contract
+    /// @param _pid the id of the pool
+    function redirectGaugeRewards(uint256 _pid) private {
+        address stash = poolInfo[_pid].stash;
+        address gauge = poolInfo[_pid].gauge;
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
+        IVoterProxy(staker).execute(gauge, uint256(0), data);
     }
 }

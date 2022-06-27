@@ -131,7 +131,6 @@ interface IStash {
     function initialize(
         uint256 _pid,
         address _operator,
-        address _staker,
         address _gauge,
         address _rewardFactory
     ) external;
@@ -238,8 +237,6 @@ interface IController {
 
     function claimRewards(uint256, address) external;
 
-    function setGaugeRedirect(uint256 _pid) external;
-
     function owner() external returns (address);
 }
 
@@ -268,11 +265,7 @@ interface IRewardFactory {
 }
 
 interface IStashFactory {
-    function createStash(
-        uint256,
-        address,
-        address
-    ) external returns (address);
+    function createStash(uint256 _pid, address _gauge) external returns (address);
 }
 
 interface ITokenFactory {

@@ -226,6 +226,17 @@ const getSmartWalletCheckerMock = async (setup) => {
   return await SmartWalletCheckerFactory.deploy();
 };
 
+const getDelegateRegistry = async (setup) => {
+  const DelegateRegistryFactory = await ethers.getContractFactory('DelegateRegistry', setup.roles.root);
+  await DelegateRegistryFactory.deploy();
+
+  const bytecode =
+    require('../build/artifacts/contracts/test/DelegateRegistry.sol/DelegateRegistry.json').deployedBytecode;
+
+  // replaces bytecode of an address
+  await ethers.provider.send('hardhat_setCode', ['0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446', bytecode]);
+};
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -252,4 +263,5 @@ module.exports = {
   getDistro,
   getStashMock,
   getStash,
+  getDelegateRegistry,
 };

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// solium-disable linebreak-style
 pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -17,11 +16,9 @@ contract ExtraRewardStash is IStash {
 
     uint256 public pid;
     address public operator;
-    address public staker;
     address public gauge;
     address public rewardFactory;
     address public rewardHook; // address to call for reward pulls
-    bool public hasRedirected;
     bool public hasBalRewards;
 
     mapping(address => uint256) public historicalRewards;
@@ -42,7 +39,6 @@ contract ExtraRewardStash is IStash {
     function initialize(
         uint256 _pid,
         address _operator,
-        address _staker,
         address _gauge,
         address _rFactory
     ) external {
@@ -51,7 +47,6 @@ contract ExtraRewardStash is IStash {
         }
         pid = _pid;
         operator = _operator;
-        staker = _staker;
         gauge = _gauge;
         rewardFactory = _rFactory;
     }
@@ -68,12 +63,6 @@ contract ExtraRewardStash is IStash {
         }
         // this is updateable from v2 gauges now so must check each time.
         checkForNewRewardTokens();
-
-        // make sure we're redirected
-        if (!hasRedirected) {
-            IController(operator).setGaugeRedirect(pid);
-            hasRedirected = true;
-        }
 
         if (hasBalRewards) {
             // claim rewards on gauge for staker
@@ -171,7 +160,6 @@ contract ExtraRewardStash is IStash {
                 }
                 //add to reward contract
                 address rewards = t.rewardAddress;
-                if (rewards == address(0)) continue;
                 IERC20(token).transfer(rewards, amount);
                 IRewards(rewards).queueNewRewards(amount);
             }

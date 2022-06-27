@@ -21,13 +21,11 @@ contract StashMock is IStash {
     function initialize(
         uint256 _pid,
         address _operator,
-        address _staker,
         address _gauge,
         address _rewardFactory
     ) external {
         pid = _pid;
         operator = _operator;
-        staker = _staker;
         gauge = _gauge;
         rewardFactory = _rewardFactory;
     }
