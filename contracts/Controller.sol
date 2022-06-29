@@ -241,7 +241,7 @@ contract Controller is IController {
         poolInfo[pid].stash = stash;
         IVoterProxy(staker).grantStashAccess(stash);
         IRewardFactory(rewardFactory).grantRewardStashAccess(stash);
-        redirectGaugeRewards(pid);
+        redirectGaugeRewards(stash, _gauge);
     }
 
     /// @notice shuts down a currently active pool
@@ -475,11 +475,11 @@ contract Controller is IController {
     }
 
     /// @notice redirects rewards from gauge to rewards contract
-    /// @param _pid the id of the pool
-    function redirectGaugeRewards(uint256 _pid) private {
-        address stash = poolInfo[_pid].stash;
-        address gauge = poolInfo[_pid].gauge;
-        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
-        IVoterProxy(staker).execute(gauge, uint256(0), data);
+    /// @param _stash stash address
+    /// @param _gauge gauge address
+    function redirectGaugeRewards(address _stash, address _gauge) private {
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), _stash);
+        (bool success, ) = IVoterProxy(staker).execute(_gauge, uint256(0), data);
+        require(success, "redirect failed");
     }
 }
