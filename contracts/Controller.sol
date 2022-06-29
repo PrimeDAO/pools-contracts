@@ -15,6 +15,16 @@ contract Controller is IController {
     event VoteDelegateChanged(address _newVoteDelegate);
     event FeesChanged(uint256 _newPlatformFee, uint256 _newProfitFee);
     event PoolShutDown(uint256 _pid);
+    event AddedPool(
+        uint256 _pid,
+        address _lpToken,
+        address _token,
+        address _gauge,
+        address _baseRewardsPool,
+        address _stash
+    );
+    event Deposited(address _user, uint256 _pid, uint256 _amount, bool _stake);
+    event Withdrawn(address _user, uint256 _pid, uint256 _amount);
     event SystemShutdown();
 
     error Unauthorized();
@@ -62,10 +72,6 @@ contract Controller is IController {
     //index(pid) -> pool
     PoolInfo[] public poolInfo;
     mapping(address => bool) public gaugeMap;
-
-    event Deposited(address indexed user, uint256 indexed poolid, uint256 amount);
-
-    event Withdrawn(address indexed user, uint256 indexed poolid, uint256 amount);
 
     constructor(
         address _staker,
@@ -242,6 +248,7 @@ contract Controller is IController {
         IVoterProxy(staker).grantStashAccess(stash);
         IRewardFactory(rewardFactory).grantRewardStashAccess(stash);
         redirectGaugeRewards(stash, _gauge);
+        emit AddedPool(pid, _lptoken, token, _gauge, newRewardPool, stash);
     }
 
     /// @notice shuts down a currently active pool
@@ -311,7 +318,7 @@ contract Controller is IController {
             ITokenMinter(token).mint(msg.sender, _amount);
         }
 
-        emit Deposited(msg.sender, _pid, _amount);
+        emit Deposited(msg.sender, _pid, _amount, _stake);
     }
 
     /// @inheritdoc IController

@@ -222,12 +222,12 @@ describe('unit - Controller', function () {
 
     await expect(controller.connect(staker).deposit(pid, ONE_HUNDRED_ETHER, true))
       .to.emit(controller, 'Deposited')
-      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER, true);
 
     // deposits leftower amount
     await expect(controller.connect(staker).depositAll(pid, false))
       .to.emit(controller, 'Deposited')
-      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER, false);
 
     // withdraws
     await expect(controller.connect(staker).withdrawAll(pid))
