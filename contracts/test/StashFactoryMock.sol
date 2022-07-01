@@ -45,8 +45,7 @@ contract StashFactoryMock {
     //function calls are different depending on the version of curve gauges so determine which stash type is needed
     function createStash(
         uint256 _pid,
-        address _gauge,
-        address _staker
+        address _gauge
     ) external returns (address) {
         require(msg.sender == operator, "!authorized");
         return address(0);

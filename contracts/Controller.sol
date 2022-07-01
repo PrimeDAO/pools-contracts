@@ -15,6 +15,16 @@ contract Controller is IController {
     event VoteDelegateChanged(address _newVoteDelegate);
     event FeesChanged(uint256 _newPlatformFee, uint256 _newProfitFee);
     event PoolShutDown(uint256 _pid);
+    event AddedPool(
+        uint256 _pid,
+        address _lpToken,
+        address _token,
+        address _gauge,
+        address _baseRewardsPool,
+        address _stash
+    );
+    event Deposited(address _user, uint256 _pid, uint256 _amount, bool _stake);
+    event Withdrawn(address _user, uint256 _pid, uint256 _amount);
     event SystemShutdown();
 
     error Unauthorized();
@@ -62,10 +72,6 @@ contract Controller is IController {
     //index(pid) -> pool
     PoolInfo[] public poolInfo;
     mapping(address => bool) public gaugeMap;
-
-    event Deposited(address indexed user, uint256 indexed poolid, uint256 amount);
-
-    event Withdrawn(address indexed user, uint256 indexed poolid, uint256 amount);
 
     constructor(
         address _staker,
@@ -217,7 +223,7 @@ contract Controller is IController {
         //create a reward contract for bal rewards
         address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(pid, token);
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).createStash(pid, _gauge, staker);
+        address stash = IStashFactory(stashFactory).createStash(pid, _gauge);
 
         if (stash == address(0)) {
             revert InvalidStash();
@@ -241,6 +247,8 @@ contract Controller is IController {
         poolInfo[pid].stash = stash;
         IVoterProxy(staker).grantStashAccess(stash);
         IRewardFactory(rewardFactory).grantRewardStashAccess(stash);
+        redirectGaugeRewards(stash, _gauge);
+        emit AddedPool(pid, _lptoken, token, _gauge, newRewardPool, stash);
     }
 
     /// @notice shuts down a currently active pool
@@ -310,7 +318,7 @@ contract Controller is IController {
             ITokenMinter(token).mint(msg.sender, _amount);
         }
 
-        emit Deposited(msg.sender, _pid, _amount);
+        emit Deposited(msg.sender, _pid, _amount, _stake);
     }
 
     /// @inheritdoc IController
@@ -412,18 +420,6 @@ contract Controller is IController {
         IVoterProxy(staker).claimRewards(_gauge);
     }
 
-    /// @notice sets the gauge redirect address
-    /// @param _pid the id of the pool
-    function setGaugeRedirect(uint256 _pid) external {
-        address stash = poolInfo[_pid].stash;
-        if (msg.sender != stash) {
-            revert Unauthorized();
-        }
-        address gauge = poolInfo[_pid].gauge;
-        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
-        IVoterProxy(staker).execute(gauge, uint256(0), data);
-    }
-
     /// @notice internal function that claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held
     function _earmarkRewards(uint256 _pid) internal {
@@ -483,5 +479,14 @@ contract Controller is IController {
         uint256 _balance = feeToken.balanceOf(address(this));
         feeToken.transfer(lockFees, _balance);
         IRewards(lockFees).queueNewRewards(_balance);
+    }
+
+    /// @notice redirects rewards from gauge to rewards contract
+    /// @param _stash stash address
+    /// @param _gauge gauge address
+    function redirectGaugeRewards(address _stash, address _gauge) private {
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), _stash);
+        (bool success, ) = IVoterProxy(staker).execute(_gauge, uint256(0), data);
+        require(success, "redirect failed");
     }
 }

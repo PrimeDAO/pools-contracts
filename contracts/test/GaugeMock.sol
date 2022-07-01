@@ -39,4 +39,8 @@ contract GaugeMock is IBalGauge {
     function lp_token() external view returns (address) {
         return address(0);
     }
+
+    function set_rewards_receiver(address) external view returns(bool, bytes memory) {
+        return (true, new bytes(0));
+    }
 }

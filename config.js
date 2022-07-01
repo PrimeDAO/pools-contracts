@@ -38,6 +38,22 @@ const contractAddresses = {
     [feeDistro]: '0x2A49c0e4f081f54d9F02d92b580ECf616B86F1ff',
     [PRIME_MULTISIG]: '0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f', // Dev wallet
   },
+  goerli: {
+    [pools]: [
+      {
+        name: '50 WBTC 50 WETH',
+        lpToken: '0x16faf9f73748013155b7bc116a3008b57332d1e6',
+        gauge: '0xf0f572ad66baacDd07d8c7ea3e0E5EFA56a76081',
+      },
+    ],
+    [minter]: '0xdf0399539A72E2689B8B2DD53C3C2A0883879fDd',
+    [veBal]: '0x33A99Dcc4C85C014cf12626959111D5898bbCAbF',
+    [bal]: '0xfa8449189744799ad2ace7e0ebac8bb7575eff47',
+    [gaugeController]: '0xBB1CE49b16d55A1f2c6e88102f32144C7334B116',
+    [wethBal]: '0xf8a0623ab66F985EfFc1C69D05F1af4BaDB01b00',
+    [feeDistro]: '0x7F91dcdE02F72b478Dc73cB21730cAcA907c8c44',
+    [PRIME_MULTISIG]: '0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f', // Dev wallet
+  },
 };
 
 module.exports = {

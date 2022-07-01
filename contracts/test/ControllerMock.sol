@@ -49,8 +49,6 @@ contract ControllerMock is IController {
 
     function claimRewards(uint256, address) external {}
 
-    function setGaugeRedirect(uint256 _pid) external {}
-
     function queueNewRewards(uint256 _rewards) external {
         IRewards(lockRewards).queueNewRewards(_rewards);
     }
@@ -58,7 +56,6 @@ contract ControllerMock is IController {
     function createStash(address _stash) external {
         address createdStash = IStashFactory(_stash).createStash(
             1,
-            address(0),
             address(0)
         );
 
@@ -87,5 +84,10 @@ contract ControllerMock is IController {
 
     function setRewardContracts(address _rewards) external {
         lockRewards = _rewards;
+    }
+
+    function callExtraRewardStashClaimRewards(address _stash, address _rewardFactory) external {
+        IRewardFactory(_rewardFactory).grantRewardStashAccess(_stash);
+        IStash(_stash).claimRewards();
     }
 }

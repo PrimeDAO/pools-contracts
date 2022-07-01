@@ -38,17 +38,12 @@ contract StashFactory is IStashFactory {
     /// @notice Create a stash contract for the given gauge
     /// @param _pid The PID of the pool
     /// @param _gauge Gauge address
-    /// @param _staker Staker's address
-    function createStash(
-        uint256 _pid,
-        address _gauge,
-        address _staker
-    ) external returns (address) {
+    function createStash(uint256 _pid, address _gauge) external returns (address) {
         if (msg.sender != operator) {
             revert Unauthorized();
         }
         address stash = IProxyFactory(proxyFactory).clone(implementation);
-        IStash(stash).initialize(_pid, msg.sender, _staker, _gauge, rewardFactory);
+        IStash(stash).initialize(_pid, msg.sender, _gauge, rewardFactory);
         return stash;
     }
 }

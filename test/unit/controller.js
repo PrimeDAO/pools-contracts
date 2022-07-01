@@ -222,12 +222,12 @@ describe('unit - Controller', function () {
 
     await expect(controller.connect(staker).deposit(pid, ONE_HUNDRED_ETHER, true))
       .to.emit(controller, 'Deposited')
-      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER, true);
 
     // deposits leftower amount
     await expect(controller.connect(staker).depositAll(pid, false))
       .to.emit(controller, 'Deposited')
-      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER, false);
 
     // withdraws
     await expect(controller.connect(staker).withdrawAll(pid))
@@ -258,9 +258,6 @@ describe('unit - Controller', function () {
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
 
     const { stash } = await controller.poolInfo(0);
-
-    // revert if unauthorized
-    await expect(controller.setGaugeRedirect(0)).to.be.revertedWith('Unauthorized()');
 
     const contract = await ethers.getContractFactory('StashMock').then((x) => x.attach(stash));
 
