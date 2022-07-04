@@ -199,6 +199,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     }
 
     /// @notice Withdraw all tokens
+    /// @param _claim Whether or not the user wants to claim their rewards
     function withdrawAll(bool _claim) external {
         withdraw(_balances[msg.sender], _claim, false);
     }

@@ -295,9 +295,9 @@ describe('unit - BaseRewardPool', function () {
     const { baseRewardPool, rewardManager, root } = await setupTests();
     await baseRewardPool.connect(rewardManager).addExtraReward(addressOne);
     expect(await baseRewardPool.extraRewardsLength()).to.equal(1);
-    await expect(baseRewardPool.connect(root).clearExtraRewards()).to.emit(baseRewardPool, 'ExtraRewardsCleared')
+    await expect(baseRewardPool.connect(root).clearExtraRewards()).to.emit(baseRewardPool, 'ExtraRewardsCleared');
     expect(await baseRewardPool.extraRewardsLength()).to.equal(0);
-  })
+  });
 });
 
 // Helper function to stake amount of stake tokens to baseRewardPool from signer

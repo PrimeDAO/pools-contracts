@@ -54,6 +54,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+        node-version: '14'
       - name: Run Slither
         uses: crytic/slither-action@main
         id: slither
