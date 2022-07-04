@@ -60,7 +60,6 @@ jobs:
         continue-on-error: true
         with:
           node-version: '14'
-        with:
           slither-args: --hardhat-artifacts-directory="./build/artifacts" --filter-paths "test"
           sarif: results.sarif
       - name: Upload SARIF file
