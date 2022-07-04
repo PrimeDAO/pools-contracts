@@ -126,17 +126,8 @@ contract BaseRewardPool is IBaseRewardsPool {
 
     /// @notice Stakes `amount` tokens
     /// @param _amount The amount of tokens user wants to stake
-    function stake(uint256 _amount) public updateReward(msg.sender) {
-        if (_amount < 1) {
-            revert InvalidAmount();
-        }
-
-        stakeToExtraRewards(msg.sender, _amount);
-
-        _totalSupply = _totalSupply + (_amount);
-        _balances[msg.sender] = _balances[msg.sender] + (_amount);
-        stakingToken.transferFrom(msg.sender, address(this), _amount);
-        emit Staked(msg.sender, _amount);
+    function stake(uint256 _amount) public {
+        stakeFor(msg.sender, _amount);
     }
 
     /// @notice Stakes all BAL tokens
