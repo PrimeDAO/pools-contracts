@@ -68,6 +68,8 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
             sarif_file: ${{ steps.slither.outputs.sarif }}
+    env:
+      NODEVER: '14'
 
   # test:
   #   runs-on: ubuntu-latest
