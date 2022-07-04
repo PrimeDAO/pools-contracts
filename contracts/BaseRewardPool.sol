@@ -225,7 +225,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @param _account The account to claim rewards for
     /// @param _claimExtras Whether or not the user wants to claim extra rewards
     function getReward(address _account, bool _claimExtras) public updateReward(_account) {
-        uint256 reward = earned(_account);
+        uint256 reward = rewards[_account];
         if (reward > 0) {
             rewards[_account] = 0;
             rewardToken.transfer(_account, reward);
