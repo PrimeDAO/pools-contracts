@@ -124,12 +124,6 @@ contract BaseRewardPool is IBaseRewardsPool {
         return (balanceOf(account) * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
-    /// @notice Stakes `amount` tokens
-    /// @param _amount The amount of tokens user wants to stake
-    function stake(uint256 _amount) public {
-        stakeFor(msg.sender, _amount);
-    }
-
     /// @notice Stakes all BAL tokens
     function stakeAll() external {
         uint256 balance = stakingToken.balanceOf(msg.sender);
@@ -139,7 +133,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Stakes `amount` tokens for `_for`
     /// @param _for Who are we staking for
     /// @param _amount The amount of tokens user wants to stake
-    function stakeFor(address _for, uint256 _amount) external updateReward(_for) {
+    function stakeFor(address _for, uint256 _amount) public updateReward(_for) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -152,6 +146,12 @@ contract BaseRewardPool is IBaseRewardsPool {
         // take away from sender
         stakingToken.transferFrom(msg.sender, address(this), _amount);
         emit Staked(_for, _amount);
+    }
+
+    /// @notice Stakes `amount` tokens
+    /// @param _amount The amount of tokens user wants to stake
+    function stake(uint256 _amount) public {
+        stakeFor(msg.sender, _amount);
     }
 
     /// @notice Unstakes `amount` tokens
