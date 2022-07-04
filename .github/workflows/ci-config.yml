@@ -53,11 +53,7 @@ jobs:
     needs: build
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '14'
+            - uses: actions/checkout@v2
       - name: Run Slither
         uses: crytic/slither-action@main
         id: slither
