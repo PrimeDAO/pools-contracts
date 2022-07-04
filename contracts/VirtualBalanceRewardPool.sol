@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 /**
  *Submitted for verification at Etherscan.io on 2020-07-17
  */
@@ -41,41 +41,32 @@ pragma solidity 0.8.14;
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 
-contract VirtualBalanceWrapper {
-    IBaseRewardsPool public deposits;
-
-    function totalSupply() public view returns (uint256) {
-        return deposits.totalSupply();
-    }
-
-    function balanceOf(address account) public view returns (uint256) {
-        return deposits.balanceOf(account);
-    }
-}
-
-contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
-    IERC20 public rewardToken;
-    uint256 public constant duration = 7 days;
-
-    address public operator;
-
-    uint256 public periodFinish = 0;
-    uint256 public rewardRate = 0;
-    uint256 public lastUpdateTime;
-    uint256 public rewardPerTokenStored;
-    uint256 public queuedRewards = 0;
-    uint256 public currentRewards = 0;
-    uint256 public historicalRewards = 0;
-    uint256 public newRewardRatio = 830;
-    mapping(address => uint256) public userRewardPerTokenPaid;
-    mapping(address => uint256) public rewards;
-
+contract VirtualBalanceRewardPool {
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
+
+    error Unauthorized();
+
+    uint256 public constant DURATION = 7 days;
+
+    IBaseRewardsPool public immutable deposits;
+    IERC20 public immutable rewardToken;
+    address public immutable operator;
+
+    uint256 public periodFinish;
+    uint256 public rewardRate;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
+    uint256 public queuedRewards;
+    uint256 public currentRewards;
+    uint256 public historicalRewards;
+    uint256 public newRewardRatio = 830;
+
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
 
     constructor(
         address deposit_,
@@ -97,7 +88,23 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         _;
     }
 
+    modifier onlyDeposits() {
+        if (msg.sender != address(deposits)) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return deposits.totalSupply();
+    }
+
+    function balanceOf(address account) public view returns (uint256) {
+        return deposits.balanceOf(account);
+    }
+
     function lastTimeRewardApplicable() public view returns (uint256) {
+        // solhint-disable-next-line
         return MathUtil.min(block.timestamp, periodFinish);
     }
 
@@ -115,16 +122,11 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
     }
 
     //update reward, emit, call linked reward's stake
-    function stake(address _account, uint256 amount) external updateReward(_account) {
-        require(msg.sender == address(deposits), "!authorized");
-        require(amount > 0, "VirtualDepositRewardPool: Cannot stake 0");
+    function stake(address _account, uint256 amount) external updateReward(_account) onlyDeposits {
         emit Staked(_account, amount);
     }
 
-    function withdraw(address _account, uint256 amount) public updateReward(_account) {
-        require(msg.sender == address(deposits), "!authorized");
-        //require(amount > 0, 'VirtualDepositRewardPool : Cannot withdraw 0');
-
+    function withdraw(address _account, uint256 amount) public updateReward(_account) onlyDeposits {
         emit Withdrawn(_account, amount);
     }
 
@@ -132,7 +134,8 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
-            rewardToken.transfer(_account, reward);
+            bool success = rewardToken.transfer(_account, reward);
+            require(success, "transfer fail");
             emit RewardPaid(_account, reward);
         }
     }
@@ -142,15 +145,18 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
     }
 
     function donate(uint256 _amount) external {
-        IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
+        bool success = IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
+        require(success, "transfer fail");
         queuedRewards = queuedRewards + _amount;
     }
 
     function queueNewRewards(uint256 _rewards) external {
-        require(msg.sender == operator, "!authorized");
-
+        if (msg.sender != operator) {
+            revert Unauthorized();
+        }
         _rewards = _rewards + queuedRewards;
 
+        // solhint-disable-next-line
         if (block.timestamp >= periodFinish) {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
@@ -158,7 +164,8 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
         }
 
         //et = now - (finish-duration)
-        uint256 elapsedTime = block.timestamp - (periodFinish - duration);
+        // solhint-disable-next-line
+        uint256 elapsedTime = block.timestamp - (periodFinish - DURATION);
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
         uint256 queuedRatio = (currentAtNow * 1000) / _rewards;
@@ -172,17 +179,21 @@ contract VirtualBalanceRewardPool is VirtualBalanceWrapper {
 
     function notifyRewardAmount(uint256 reward) internal updateReward(address(0)) {
         historicalRewards = historicalRewards + reward;
+        // solhint-disable-next-line
         if (block.timestamp >= periodFinish) {
-            rewardRate = reward / duration;
+            rewardRate = reward / DURATION;
         } else {
+            // solhint-disable-next-line
             uint256 remaining = periodFinish - block.timestamp;
             uint256 leftover = remaining * rewardRate;
             reward = reward + leftover;
-            rewardRate = reward / duration;
+            rewardRate = reward / DURATION;
         }
         currentRewards = reward;
+        // solhint-disable-next-line
         lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp + duration;
+        // solhint-disable-next-line
+        periodFinish = block.timestamp + DURATION;
         emit RewardAdded(reward);
     }
 }

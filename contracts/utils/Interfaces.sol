@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -50,8 +50,6 @@ interface IVoterProxy {
 
     function withdrawWethBal(address, uint256) external;
 
-    function withdraw(IERC20 _asset) external returns (uint256 balance);
-
     function withdraw(
         address _token,
         address _gauge,
@@ -73,8 +71,6 @@ interface IVoterProxy {
     function claimRewards(address _gauge) external;
 
     function claimFees(address _distroContract, IERC20 _token) external returns (uint256);
-
-    function grantStashAccess(address _stash) external;
 
     function delegateVotingPower(address _delegateTo) external;
 

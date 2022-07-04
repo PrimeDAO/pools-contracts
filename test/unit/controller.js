@@ -26,7 +26,7 @@ describe('unit - Controller', function () {
 
     // mock voterProxy
     voterProxy = await init.getVoterProxyMock(setup);
-    controller = await init.controller(setup, voterProxy, feeDistributor, setup.roles.root, setup.roles.root);
+    controller = await init.controller(setup, voterProxy, feeDistributor);
 
     // Deploy implementation contract
     const implementationAddress = await ethers
@@ -200,12 +200,6 @@ describe('unit - Controller', function () {
       await controller.shutdownPool(pid);
       await expectRevert(controller.earmarkRewards(pid), 'PoolIsClosed()');
     });
-
-    it('earmarkRewards reverts if system is shutdown', async () => {
-      await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
-      await expect(controller.shutdownSystem()).to.emit(controller, 'SystemShutdown');
-      await expectRevert(controller.earmarkRewards(0), 'Shutdown()');
-    });
   });
 
   it('deposits with and without lock and then withdraws all', async function () {
@@ -268,4 +262,48 @@ describe('unit - Controller', function () {
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
     await expect(controller.claimRewards(0, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
   });
+
+  it('reverts add pool if system is shut down', async () => {
+    await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
+    await expect(controller.shutdownSystem()).to.emit(controller, 'SystemShutdown');
+    // try add another pool
+    await expect(controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address)).to.be.revertedWith('Shutdown()');
+  });
+
+  it('deposit reverts if pool is shut down', async () => {
+    const pid = 0;
+    await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
+    await controller.shutdownPool(pid);
+    await expect(controller.deposit(pid, ONE_ADDRESS, true)).to.be.revertedWith('PoolIsClosed()');
+  });
+
+  it('deposit reverts if pool is shut down', async () => {
+    // withdraw function is tested in another unit test
+    // this one is to get coverage to 100%
+    const pid = 0;
+    await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
+    const poolInfo = await controller.poolInfo(pid);
+    const balRewards = poolInfo.balRewards;
+    const baseRewardPoolMock = await getBaseRewardPoolMock(balRewards);
+
+    await expect(controller.withdrawTo(pid, ONE_HUNDRED_ETHER, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
+
+    // testing this properly would require hacking things together, and we already have controller._withdraw covered by another unit test
+    // for that reason we don't care that ERC20.burn reverts (in controller._withdraw)
+    await expect(
+      baseRewardPoolMock.callWithdrawToOnController(controller.address, pid, ONE_HUNDRED_ETHER)
+    ).to.be.revertedWith('ERC20: burn amount exceeds balance');
+  });
 });
+
+const getBaseRewardPoolMock = async (address) => {
+  const BaseRewardPoolMockFactory = await ethers.getContractFactory('BaseRewardPoolMock');
+  await BaseRewardPoolMockFactory.deploy();
+
+  const bytecode =
+    require('../../build/artifacts/contracts/test/BaseRewardPoolMock.sol/BaseRewardPoolMock.json').deployedBytecode;
+
+  await ethers.provider.send('hardhat_setCode', [address, bytecode]);
+
+  return BaseRewardPoolMockFactory.attach(address);
+};

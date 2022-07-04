@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/Interfaces.sol";
+import "./utils/MathUtil.sol";
 
 /// @title ExtraRewardStash
 contract ExtraRewardStash is IStash {
+    using MathUtil for uint256;
     error Unauthorized();
     error AlreadyInitialized();
 
@@ -79,7 +81,7 @@ contract ExtraRewardStash is IStash {
 
     /// @notice Checks if the gauge rewards have changed
     function checkForNewRewardTokens() internal {
-        for (uint256 i = 0; i < MAX_REWARDS; i++) {
+        for (uint256 i = 0; i < MAX_REWARDS; i.unsafeInc()) {
             address token = IBalGauge(gauge).reward_tokens(i);
             if (token == address(0)) {
                 break;
@@ -155,12 +157,14 @@ contract ExtraRewardStash is IStash {
                 historicalRewards[token] = historicalRewards[token] + amount;
                 if (token == bal) {
                     //if BAL, send back to booster to distribute
-                    IERC20(token).transfer(operator, amount);
+                    bool success = IERC20(token).transfer(operator, amount);
+                    require(success, "transfer fail");
                     continue;
                 }
                 //add to reward contract
                 address rewards = t.rewardAddress;
-                IERC20(token).transfer(rewards, amount);
+                bool success = IERC20(token).transfer(rewards, amount);
+                require(success, "transfer fail");
                 IRewards(rewards).queueNewRewards(amount);
             }
         }

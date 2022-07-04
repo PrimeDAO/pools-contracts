@@ -131,7 +131,7 @@ describe('unit - BaseRewardPool', function () {
     it('reverts on invalid unstake amount', async function () {
       const { baseRewardPool } = await setupTests();
 
-      await expect(baseRewardPool.withdraw(0, true)).to.be.revertedWith('InvalidAmount()');
+      await expect(baseRewardPool.withdraw(0, true, false)).to.be.revertedWith('InvalidAmount()');
     });
 
     it('unstakes 10000 stake tokens', async function () {
@@ -141,7 +141,7 @@ describe('unit - BaseRewardPool', function () {
 
       await stakeAmount(baseRewardPool, stakeToken, amount, root);
 
-      await expect(baseRewardPool.connect(root).withdraw(amount, true))
+      await expect(baseRewardPool.connect(root).withdraw(amount, true, false))
         .to.emit(baseRewardPool, 'Withdrawn')
         .withArgs(root.address, amount);
     });
@@ -168,9 +168,9 @@ describe('unit - BaseRewardPool', function () {
 
       await stakeAmount(baseRewardPool, stakeToken, amount, root);
 
-      await expect(baseRewardPool.connect(root).withdrawAndUnwrap(0, true)).to.be.revertedWith('InvalidAmount()');
+      await expect(baseRewardPool.connect(root).withdraw(0, true, true)).to.be.revertedWith('InvalidAmount()');
 
-      await expect(baseRewardPool.connect(root).withdrawAndUnwrap(amount, true))
+      await expect(baseRewardPool.connect(root).withdraw(amount, true, true))
         .to.emit(baseRewardPool, 'Withdrawn')
         .withArgs(root.address, amount);
     });
@@ -291,11 +291,13 @@ describe('unit - BaseRewardPool', function () {
     expect(await rewardToken.balanceOf(root.address)).to.equal(0);
   });
 
-  it('returns correct result for unsafeInc', async function () {
-    const { baseRewardPool } = await setupTests();
-
-    await expect(baseRewardPool.unsafeIncExternal(1)).to.emit(baseRewardPool, 'Result').withArgs(2);
-  });
+  it('clears extra rewards', async function () {
+    const { baseRewardPool, rewardManager, root } = await setupTests();
+    await baseRewardPool.connect(rewardManager).addExtraReward(addressOne);
+    expect(await baseRewardPool.extraRewardsLength()).to.equal(1);
+    await expect(baseRewardPool.connect(root).clearExtraRewards()).to.emit(baseRewardPool, 'ExtraRewardsCleared')
+    expect(await baseRewardPool.extraRewardsLength()).to.equal(0);
+  })
 });
 
 // Helper function to stake amount of stake tokens to baseRewardPool from signer
