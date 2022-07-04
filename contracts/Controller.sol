@@ -39,8 +39,6 @@ contract Controller is IController {
 
     address public immutable bal;
     address public immutable staker;
-    address public immutable voteOwnership; // 0xE478de485ad2fe566d49342Cbd03E49ed7DB3356
-    address public immutable voteParameter; // 0xBCfF8B0b9419b9A88c44546519b1e909cF330399
     address public immutable feeDistro; // Balancer FeeDistributor
 
     uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
@@ -76,14 +74,10 @@ contract Controller is IController {
     constructor(
         address _staker,
         address _bal,
-        address _feeDistro,
-        address _voteOwnership,
-        address _voteParameter
+        address _feeDistro
     ) {
         bal = _bal;
         feeDistro = _feeDistro;
-        voteOwnership = _voteOwnership;
-        voteParameter = _voteParameter;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
