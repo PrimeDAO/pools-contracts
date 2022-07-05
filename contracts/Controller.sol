@@ -25,6 +25,8 @@ contract Controller is IController {
     );
     event Deposited(address _user, uint256 _pid, uint256 _amount, bool _stake);
     event Withdrawn(address _user, uint256 _pid, uint256 _amount);
+    error TransferFailed();
+    error RedirectFailed();
     event SystemShutdown();
 
     error Unauthorized();
@@ -385,7 +387,7 @@ contract Controller is IController {
 
     /// @inheritdoc IController
     function withdrawUnlockedWethBal(uint256 _amount) external {
-        IVoterProxy(staker).withdrawWethBal(treasury, _amount);
+        IVoterProxy(staker).withdrawWethBal(address(this), _amount);
     }
 
     /// @notice Delegates voting power from VoterProxy
@@ -477,7 +479,10 @@ contract Controller is IController {
         IVoterProxy(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = feeToken.balanceOf(address(this));
-        feeToken.transfer(lockFees, _balance);
+        bool success = feeToken.transfer(lockFees, _balance);
+        if (!success) {
+            revert TransferFailed();
+        }
         IRewards(lockFees).queueNewRewards(_balance);
     }
 
@@ -487,6 +492,8 @@ contract Controller is IController {
     function redirectGaugeRewards(address _stash, address _gauge) private {
         bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), _stash);
         (bool success, ) = IVoterProxy(staker).execute(_gauge, uint256(0), data);
-        require(success, "redirect failed");
+        if (!success) {
+            revert RedirectFailed();
+        }
     }
 }

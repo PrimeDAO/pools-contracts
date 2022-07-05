@@ -2,12 +2,16 @@
 pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./utils/MathUtil.sol";
 import "./utils/Interfaces.sol";
 
 /// @title ExtraRewardStash
 contract ExtraRewardStash is IStash {
+    using MathUtil for uint256;
+
     error Unauthorized();
     error AlreadyInitialized();
+    error TransferFailed();
 
     event RewardHookSet(address newRewardHook);
 
@@ -79,7 +83,7 @@ contract ExtraRewardStash is IStash {
 
     /// @notice Checks if the gauge rewards have changed
     function checkForNewRewardTokens() internal {
-        for (uint256 i = 0; i < MAX_REWARDS; i++) {
+        for (uint256 i = 0; i < MAX_REWARDS; i = i.unsafeInc()) {
             address token = IBalGauge(gauge).reward_tokens(i);
             if (token == address(0)) {
                 break;
@@ -145,7 +149,7 @@ contract ExtraRewardStash is IStash {
             revert Unauthorized();
         }
         uint256 tCount = tokenList.length;
-        for (uint256 i = 0; i < tCount; i++) {
+        for (uint256 i = 0; i < tCount; i = i.unsafeInc()) {
             TokenInfo storage t = tokenInfo[tokenList[i]];
             address token = t.token;
             if (token == address(0)) continue;
@@ -155,12 +159,18 @@ contract ExtraRewardStash is IStash {
                 historicalRewards[token] = historicalRewards[token] + amount;
                 if (token == bal) {
                     //if BAL, send back to booster to distribute
-                    IERC20(token).transfer(operator, amount);
+                    bool successFullTransfer = IERC20(token).transfer(operator, amount);
+                    if (!successFullTransfer) {
+                        revert TransferFailed();
+                    }
                     continue;
                 }
                 //add to reward contract
                 address rewards = t.rewardAddress;
-                IERC20(token).transfer(rewards, amount);
+                bool success = IERC20(token).transfer(rewards, amount);
+                if (!success) {
+                    revert TransferFailed();
+                }
                 IRewards(rewards).queueNewRewards(amount);
             }
         }
