@@ -256,12 +256,6 @@ interface IRewardFactory {
         address,
         address
     ) external returns (address);
-
-    function activeRewardCount(address) external view returns (uint256);
-
-    function addActiveReward(address, uint256) external returns (bool);
-
-    function removeActiveReward(address, uint256) external returns (bool);
 }
 
 interface IStashFactory {
