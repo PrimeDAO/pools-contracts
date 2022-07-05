@@ -8,8 +8,10 @@ import "./utils/MathUtil.sol";
 /// @title ExtraRewardStash
 contract ExtraRewardStash is IStash {
     using MathUtil for uint256;
+
     error Unauthorized();
     error AlreadyInitialized();
+    error TransferFailed();
 
     event RewardHookSet(address newRewardHook);
 
@@ -81,7 +83,7 @@ contract ExtraRewardStash is IStash {
 
     /// @notice Checks if the gauge rewards have changed
     function checkForNewRewardTokens() internal {
-        for (uint256 i = 0; i < MAX_REWARDS; i.unsafeInc()) {
+        for (uint256 i = 0; i < MAX_REWARDS; i = i.unsafeInc()) {
             address token = IBalGauge(gauge).reward_tokens(i);
             if (token == address(0)) {
                 break;
@@ -158,13 +160,17 @@ contract ExtraRewardStash is IStash {
                 if (token == bal) {
                     //if BAL, send back to booster to distribute
                     bool success = IERC20(token).transfer(operator, amount);
-                    require(success, "transfer fail");
+                    if (!success) {
+                        revert TransferFailed();
+                    }
                     continue;
                 }
                 //add to reward contract
                 address rewards = t.rewardAddress;
                 bool success = IERC20(token).transfer(rewards, amount);
-                require(success, "transfer fail");
+                if (!success) {
+                    revert TransferFailed();
+                }
                 IRewards(rewards).queueNewRewards(amount);
             }
         }

@@ -31,6 +31,8 @@ contract Controller is IController {
     error PoolIsClosed();
     error InvalidParameters();
     error InvalidStash();
+    error TransferFailed();
+    error RedirectFailed();
 
     uint256 public constant MAX_FEES = 3000;
     uint256 public constant FEE_DENOMINATOR = 10000;
@@ -206,7 +208,7 @@ contract Controller is IController {
     /// @param _lptoken The address of the lp token
     /// @param _gauge The address of the gauge controller
     function addPool(address _lptoken, address _gauge) external onlyAddress(poolManager) isNotShutDown {
-        if (_gauge == address(0) || _lptoken == address(0)) {
+        if (_gauge == address(0) || _lptoken == address(0) || gaugeMap[_gauge]) {
             revert InvalidParameters();
         }
         //the next pool's pid
@@ -243,44 +245,36 @@ contract Controller is IController {
         emit AddedPool(pid, _lptoken, token, _gauge, newRewardPool, stash);
     }
 
-    /// @notice shuts down a currently active pool
-    /// @param _pid The id of the pool to shutdown
-    function shutdownPool(uint256 _pid) external onlyAddress(poolManager) {
-        PoolInfo storage pool = poolInfo[_pid];
-
-        _earmarkRewards(_pid);
-
-        //withdraw from gauge
-        // solhint-disable-next-line
-        try IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge) {
-            // solhint-disable-next-line
-        } catch {}
-
-        pool.shutdown = true;
-        gaugeMap[pool.gauge] = false;
-        emit PoolShutDown(_pid);
-    }
-
-    /// @notice shuts down all pools
-    /// @dev This shuts down the contract, unstakes and withdraws all LP tokens
-    function shutdownSystem() external onlyAddress(owner) {
-        isShutdown = true;
-
-        for (uint256 i = 0; i < poolInfo.length; i++) {
+    /// @notice Shuts down multiple pools
+    /// @dev Claims rewards for that pool before shutting it down
+    /// @param _startPoolIdx Start pool index
+    /// @param _endPoolIdx End pool index (excluded)
+    function bulkPoolShutdown(uint256 _startPoolIdx, uint256 _endPoolIdx) external onlyAddress(poolManager) {
+        for (uint256 i = _startPoolIdx; i < _endPoolIdx; ++i) {
             PoolInfo storage pool = poolInfo[i];
-            if (pool.shutdown) continue;
 
-            address token = pool.lptoken;
-            address gauge = pool.gauge;
+            if (pool.shutdown) {
+                continue;
+            }
 
             _earmarkRewards(i);
 
             //withdraw from gauge
-            try IVoterProxy(staker).withdrawAll(token, gauge) {
-                pool.shutdown = true;
+            // solhint-disable-next-line
+            try IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge) {
                 // solhint-disable-next-line
             } catch {}
+
+            pool.shutdown = true;
+            gaugeMap[pool.gauge] = false;
+            emit PoolShutDown(i);
         }
+    }
+
+    /// @notice shuts down all pools
+    /// @dev This shuts down the contract
+    function shutdownSystem() external onlyAddress(owner) {
+        isShutdown = true;
         emit SystemShutdown();
     }
 
@@ -474,7 +468,9 @@ contract Controller is IController {
         //send fee rewards to reward contract
         uint256 _balance = feeToken.balanceOf(address(this));
         bool success = feeToken.transfer(lockFees, _balance);
-        require(success, "transfer fail");
+        if (!success) {
+            revert TransferFailed();
+        }
         IRewards(lockFees).queueNewRewards(_balance);
     }
 
@@ -484,6 +480,8 @@ contract Controller is IController {
     function redirectGaugeRewards(address _stash, address _gauge) private {
         bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), _stash);
         (bool success, ) = IVoterProxy(staker).execute(_gauge, uint256(0), data);
-        require(success, "redirect failed");
+        if (!success) {
+            revert RedirectFailed();
+        }
     }
 }

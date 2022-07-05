@@ -197,7 +197,7 @@ describe('unit - Controller', function () {
     it('earmarkRewards reverts if pool is closed', async () => {
       await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
       const pid = 0;
-      await controller.shutdownPool(pid);
+      await controller.bulkPoolShutdown(pid, pid + 1);
       await expectRevert(controller.earmarkRewards(pid), 'PoolIsClosed()');
     });
   });
@@ -273,7 +273,7 @@ describe('unit - Controller', function () {
   it('deposit reverts if pool is shut down', async () => {
     const pid = 0;
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
-    await controller.shutdownPool(pid);
+    await controller.bulkPoolShutdown(pid, pid + 1);
     await expect(controller.deposit(pid, ONE_ADDRESS, true)).to.be.revertedWith('PoolIsClosed()');
   });
 
