@@ -5,7 +5,7 @@ import "./utils/Interfaces.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title BalDepositor contract
-/// @dev Deposit contract for Prime Pools is based on the convex contract
+/// @dev Deposit contract for Prime Pools is based on the convex contract crvDepositor.sol
 contract BalDepositor {
     event FeeManagerChanged(address newFeeManager);
     event LockIncentiveChanged(uint256 newLockIncentive);
