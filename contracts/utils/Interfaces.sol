@@ -50,8 +50,6 @@ interface IVoterProxy {
 
     function withdrawWethBal(address, uint256) external;
 
-    function withdraw(IERC20 _asset) external returns (uint256 balance);
-
     function withdraw(
         address _token,
         address _gauge,
