@@ -72,8 +72,6 @@ interface IVoterProxy {
 
     function claimFees(address _distroContract, IERC20 _token) external returns (uint256);
 
-    function grantStashAccess(address _stash) external;
-
     function delegateVotingPower(address _delegateTo) external;
 
     function clearDelegate() external;
