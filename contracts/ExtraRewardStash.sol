@@ -14,6 +14,7 @@ contract ExtraRewardStash is IStash {
     error TransferFailed();
 
     event RewardHookSet(address newRewardHook);
+    event ExtraRewardsCleared();
 
     uint256 private constant MAX_REWARDS = 8;
     address public immutable bal;
@@ -55,16 +56,20 @@ contract ExtraRewardStash is IStash {
         rewardFactory = _rFactory;
     }
 
+    modifier onlyAddress(address authorizedAddress) {
+        if (msg.sender != authorizedAddress) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
     /// @notice Returns the length of the tokenList
     function tokenCount() external view returns (uint256) {
         return tokenList.length;
     }
 
     /// @notice Claims registered reward tokens
-    function claimRewards() external {
-        if (msg.sender != operator) {
-            revert Unauthorized();
-        }
+    function claimRewards() external onlyAddress(operator) {
         // this is updateable from v2 gauges now so must check each time.
         checkForNewRewardTokens();
 
@@ -79,6 +84,13 @@ contract ExtraRewardStash is IStash {
             // solhint-disable-next-line
             try IRewardHook(rewardHook).onRewardClaim() {} catch {}
         }
+    }
+
+    /// @notice Clears extra rewards
+    /// @dev Only Prime multising has the ability to do this
+    function clearExtraRewards() external onlyAddress(IController(operator).owner()) {
+        delete tokenList;
+        emit ExtraRewardsCleared();
     }
 
     /// @notice Checks if the gauge rewards have changed
@@ -97,22 +109,14 @@ contract ExtraRewardStash is IStash {
 
     /// @notice Registers an extra reward token to be handled
     /// @param _token The reward token address
-    /// @dev Used for any new incentive that is not directly on curve gauges
-    function setExtraReward(address _token) external {
-        // owner of booster can set extra rewards
-        if (msg.sender != IController(operator).owner()) {
-            revert Unauthorized();
-        }
+    /// @dev Used for any new incentive that is not directly on balancer gauges
+    function setExtraReward(address _token) external onlyAddress(IController(operator).owner()) {
         setToken(_token);
     }
 
     /// @notice Sets the reward hook address
     /// @param _hook The address of the reward hook
-    function setRewardHook(address _hook) external {
-        // owner of booster can set reward hook
-        if (msg.sender != IController(operator).owner()) {
-            revert Unauthorized();
-        }
+    function setRewardHook(address _hook) external onlyAddress(IController(operator).owner()) {
         rewardHook = _hook;
         emit RewardHookSet(_hook);
     }
@@ -144,10 +148,7 @@ contract ExtraRewardStash is IStash {
     }
 
     /// @notice Sends all of the extra rewards to the reward contracts
-    function processStash() external {
-        if (msg.sender != operator) {
-            revert Unauthorized();
-        }
+    function processStash() external onlyAddress(operator) {
         uint256 tCount = tokenList.length;
         for (uint256 i = 0; i < tCount; i++) {
             TokenInfo storage t = tokenInfo[tokenList[i]];
