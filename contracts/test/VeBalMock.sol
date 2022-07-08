@@ -2,7 +2,7 @@
 //by address 0xC128a9954e6c874eA3d62ce62B468bA073093F25
 
 // solium-disable linebreak-style
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";

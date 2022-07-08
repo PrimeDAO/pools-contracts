@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./utils/Interfaces.sol";
-import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title Controller contract
 /// @dev Controller contract for Prime Pools is based on the convex Booster.sol contract
 contract Controller is IController {
+    using SafeERC20 for IERC20;
+
     event OwnerChanged(address _newOwner);
     event FeeManagerChanged(address _newFeeManager);
     event PoolManagerChanged(address _newPoolManager);
@@ -32,6 +34,7 @@ contract Controller is IController {
     error PoolIsClosed();
     error InvalidParameters();
     error InvalidStash();
+    error RedirectFailed();
 
     uint256 public constant MAX_FEES = 3000;
     uint256 public constant FEE_DENOMINATOR = 10000;
@@ -39,8 +42,6 @@ contract Controller is IController {
 
     address public immutable bal;
     address public immutable staker;
-    address public immutable voteOwnership; // 0xE478de485ad2fe566d49342Cbd03E49ed7DB3356
-    address public immutable voteParameter; // 0xBCfF8B0b9419b9A88c44546519b1e909cF330399
     address public immutable feeDistro; // Balancer FeeDistributor
 
     uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
@@ -76,14 +77,10 @@ contract Controller is IController {
     constructor(
         address _staker,
         address _bal,
-        address _feeDistro,
-        address _voteOwnership,
-        address _voteParameter
+        address _feeDistro
     ) {
         bal = _bal;
         feeDistro = _feeDistro;
-        voteOwnership = _voteOwnership;
-        voteParameter = _voteParameter;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
@@ -213,7 +210,7 @@ contract Controller is IController {
     /// @param _lptoken The address of the lp token
     /// @param _gauge The address of the gauge controller
     function addPool(address _lptoken, address _gauge) external onlyAddress(poolManager) isNotShutDown {
-        if (_gauge == address(0) || _lptoken == address(0)) {
+        if (_gauge == address(0) || _lptoken == address(0) || gaugeMap[_gauge]) {
             revert InvalidParameters();
         }
         //the next pool's pid
@@ -245,46 +242,41 @@ contract Controller is IController {
         // VoterProxy so that it can grab the incentive tokens off the contract after claiming rewards
         // RewardFactory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
         poolInfo[pid].stash = stash;
-        IVoterProxy(staker).grantStashAccess(stash);
         IRewardFactory(rewardFactory).grantRewardStashAccess(stash);
         redirectGaugeRewards(stash, _gauge);
         emit AddedPool(pid, _lptoken, token, _gauge, newRewardPool, stash);
     }
 
-    /// @notice shuts down a currently active pool
-    /// @param _pid The id of the pool to shutdown
-    function shutdownPool(uint256 _pid) external onlyAddress(poolManager) {
-        PoolInfo storage pool = poolInfo[_pid];
+    /// @notice Shuts down multiple pools
+    /// @dev Claims rewards for that pool before shutting it down
+    /// @param _startPoolIdx Start pool index
+    /// @param _endPoolIdx End pool index (excluded)
+    function bulkPoolShutdown(uint256 _startPoolIdx, uint256 _endPoolIdx) external onlyAddress(poolManager) {
+        for (uint256 i = _startPoolIdx; i < _endPoolIdx; ++i) {
+            PoolInfo storage pool = poolInfo[i];
 
-        //withdraw from gauge
-        // solhint-disable-next-line
-        try IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge) {
+            if (pool.shutdown) {
+                continue;
+            }
+
+            _earmarkRewards(i);
+
+            //withdraw from gauge
             // solhint-disable-next-line
-        } catch {}
+            try IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge) {
+                // solhint-disable-next-line
+            } catch {}
 
-        pool.shutdown = true;
-        gaugeMap[pool.gauge] = false;
-        emit PoolShutDown(_pid);
+            pool.shutdown = true;
+            gaugeMap[pool.gauge] = false;
+            emit PoolShutDown(i);
+        }
     }
 
     /// @notice shuts down all pools
-    /// @dev This shuts down the contract, unstakes and withdraws all LP tokens
+    /// @dev This shuts down the contract
     function shutdownSystem() external onlyAddress(owner) {
         isShutdown = true;
-
-        for (uint256 i = 0; i < poolInfo.length; i++) {
-            PoolInfo storage pool = poolInfo[i];
-            if (pool.shutdown) continue;
-
-            address token = pool.lptoken;
-            address gauge = pool.gauge;
-
-            //withdraw from gauge
-            try IVoterProxy(staker).withdrawAll(token, gauge) {
-                pool.shutdown = true;
-                // solhint-disable-next-line
-            } catch {}
-        }
         emit SystemShutdown();
     }
 
@@ -467,7 +459,7 @@ contract Controller is IController {
     }
 
     /// @inheritdoc IController
-    function earmarkRewards(uint256 _pid) external isNotShutDown {
+    function earmarkRewards(uint256 _pid) external {
         _earmarkRewards(_pid);
     }
 
@@ -477,7 +469,7 @@ contract Controller is IController {
         IVoterProxy(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = feeToken.balanceOf(address(this));
-        feeToken.transfer(lockFees, _balance);
+        feeToken.safeTransfer(lockFees, _balance);
         IRewards(lockFees).queueNewRewards(_balance);
     }
 
@@ -487,6 +479,8 @@ contract Controller is IController {
     function redirectGaugeRewards(address _stash, address _gauge) private {
         bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), _stash);
         (bool success, ) = IVoterProxy(staker).execute(_gauge, uint256(0), data);
-        require(success, "redirect failed");
+        if (!success) {
+            revert RedirectFailed();
+        }
     }
 }
