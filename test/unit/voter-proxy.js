@@ -20,8 +20,7 @@ describe('unit - VoterProxy', function () {
     veBal,
     wethBal,
     B50WBTC50WETH,
-    anotherUser,
-    stash;
+    anotherUser;
 
   const setupTests = deployments.createFixture(async () => {
     const signers = await ethers.getSigners();
@@ -60,7 +59,6 @@ describe('unit - VoterProxy', function () {
       wethBal: setup.tokens.WethBal,
       B50WBTC50WETH, // LP token
       anotherUser: signers.pop(),
-      stash: signers.pop(),
     };
   });
 
@@ -80,7 +78,6 @@ describe('unit - VoterProxy', function () {
     wethBal = setup.wethBal;
     B50WBTC50WETH = setup.B50WBTC50WETH;
     anotherUser = setup.anotherUser;
-    stash = setup.stash;
   });
 
   context('setup', async function () {
@@ -104,12 +101,6 @@ describe('unit - VoterProxy', function () {
     await expect(
       voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365))
     ).to.be.revertedWith('Unauthorized()');
-  });
-
-  it('reverts if no stash access', async function () {
-    await expect(voterProxy.connect(anotherUser)['withdraw(address)'](B50WBTC50WETH.address)).to.be.revertedWith(
-      'Unauthorized()'
-    );
   });
 
   it('should revert if not authorized', async function () {
@@ -152,11 +143,6 @@ describe('unit - VoterProxy', function () {
       .withArgs(anotherUser.address);
   });
 
-  it('grants stash access', async function () {
-    await changeOperator(voterProxy, anotherUser.address);
-    await voterProxy.connect(anotherUser).grantStashAccess(stash.address);
-  });
-
   it('deposits lp tokens', async function () {
     // We're depositing B50WBTC50WETH LP tokens to voter proxy, and it is interacting with gauge mock
     await changeOperator(voterProxy, anotherUser.address);
@@ -172,38 +158,6 @@ describe('unit - VoterProxy', function () {
   });
 
   context('Withdraw', async function () {
-    context('withdraww(address)', async function () {
-      it('withdraws unprotected asset using withdraww(address)', async function () {
-        // unprotected asset is token that is not deposited to VoterProxy via .deposit
-
-        // mint 100 B50WBTC50WETH
-        await B50WBTC50WETH.mint(voterProxy.address, ONE_HUNDRED_ETHER);
-
-        await changeOperator(voterProxy, anotherUser.address);
-        // give access to self
-        await voterProxy.connect(anotherUser).grantStashAccess(anotherUser.address);
-
-        expect(await B50WBTC50WETH.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER);
-        await voterProxy.connect(anotherUser)['withdraw(address)'](B50WBTC50WETH.address);
-        expect(await B50WBTC50WETH.balanceOf(anotherUser.address)).to.equals(ONE_HUNDRED_ETHER);
-      });
-
-      it("doesn't withdraw protected asset", async function () {
-        await changeOperator(voterProxy, anotherUser.address);
-        // give access to self
-        await voterProxy.connect(anotherUser).grantStashAccess(anotherUser.address);
-
-        await B50WBTC50WETH.mint(voterProxy.address, ONE_HUNDRED_ETHER);
-        expect(await B50WBTC50WETH.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER);
-
-        await voterProxy.connect(anotherUser).deposit(B50WBTC50WETH.address, gauge.address);
-
-        await voterProxy.connect(anotherUser)['withdraw(address)'](B50WBTC50WETH.address);
-        // gauge should have the same amount of tokens
-        expect(await B50WBTC50WETH.balanceOf(gauge.address)).to.equals(ONE_HUNDRED_ETHER);
-      });
-    });
-
     context('withdraw(address,address,uint256)', async function () {
       it('withdraws amount', async function () {
         await changeOperator(voterProxy, anotherUser.address);

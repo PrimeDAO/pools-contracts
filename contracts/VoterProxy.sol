@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -109,13 +109,6 @@ contract VoterProxy is IVoterProxy {
     function setDepositor(address _depositor) external onlyOwner {
         depositor = _depositor;
         emit DepositorChanged(_depositor);
-    }
-
-    /// @notice Sets `_stash` access to `_status`
-    /// @param _stash The address of the stash
-    function grantStashAccess(address _stash) external onlyOperator {
-        stashAccess[_stash] = true;
-        emit StashAccessGranted(_stash);
     }
 
     /// @notice Used to deposit tokens
@@ -252,23 +245,6 @@ contract VoterProxy is IVoterProxy {
     /// @dev Only possible if the lock has expired
     function release() external onlyDepositor {
         IBalVoteEscrow(veBal).withdraw();
-    }
-
-    /// @notice Used for pulling extra incentive reward tokens out
-    /// @param _asset ERC20 token address
-    /// @return amount of tokens withdrawn
-    function withdraw(IERC20 _asset) external returns (uint256) {
-        if (!stashAccess[msg.sender]) {
-            revert Unauthorized();
-        }
-
-        if (protectedTokens[address(_asset)]) {
-            return 0;
-        }
-
-        uint256 balance = _asset.balanceOf(address(this));
-        _asset.transfer(msg.sender, balance);
-        return balance;
     }
 
     /// @notice Used for withdrawing tokens

@@ -71,15 +71,13 @@ const getStash = async (setup) => {
   return await Stash.deploy(setup.tokens.BAL.address);
 };
 
-const controller = async (setup, voterProxy, feeDistributor, voteOwnership, voteParameter) => {
+const controller = async (setup, voterProxy, feeDistributor) => {
   const controllerFactory = await ethers.getContractFactory('Controller', setup.roles.root);
 
   const controller = await controllerFactory.deploy(
     voterProxy.address,
     setup.tokens.BAL.address,
-    feeDistributor.address,
-    voteOwnership.address,
-    voteParameter.address
+    feeDistributor.address
   );
 
   await voterProxy.setOperator(controller.address);
@@ -152,7 +150,7 @@ const getStashFactoryMock = async (setup, controller, rewardFactory, proxyFactor
 };
 
 const getBaseRewardPool = async (setup) => {
-  const BaseRewardPoolFactory = await ethers.getContractFactory('BaseRewardPoolInTest', setup.roles.root);
+  const BaseRewardPoolFactory = await ethers.getContractFactory('BaseRewardPool', setup.roles.root);
 
   const controller = await getControllerMock(setup);
 
