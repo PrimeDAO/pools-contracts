@@ -1,5 +1,5 @@
 // solium-disable linebreak-style
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 interface VotingEscrow {
     function get_last_user_slope(address addr) external view returns (uint256);

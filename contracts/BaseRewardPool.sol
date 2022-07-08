@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 /**
  *Submitted for verification at Etherscan.io on 2020-07-17
  */
@@ -16,7 +16,7 @@ pragma solidity 0.8.14;
 *
 *
 * MIT License
-* ===========
+* 
 *
 * Copyright (c) 2020 Synthetix
 *
@@ -41,14 +41,19 @@ pragma solidity 0.8.14;
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title Base Reward Pool contract
 /// @dev Rewards contract for Prime Pools is based on the convex contract
 contract BaseRewardPool is IBaseRewardsPool {
+    using SafeERC20 for IERC20;
+    using MathUtil for uint256;
+
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
+    event ExtraRewardsCleared();
 
     error Unauthorized();
     error InvalidAmount();
@@ -136,6 +141,13 @@ contract BaseRewardPool is IBaseRewardsPool {
         extraRewards.push(_reward);
     }
 
+    /// @notice Clears extra rewards
+    /// @dev Only Prime multising has the ability to do this
+    function clearExtraRewards() external onlyAddress(IController(operator).owner()) {
+        delete extraRewards;
+        emit ExtraRewardsCleared();
+    }
+
     /// @notice Returns last time reward applicable
     /// @return The lower value of current block.timestamp or last time reward applicable
     function lastTimeRewardApplicable() public view returns (uint256) {
@@ -146,12 +158,13 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Returns rewards per token staked
     /// @return The rewards per token staked
     function rewardPerToken() public view returns (uint256) {
-        if (totalSupply() == 0) {
+        uint256 totalSupplyMemory = totalSupply();
+        if (totalSupplyMemory == 0) {
             return rewardPerTokenStored;
         }
         return
             rewardPerTokenStored +
-            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupply());
+            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupplyMemory);
     }
 
     /// @notice Returns the `account`'s earned rewards
@@ -163,17 +176,8 @@ contract BaseRewardPool is IBaseRewardsPool {
 
     /// @notice Stakes `amount` tokens
     /// @param _amount The amount of tokens user wants to stake
-    function stake(uint256 _amount) public updateReward(msg.sender) {
-        if (_amount < 1) {
-            revert InvalidAmount();
-        }
-
-        stakeToExtraRewards(msg.sender, _amount);
-
-        _totalSupply = _totalSupply + (_amount);
-        _balances[msg.sender] = _balances[msg.sender] + (_amount);
-        stakingToken.transferFrom(msg.sender, address(this), _amount);
-        emit Staked(msg.sender, _amount);
+    function stake(uint256 _amount) public {
+        stakeFor(msg.sender, _amount);
     }
 
     /// @notice Stakes all BAL tokens
@@ -185,7 +189,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Stakes `amount` tokens for `_for`
     /// @param _for Who are we staking for
     /// @param _amount The amount of tokens user wants to stake
-    function stakeFor(address _for, uint256 _amount) external updateReward(_for) {
+    function stakeFor(address _for, uint256 _amount) public updateReward(_for) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -200,10 +204,15 @@ contract BaseRewardPool is IBaseRewardsPool {
         emit Staked(_for, _amount);
     }
 
-    /// @notice Unstakes `amount` tokens
+    /// @notice Withdraw `amount` tokens and possibly unwrap
     /// @param _amount The amount of tokens that the user wants to withdraw
     /// @param _claim Whether or not the user wants to claim their rewards
-    function withdraw(uint256 _amount, bool _claim) public updateReward(msg.sender) {
+    /// @param _unwrap Whether or not the user wants to unwrap to BLP tokens
+    function withdraw(
+        uint256 _amount,
+        bool _claim,
+        bool _unwrap
+    ) public updateReward(msg.sender) {
         if (_amount < 1) {
             revert InvalidAmount();
         }
@@ -214,8 +223,12 @@ contract BaseRewardPool is IBaseRewardsPool {
         _totalSupply = _totalSupply - (_amount);
         _balances[msg.sender] = _balances[msg.sender] - (_amount);
 
-        // return staked tokens to sender
-        stakingToken.transfer(msg.sender, _amount);
+        if (_unwrap) {
+            IController(operator).withdrawTo(pid, _amount, msg.sender);
+        } else {
+            // return staked tokens to sender
+            stakingToken.transfer(msg.sender, _amount);
+        }
         emit Withdrawn(msg.sender, _amount);
 
         // claim staking rewards
@@ -225,54 +238,32 @@ contract BaseRewardPool is IBaseRewardsPool {
     }
 
     /// @notice Withdraw all tokens
-    function withdrawAll(bool _claim) external {
-        withdraw(_balances[msg.sender], _claim);
-    }
-
-    /// @notice Withdraw `amount` tokens and unwrap
-    /// @param _amount The amount of tokens that the user wants to withdraw
     /// @param _claim Whether or not the user wants to claim their rewards
-    function withdrawAndUnwrap(uint256 _amount, bool _claim) public updateReward(msg.sender) {
-        if (_amount < 1) {
-            revert InvalidAmount();
-        }
-
-        withdrawExtraRewards(msg.sender, _amount);
-
-        _totalSupply = _totalSupply - (_amount);
-        _balances[msg.sender] = _balances[msg.sender] - (_amount);
-
-        // tell operator to withdraw from here directly to user
-        IController(operator).withdrawTo(pid, _amount, msg.sender);
-        emit Withdrawn(msg.sender, _amount);
-
-        //get rewards too
-        if (_claim) {
-            getReward(msg.sender, true);
-        }
+    function withdrawAll(bool _claim) external {
+        withdraw(_balances[msg.sender], _claim, false);
     }
 
     /// @notice Withdraw all tokens and unwrap
     /// @param _claim Whether or not the user wants to claim their rewards
     function withdrawAllAndUnwrap(bool _claim) external {
-        withdrawAndUnwrap(_balances[msg.sender], _claim);
+        withdraw(_balances[msg.sender], _claim, true);
     }
 
     /// @notice Claims Rewards for `_account`
     /// @param _account The account to claim rewards for
     /// @param _claimExtras Whether or not the user wants to claim extra rewards
     function getReward(address _account, bool _claimExtras) public updateReward(_account) {
-        uint256 reward = earned(_account);
+        uint256 reward = rewards[_account];
         if (reward > 0) {
             rewards[_account] = 0;
-            rewardToken.transfer(_account, reward);
+            rewardToken.safeTransfer(_account, reward);
             emit RewardPaid(_account, reward);
         }
 
         // also get rewards from linked rewards
         if (_claimExtras) {
             address[] memory extraRewardsMemory = extraRewards;
-            for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
+            for (uint256 i = 0; i < extraRewardsMemory.length; i = i.unsafeInc()) {
                 IRewards(extraRewardsMemory[i]).getReward(_account);
             }
         }
@@ -286,7 +277,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Donates reward token to this contract
     /// @param _amount The amount of tokens to donate
     function donate(uint256 _amount) external {
-        IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
+        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards + _amount;
     }
 
@@ -316,21 +307,13 @@ contract BaseRewardPool is IBaseRewardsPool {
         }
     }
 
-    /// @dev Gas optimization for loops that iterate over extra rewards
-    /// We know that this can't overflow because we can't interate over big arrays
-    function unsafeInc(uint256 x) internal pure returns (uint256) {
-        unchecked {
-            return x + 1;
-        }
-    }
-
     /// @dev Stakes `amount` tokens for address `for` to extra rewards tokens
     /// RewardManager `rewardManager` is responsible for adding reward tokens
     /// @param _for Who are we staking for
     /// @param _amount The amount of tokens user wants to stake
     function stakeToExtraRewards(address _for, uint256 _amount) internal {
         address[] memory extraRewardsMemory = extraRewards;
-        for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
+        for (uint256 i = 0; i < extraRewardsMemory.length; i = i.unsafeInc()) {
             IRewards(extraRewardsMemory[i]).stake(_for, _amount);
         }
     }
@@ -341,7 +324,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @param _amount The amount of tokens user wants to stake
     function withdrawExtraRewards(address _for, uint256 _amount) internal {
         address[] memory extraRewardsMemory = extraRewards;
-        for (uint256 i = 0; i < extraRewardsMemory.length; i = unsafeInc(i)) {
+        for (uint256 i = 0; i < extraRewardsMemory.length; i = i.unsafeInc()) {
             IRewards(extraRewardsMemory[i]).withdraw(_for, _amount);
         }
     }
