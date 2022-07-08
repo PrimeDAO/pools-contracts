@@ -2,16 +2,17 @@
 pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 
 /// @title ExtraRewardStash
 contract ExtraRewardStash is IStash {
+    using SafeERC20 for IERC20;
     using MathUtil for uint256;
 
     error Unauthorized();
     error AlreadyInitialized();
-    error TransferFailed();
 
     event RewardHookSet(address newRewardHook);
     event ExtraRewardsCleared();
@@ -160,18 +161,12 @@ contract ExtraRewardStash is IStash {
                 historicalRewards[token] = historicalRewards[token] + amount;
                 if (token == bal) {
                     //if BAL, send back to booster to distribute
-                    bool success = IERC20(token).transfer(operator, amount);
-                    if (!success) {
-                        revert TransferFailed();
-                    }
+                    IERC20(token).safeTransfer(operator, amount);
                     continue;
                 }
                 //add to reward contract
                 address rewards = t.rewardAddress;
-                bool success = IERC20(token).transfer(rewards, amount);
-                if (!success) {
-                    revert TransferFailed();
-                }
+                IERC20(token).safeTransfer(rewards, amount);
                 IRewards(rewards).queueNewRewards(amount);
             }
         }

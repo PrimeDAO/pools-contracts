@@ -41,8 +41,11 @@ pragma solidity 0.8.15;
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract VirtualBalanceRewardPool {
+    using SafeERC20 for IERC20;
+
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
@@ -134,8 +137,7 @@ contract VirtualBalanceRewardPool {
         uint256 reward = earned(_account);
         if (reward > 0) {
             rewards[_account] = 0;
-            bool success = rewardToken.transfer(_account, reward);
-            require(success, "transfer fail");
+            rewardToken.safeTransfer(_account, reward);
             emit RewardPaid(_account, reward);
         }
     }
@@ -145,8 +147,7 @@ contract VirtualBalanceRewardPool {
     }
 
     function donate(uint256 _amount) external {
-        bool success = IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
-        require(success, "transfer fail");
+        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards + _amount;
     }
 

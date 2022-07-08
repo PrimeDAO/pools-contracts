@@ -3,10 +3,13 @@ pragma solidity 0.8.15;
 
 import "./utils/Interfaces.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title Controller contract
 /// @dev Controller contract for Prime Pools is based on the convex Booster.sol contract
 contract Controller is IController {
+    using SafeERC20 for IERC20;
+
     event OwnerChanged(address _newOwner);
     event FeeManagerChanged(address _newFeeManager);
     event PoolManagerChanged(address _newPoolManager);
@@ -31,7 +34,6 @@ contract Controller is IController {
     error PoolIsClosed();
     error InvalidParameters();
     error InvalidStash();
-    error TransferFailed();
     error RedirectFailed();
 
     uint256 public constant MAX_FEES = 3000;
@@ -467,10 +469,7 @@ contract Controller is IController {
         IVoterProxy(staker).claimFees(feeDistro, feeToken);
         //send fee rewards to reward contract
         uint256 _balance = feeToken.balanceOf(address(this));
-        bool success = feeToken.transfer(lockFees, _balance);
-        if (!success) {
-            revert TransferFailed();
-        }
+        feeToken.safeTransfer(lockFees, _balance);
         IRewards(lockFees).queueNewRewards(_balance);
     }
 

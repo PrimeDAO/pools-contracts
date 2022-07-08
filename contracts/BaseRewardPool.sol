@@ -4,10 +4,12 @@ pragma solidity 0.8.15;
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title Base Reward Pool contract
 /// @dev Rewards contract for Prime Pools is based on the convex contract
 contract BaseRewardPool is IBaseRewardsPool {
+    using SafeERC20 for IERC20;
     using MathUtil for uint256;
 
     event RewardAdded(uint256 reward);
@@ -217,7 +219,7 @@ contract BaseRewardPool is IBaseRewardsPool {
         uint256 reward = rewards[_account];
         if (reward > 0) {
             rewards[_account] = 0;
-            rewardToken.transfer(_account, reward);
+            rewardToken.safeTransfer(_account, reward);
             emit RewardPaid(_account, reward);
         }
 
@@ -238,7 +240,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     /// @notice Donates reward token to this contract
     /// @param _amount The amount of tokens to donate
     function donate(uint256 _amount) external {
-        IERC20(rewardToken).transferFrom(msg.sender, address(this), _amount);
+        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), _amount);
         queuedRewards = queuedRewards + _amount;
     }
 
