@@ -127,25 +127,23 @@ contract ExtraRewardStash is IStash {
     function setToken(address _token) internal {
         TokenInfo storage t = tokenInfo[_token];
 
-        if (t.token == address(0)) {
-            //set token address
-            t.token = _token;
+        //set token address
+        t.token = _token;
 
-            //check if BAL
-            if (_token != bal) {
-                //create new reward contract (for NON-BAL tokens only)
-                (, , , address mainRewardContract, , ) = IController(operator).poolInfo(pid);
-                address rewardContract = IRewardFactory(rewardFactory).createTokenRewards(
-                    _token,
-                    mainRewardContract,
-                    address(this)
-                );
+        //check if BAL
+        if (_token != bal) {
+            //create new reward contract (for NON-BAL tokens only)
+            (, , , address mainRewardContract, , ) = IController(operator).poolInfo(pid);
+            address rewardContract = IRewardFactory(rewardFactory).createTokenRewards(
+                _token,
+                mainRewardContract,
+                address(this)
+            );
 
-                t.rewardAddress = rewardContract;
-            }
-            //add token to list of known rewards
-            tokenList.push(_token);
+            t.rewardAddress = rewardContract;
         }
+        //add token to list of known rewards
+        tokenList.push(_token);
     }
 
     /// @notice Sends all of the extra rewards to the reward contracts

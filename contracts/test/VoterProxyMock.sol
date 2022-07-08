@@ -127,13 +127,7 @@ contract VoterProxyMock is IVoterProxy {
 
     function claimRewards(address _gauge) external {}
 
-    function claimFees(address _distroContract, IERC20 _token)
-        external
-        returns (uint256)
-    {
-
-        return 1;
-    }
+    function claimFees(address _distroContract, IERC20[] calldata _tokens) external {}
 
     function balanceOfPool(address _gauge) public view returns (uint256) {
         return 1;
