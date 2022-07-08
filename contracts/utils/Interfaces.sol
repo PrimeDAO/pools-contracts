@@ -33,10 +33,6 @@ interface IBalVoteEscrow {
     function balanceOfAt(address, uint256) external view returns (uint256);
 }
 
-interface IWalletChecker {
-    function check(address) external view returns (bool);
-}
-
 interface IVoting {
     function vote_for_gauge_weights(address, uint256) external;
 }
@@ -236,12 +232,6 @@ interface IController {
     function owner() external returns (address);
 }
 
-interface ICrvDeposit {
-    function deposit(uint256, bool) external;
-
-    function lockIncentive() external view returns (uint256);
-}
-
 interface IRewardFactory {
     function grantRewardStashAccess(address) external;
 
@@ -266,46 +256,6 @@ interface IStashFactory {
 
 interface ITokenFactory {
     function createDepositToken(address) external returns (address);
-}
-
-interface IPools {
-    function addPool(address, address) external returns (bool);
-
-    function forceAddPool(address, address) external returns (bool);
-
-    function shutdownPool(uint256) external returns (bool);
-
-    function poolInfo(uint256)
-        external
-        view
-        returns (
-            address,
-            address,
-            address,
-            address,
-            address,
-            bool
-        );
-
-    function poolLength() external view returns (uint256);
-
-    function gaugeMap(address) external view returns (bool);
-
-    function setPoolManager(address _poolM) external;
-}
-
-interface IVestedEscrow {
-    function fund(address[] calldata _recipient, uint256[] calldata _amount) external returns (bool);
-}
-
-interface GaugeController {
-    function gauge_types(address _addr) external returns (int128);
-}
-
-interface LiquidityGauge {
-    function integrate_fraction(address _address) external returns (uint256);
-
-    function user_checkpoint(address _address) external returns (bool);
 }
 
 interface IProxyFactory {
