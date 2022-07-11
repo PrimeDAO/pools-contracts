@@ -15,10 +15,7 @@ contract StashFactory is IStashFactory {
 
     address public implementation;
 
-    constructor(
-        address _operator,
-        address _rewardFactory
-    ) {
+    constructor(address _operator, address _rewardFactory) {
         operator = _operator;
         rewardFactory = _rewardFactory;
     }
