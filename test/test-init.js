@@ -1,7 +1,7 @@
 const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat');
 
-const initialize = async (accounts) => {
+const initialize = async accounts => {
   const setup = {};
   setup.roles = {
     root: accounts[0],
@@ -17,7 +17,7 @@ const initialize = async (accounts) => {
   return setup;
 };
 
-const getTokens = async (setup) => {
+const getTokens = async setup => {
   const ERC20Factory = await ethers.getContractFactory('ERC20Mock', setup.roles.root);
 
   const VeBalFactory = await ethers.getContractFactory('VeBalMock', setup.roles.root);
@@ -52,7 +52,7 @@ const getTokens = async (setup) => {
   return tokens;
 };
 
-const getVoterProxyMock = async (setup) => {
+const getVoterProxyMock = async setup => {
   const VoterProxyMockFactory = await ethers.getContractFactory('VoterProxyMock', setup.roles.root);
   const mintr = setup.tokens.D2DBal;
   const bal = setup.tokens.BAL;
@@ -61,12 +61,12 @@ const getVoterProxyMock = async (setup) => {
   return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, ZERO_ADDRESS);
 };
 
-const getStashMock = async (setup) => {
+const getStashMock = async setup => {
   const StashMockFactory = await ethers.getContractFactory('StashMock', setup.roles.root);
   return await StashMockFactory.deploy();
 };
 
-const getStash = async (setup) => {
+const getStash = async setup => {
   const Stash = await ethers.getContractFactory('ExtraRewardStash', setup.roles.root);
   return await Stash.deploy(setup.tokens.BAL.address);
 };
@@ -114,11 +114,6 @@ const baseRewardPool = async (setup, controller, rewardFactory) => {
   );
 };
 
-const proxyFactory = async (setup) => {
-  const ProxyFactory = await ethers.getContractFactory('ProxyFactory', setup.roles.root);
-  return await ProxyFactory.deploy();
-};
-
 const balDepositor = async (setup, voterProxy) => {
   const balDepositor = await ethers.getContractFactory('BalDepositor', setup.roles.root);
 
@@ -130,7 +125,7 @@ const balDepositor = async (setup, voterProxy) => {
   );
 };
 
-const getMintrMock = async (setup) => {
+const getMintrMock = async setup => {
   const MintrMock = await ethers.getContractFactory('MintrMock');
 
   const controllerMock = await getControllerMock(setup);
@@ -138,18 +133,18 @@ const getMintrMock = async (setup) => {
   return await MintrMock.deploy(setup.tokens.BAL.address, controllerMock.address);
 };
 
-const stashFactory = async (setup, controller, rewardFactory, proxyFactory) => {
+const stashFactory = async (setup, controller, rewardFactory) => {
   const StashFactory = await ethers.getContractFactory('StashFactory', setup.roles.root);
 
-  return await StashFactory.deploy(controller.address, rewardFactory.address, proxyFactory.address);
+  return await StashFactory.deploy(controller.address, rewardFactory.address);
 };
 
-const getStashFactoryMock = async (setup, controller, rewardFactory, proxyFactory) => {
+const getStashFactoryMock = async (setup, controller, rewardFactory) => {
   const StashFactoryMock = await ethers.getContractFactory('StashFactoryMock', setup.roles.root);
-  return await StashFactoryMock.deploy(controller.address, rewardFactory.address, proxyFactory.address);
+  return await StashFactoryMock.deploy(controller.address, rewardFactory.address);
 };
 
-const getBaseRewardPool = async (setup) => {
+const getBaseRewardPool = async setup => {
   const BaseRewardPoolFactory = await ethers.getContractFactory('BaseRewardPool', setup.roles.root);
 
   const controller = await getControllerMock(setup);
@@ -163,19 +158,19 @@ const getBaseRewardPool = async (setup) => {
   );
 };
 
-const getControllerMock = async (setup) => {
+const getControllerMock = async setup => {
   const ControllerMockFactory = await ethers.getContractFactory('ControllerMock', setup.roles.root);
 
   return await ControllerMockFactory.deploy();
 };
 
-const getExtraRewardMock = async (setup) => {
+const getExtraRewardMock = async setup => {
   const ExtraRewardMockFactory = await ethers.getContractFactory('ExtraRewardMock', setup.roles.root);
 
   return await ExtraRewardMockFactory.deploy();
 };
 
-const gaugeController = async (setup) => {
+const gaugeController = async setup => {
   const GaugeController = await ethers.getContractFactory('GaugeControllerMock', setup.roles.root);
   return await GaugeController.deploy(setup.tokens.BAL.address, setup.tokens.VeBal.address);
 };
@@ -197,39 +192,39 @@ const getGaugeMock = async (setup, lpTokenAddress) => {
   return await GaugeMock.deploy(lpTokenAddress);
 };
 
-const getDistroMock = async (setup) => {
+const getDistroMock = async setup => {
   const DistroMock = await ethers.getContractFactory('DistroMock', setup.roles.root);
   return await DistroMock.deploy();
 };
 
-const getDistro = async (setup) => {
+const getDistro = async setup => {
   const Distro = await ethers.getContractFactory('Distro', setup.roles.root);
   return await Distro.deploy(setup.tokens.BAL.address);
 };
 
-const getExternalContractMock = async (setup) => {
+const getExternalContractMock = async setup => {
   const DistroMock = await ethers.getContractFactory('ExternalContractMock', setup.roles.root);
   return await DistroMock.deploy();
 };
 
-const getRewardFactory = async (setup) => {
+const getRewardFactory = async setup => {
   const RewardFactoryFactory = await ethers.getContractFactory('RewardFactory', setup.roles.root);
 
   return await RewardFactoryFactory.deploy(setup.roles.operator.address, setup.tokens.BAL.address);
 };
 
-const getSmartWalletCheckerMock = async (setup) => {
+const getSmartWalletCheckerMock = async setup => {
   const SmartWalletCheckerFactory = await ethers.getContractFactory('SmartWalletCheckerMock', setup.roles.root);
 
   return await SmartWalletCheckerFactory.deploy();
 };
 
-const getDelegateRegistry = async (setup) => {
+const getDelegateRegistry = async setup => {
   const DelegateRegistryFactory = await ethers.getContractFactory('DelegateRegistry', setup.roles.root);
   await DelegateRegistryFactory.deploy();
 
-  const bytecode =
-    require('../build/artifacts/contracts/test/DelegateRegistry.sol/DelegateRegistry.json').deployedBytecode;
+  const bytecode = require('../build/artifacts/contracts/test/DelegateRegistry.sol/DelegateRegistry.json')
+    .deployedBytecode;
 
   // replaces bytecode of an address
   await ethers.provider.send('hardhat_setCode', ['0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446', bytecode]);
@@ -244,7 +239,6 @@ module.exports = {
   baseRewardPool,
   controller,
   getMintrMock,
-  proxyFactory,
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,

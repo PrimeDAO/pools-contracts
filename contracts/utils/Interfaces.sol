@@ -258,10 +258,6 @@ interface ITokenFactory {
     function createDepositToken(address) external returns (address);
 }
 
-interface IProxyFactory {
-    function clone(address _target) external returns (address);
-}
-
 interface IRewardHook {
     function onRewardClaim() external;
 }

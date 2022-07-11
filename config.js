@@ -57,7 +57,7 @@ const contractAddresses = {
 };
 
 module.exports = {
-  getAddresses: function () {
+  getAddresses: function() {
     const blockchainOverride = process.env.BLOCKCHAIN_FORK ? process.env.BLOCKCHAIN_FORK : hre.network.name;
     return contractAddresses[blockchainOverride] ?? [];
   },
@@ -69,7 +69,6 @@ module.exports = {
     D2DBal: 'D2DBal',
     Controller: 'Controller',
     TokenFactory: 'TokenFactory',
-    ProxyFactory: 'ProxyFactory',
     ExtraRewardStash: 'ExtraRewardStash',
     RewardFactory: 'RewardFactory',
     StashFactory: 'StashFactory',

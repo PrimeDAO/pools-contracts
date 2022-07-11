@@ -4,7 +4,7 @@ const { ethers } = require('hardhat');
 const init = require('../test-init.js');
 const { ONE_ADDRESS } = require('../helpers/constants');
 
-describe('unit - StashFactory', function () {
+describe('unit - StashFactory', function() {
   const setupTests = deployments.createFixture(async () => {
     const signers = await ethers.getSigners();
     const setup = await init.initialize(await ethers.getSigners());
@@ -19,9 +19,7 @@ describe('unit - StashFactory', function () {
 
     setup.baseRewardPool = await init.baseRewardPool(setup, setup.controller, setup.rewardFactory);
 
-    setup.proxyFactory = await init.proxyFactory(setup);
-
-    const stashFactory = await init.stashFactory(setup, setup.controller, setup.rewardFactory, setup.proxyFactory);
+    const stashFactory = await init.stashFactory(setup, setup.controller, setup.rewardFactory);
     return {
       stashFactory,
       root: setup.roles.root,
@@ -29,12 +27,12 @@ describe('unit - StashFactory', function () {
     };
   });
 
-  it('reverts if unauthorized on setImplementation', async function () {
+  it('reverts if unauthorized on setImplementation', async function() {
     const { stashFactory, randomUser } = await setupTests();
     await expect(stashFactory.connect(randomUser).setImplementation(ONE_ADDRESS)).to.be.revertedWith('Unauthorized()');
   });
 
-  it('set implementation and create stash works', async function () {
+  it('set implementation and create stash works', async function() {
     const { stashFactory, root } = await setupTests();
 
     // We need to do it this way because previous test is calling operator.owner() so we can't use EOA
@@ -43,13 +41,13 @@ describe('unit - StashFactory', function () {
     const operatorAddress = await stashFactory.operator();
 
     //Get mock factory and attach to that address
-    const operator = await ethers.getContractFactory('ControllerMock').then((x) => x.attach(operatorAddress));
+    const operator = await ethers.getContractFactory('ControllerMock').then(x => x.attach(operatorAddress));
 
     // Deploy implementation contract
     const implementationAddress = await ethers
       .getContractFactory('StashMock')
-      .then((x) => x.deploy())
-      .then((x) => x.address);
+      .then(x => x.deploy())
+      .then(x => x.address);
 
     // Set implementation contract
     await expect(stashFactory.connect(root).setImplementation(implementationAddress))
@@ -59,7 +57,7 @@ describe('unit - StashFactory', function () {
     await expect(operator.createStash(stashFactory.address)).to.emit(operator, 'StashCreated');
   });
 
-  it('reverts if unauthorized on createStash', async function () {
+  it('reverts if unauthorized on createStash', async function() {
     const { stashFactory, randomUser } = await setupTests();
 
     await expect(stashFactory.connect(randomUser).createStash(1, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');

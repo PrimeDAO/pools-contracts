@@ -8,7 +8,7 @@ const init = require('../test-init.js');
 const defaultProfitFee = 250;
 const defaultPlatformFee = 1000;
 
-describe('unit - Controller', function () {
+describe('unit - Controller', function() {
   const setupTests = deployments.createFixture(async () => {
     const setup = await init.initialize(await ethers.getSigners());
 
@@ -31,13 +31,12 @@ describe('unit - Controller', function () {
     // Deploy implementation contract
     const implementationAddress = await ethers
       .getContractFactory('StashMock')
-      .then((x) => x.deploy())
-      .then((x) => x.address);
+      .then(x => x.deploy())
+      .then(x => x.address);
 
-    proxyFactory = await init.proxyFactory(setup);
     rewardFactory = await init.rewardFactory(setup, controller);
 
-    stashFactory = await init.stashFactory(setup, controller, rewardFactory, proxyFactory);
+    stashFactory = await init.stashFactory(setup, controller, rewardFactory);
     // Set implementation contract to mock
     expect(await stashFactory.connect(root).setImplementation(implementationAddress))
       .to.emit(stashFactory, 'ImpelemntationChanged')
@@ -45,7 +44,7 @@ describe('unit - Controller', function () {
     tokenFactory = await init.tokenFactory(setup, controller);
 
     baseRewardPool = await init.baseRewardPool(setup, controller, rewardFactory);
-    stashFactoryMock = await init.getStashFactoryMock(setup, controller, rewardFactory, proxyFactory);
+    stashFactoryMock = await init.getStashFactoryMock(setup, controller, rewardFactory);
 
     // set factories and verify
     await controller.setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);
@@ -62,11 +61,11 @@ describe('unit - Controller', function () {
     expect(await controller.feeToken()).to.equal(tokens.BAL.address);
   });
 
-  beforeEach('>>> setup', async function () {
+  beforeEach('>>> setup', async function() {
     await setupTests();
   });
 
-  it('» setup', async function () {
+  it('» setup', async function() {
     expect(await controller.isShutdown()).to.equals(false);
     expect(await controller.bal()).to.equals(bal.address);
     expect(await controller.staker()).to.equals(voterProxy.address);
@@ -78,31 +77,33 @@ describe('unit - Controller', function () {
     expect(await controller.treasury()).to.equals(ZERO_ADDRESS);
   });
 
-  context('» setters', async function () {
-    it('sets owner', async function () {
-      await expect(controller.setOwner(ONE_ADDRESS)).to.emit(controller, 'OwnerChanged').withArgs(ONE_ADDRESS);
+  context('» setters', async function() {
+    it('sets owner', async function() {
+      await expect(controller.setOwner(ONE_ADDRESS))
+        .to.emit(controller, 'OwnerChanged')
+        .withArgs(ONE_ADDRESS);
       expect(await controller.owner()).to.equals(ONE_ADDRESS);
     });
 
-    it('setOwner reverts if unauthorized', async function () {
+    it('setOwner reverts if unauthorized', async function() {
       await expectRevert(controller.connect(staker).setOwner(staker.address), 'Unauthorized()');
     });
 
-    it('sets feeManager', async function () {
+    it('sets feeManager', async function() {
       await expect(controller.setFeeManager(ONE_ADDRESS))
         .to.emit(controller, 'FeeManagerChanged')
         .withArgs(ONE_ADDRESS);
       expect(await controller.feeManager()).to.equals(ONE_ADDRESS);
     });
 
-    it('sets poolManager', async function () {
+    it('sets poolManager', async function() {
       await expect(controller.setPoolManager(ONE_ADDRESS))
         .to.emit(controller, 'PoolManagerChanged')
         .withArgs(ONE_ADDRESS);
       expect(await controller.poolManager()).to.equals(ONE_ADDRESS);
     });
 
-    it('sets voteDelegate', async function () {
+    it('sets voteDelegate', async function() {
       await expect(controller.setVoteDelegate(ONE_ADDRESS))
         .to.emit(controller, 'VoteDelegateChanged')
         .withArgs(ONE_ADDRESS);
@@ -110,7 +111,7 @@ describe('unit - Controller', function () {
       expect(await controller.voteDelegate()).to.equals(ONE_ADDRESS);
     });
 
-    it('addPool reverts on invalid parameters', async function () {
+    it('addPool reverts on invalid parameters', async function() {
       await expectRevert(controller.addPool(ZERO_ADDRESS, ZERO_ADDRESS), 'InvalidParameters()');
     });
   });
@@ -202,7 +203,7 @@ describe('unit - Controller', function () {
     });
   });
 
-  it('deposits with and without lock and then withdraws all', async function () {
+  it('deposits with and without lock and then withdraws all', async function() {
     const pid = 0;
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
 
@@ -229,36 +230,36 @@ describe('unit - Controller', function () {
       .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
   });
 
-  it('withdrawsUnlockedWethBal', async function () {
+  it('withdrawsUnlockedWethBal', async function() {
     await controller.withdrawUnlockedWethBal(ONE_HUNDRED_ETHER);
   });
 
-  it('voteGaugeWeight', async function () {
+  it('voteGaugeWeight', async function() {
     await controller.voteGaugeWeight([gaugeMock.address], [1000]);
   });
 
-  it('delegateVotingPower', async function () {
+  it('delegateVotingPower', async function() {
     await expect(controller.delegateVotingPower(ONE_ADDRESS))
       .to.emit(voterProxy, 'VotingPowerDelegated')
       .withArgs(ONE_ADDRESS);
   });
 
-  it('clearDelegation', async function () {
+  it('clearDelegation', async function() {
     await expect(controller.clearDelegation()).to.emit(voterProxy, 'VotingPowerCleared');
   });
 
-  it('claims rewards', async function () {
+  it('claims rewards', async function() {
     // add pool
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
 
     const { stash } = await controller.poolInfo(0);
 
-    const contract = await ethers.getContractFactory('StashMock').then((x) => x.attach(stash));
+    const contract = await ethers.getContractFactory('StashMock').then(x => x.attach(stash));
 
     await contract.claimRewards();
   });
 
-  it('reverts claimRewards() if unauthorized', async function () {
+  it('reverts claimRewards() if unauthorized', async function() {
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
     await expect(controller.claimRewards(0, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
   });
@@ -296,12 +297,12 @@ describe('unit - Controller', function () {
   });
 });
 
-const getBaseRewardPoolMock = async (address) => {
+const getBaseRewardPoolMock = async address => {
   const BaseRewardPoolMockFactory = await ethers.getContractFactory('BaseRewardPoolMock');
   await BaseRewardPoolMockFactory.deploy();
 
-  const bytecode =
-    require('../../build/artifacts/contracts/test/BaseRewardPoolMock.sol/BaseRewardPoolMock.json').deployedBytecode;
+  const bytecode = require('../../build/artifacts/contracts/test/BaseRewardPoolMock.sol/BaseRewardPoolMock.json')
+    .deployedBytecode;
 
   await ethers.provider.send('hardhat_setCode', [address, bytecode]);
 

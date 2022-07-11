@@ -2,6 +2,7 @@
 pragma solidity 0.8.15;
 
 import "../utils/Interfaces.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 /// @title Stash Factory
 contract StashFactory is IStashFactory {
@@ -11,18 +12,15 @@ contract StashFactory is IStashFactory {
 
     address public immutable operator;
     address public immutable rewardFactory;
-    address public immutable proxyFactory;
 
     address public implementation;
 
     constructor(
         address _operator,
-        address _rewardFactory,
-        address _proxyFactory
+        address _rewardFactory
     ) {
         operator = _operator;
         rewardFactory = _rewardFactory;
-        proxyFactory = _proxyFactory;
     }
 
     /// @notice Used to set address for new implementation contract
@@ -42,7 +40,7 @@ contract StashFactory is IStashFactory {
         if (msg.sender != operator) {
             revert Unauthorized();
         }
-        address stash = IProxyFactory(proxyFactory).clone(implementation);
+        address stash = Clones.clone(implementation);
         IStash(stash).initialize(_pid, msg.sender, _gauge, rewardFactory);
         return stash;
     }
