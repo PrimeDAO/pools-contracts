@@ -1,4 +1,4 @@
-const { getAddresses, tags: { BaseRewardPool, deployment, Controller, D2DBal, RewardFactory } } = require('../config');
+const { getAddresses, tags: { BaseRewardPool, deployment, Controller, D2DBal } } = require('../config');
 
 const deployFunction = async ({ getNamedAccounts, deployments }) => {
     // This is our cvxCRV Rewards equivalent
@@ -9,11 +9,10 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
     const controller = await deployments.get('Controller');
     const d2dBal = await deployments.get('D2DBal');
-    const rewardFactory = await deployments.get('RewardFactory');
 
     const { address: baseRewardPoolAddress } = await deploy("BaseRewardPool", {
         from: root,
-        args: [0, d2dBal.address, addresses.bal, controller.address, rewardFactory.address],
+        args: [0, d2dBal.address, addresses.bal, controller.address, root],
         log: true,
     });
 
@@ -24,4 +23,4 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
 
 module.exports = deployFunction;
 module.exports.tags = [BaseRewardPool, deployment];
-module.exports.dependencies = [Controller, D2DBal, RewardFactory];
+module.exports.dependencies = [Controller, D2DBal];
