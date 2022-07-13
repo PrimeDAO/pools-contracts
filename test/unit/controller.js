@@ -290,7 +290,14 @@ describe('unit - Controller', function () {
     const pid = 0;
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
     await controller.bulkPoolShutdown(pid, pid + 1);
+    // repeat call for line coverage to hit 'continue'
+    await controller.bulkPoolShutdown(pid, pid + 1);
     await expect(controller.deposit(pid, ONE_ADDRESS, true)).to.be.revertedWith('PoolIsClosed()');
+  });
+
+  it('gauge redirect fails', async function () {
+    // reverts if gauge address is one address
+    await expect(controller.addPool(tokens.B50WBTC50WETH.address, ONE_ADDRESS)).to.be.revertedWith('RedirectFailed()');
   });
 
   it('deposit reverts if pool is shut down', async () => {

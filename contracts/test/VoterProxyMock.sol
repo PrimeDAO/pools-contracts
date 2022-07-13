@@ -138,6 +138,10 @@ contract VoterProxyMock is IVoterProxy {
         uint256 _value,
         bytes calldata _data
     ) external returns (bool, bytes memory) {
+        // so that we can test the revert part
+        if(_to == address(1)) {
+            return (false, new bytes(0));
+        }
         // solhint-disable-next-line
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
 
