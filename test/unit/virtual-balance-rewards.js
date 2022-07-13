@@ -14,8 +14,8 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     const setup = await init.initialize(await ethers.getSigners());
     await init.getTokens(setup);
     D2DBal = setup.tokens.D2DBal;
-    goldToken = setup.tokens.goldToken
-    root = setup.roles.root
+    goldToken = setup.tokens.goldToken;
+    root = setup.roles.root;
 
     controller = await init.getControllerMock(setup);
 
@@ -75,17 +75,20 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     // Normally extraRewardStash transfers holds the reward token, and transfers it to corresponding
     // VirtualBalanceRewardPool in extraRewardStash.processStash()
     // in this case we're skipping that, by donating tokens from EOA directly
-    await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER)
+    await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER);
 
-    // In reality controller.earmarkRewards(pid) would queue new rewards 
+    // In reality controller.earmarkRewards(pid) would queue new rewards
     // this way we do it manually
-    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, ONE_HUNDRED_ETHER)
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, ONE_HUNDRED_ETHER);
 
     // balance before should be 0
-    expect(await goldToken.balanceOf(randomUser.address)).to.equals(0)
-    await expect(VirtualBalanceRewardPool.connect(randomUser)['getReward()']()).to.emit(VirtualBalanceRewardPool, 'RewardPaid')
+    expect(await goldToken.balanceOf(randomUser.address)).to.equals(0);
+    await expect(VirtualBalanceRewardPool.connect(randomUser)['getReward()']()).to.emit(
+      VirtualBalanceRewardPool,
+      'RewardPaid'
+    );
     // he should get some goldToken as a reward
-    expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0)
+    expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0);
   });
 
   // it('allows caller to withdraw a specified amount', async function () {
