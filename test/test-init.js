@@ -28,6 +28,7 @@ const getTokens = async (setup) => {
 
   const B50WBTC50WETH = await ERC20Factory.deploy('Balancer 50 WBTC 50 WETH', 'B-50WBTC-50WETH'); // LP token
   const BAL = await ERC20Factory.deploy('Bal', 'BAL');
+  const goldToken = await ERC20Factory.deploy('Gold', 'GLD');
   const D2DBal = await D2DBalFactory.deploy();
   const depositToken = await DepositTokenFactory.deploy(setup.roles.root.address, B50WBTC50WETH.address);
   const PoolContract = await ERC20Factory.deploy('PoolToken', 'BALP');
@@ -46,6 +47,7 @@ const getTokens = async (setup) => {
     B50WBTC50WETH,
     StashMock,
     depositToken,
+    goldToken,
   };
 
   setup.tokens = tokens;
@@ -118,7 +120,7 @@ const baseRewardPool = async (setup, controller, rewardFactory) => {
 
 const getVirtualBalanceRewardPool = async (setup, baseRewardPool, controller) => {
   const getVirtualBalanceRewardPool = await ethers.getContractFactory('VirtualBalanceRewardPool', setup.roles.root);
-  const rewardToken = setup.tokens.D2DBal;
+  const rewardToken = setup.tokens.goldToken;
 
   return await getVirtualBalanceRewardPool.deploy(baseRewardPool, rewardToken.address, controller);
 };

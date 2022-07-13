@@ -9,27 +9,17 @@ const init = require('../test-init.js');
 const ZERO = 0;
 
 describe('unit - VirtualBalanceRewardPool', async () => {
-  let randomUser;
-  let VirtualBalanceRewardPool;
-  let D2DBal;
   const setupTests = deployments.createFixture(async () => {
     const signers = await ethers.getSigners();
     const setup = await init.initialize(await ethers.getSigners());
     await init.getTokens(setup);
-
     D2DBal = setup.tokens.D2DBal;
-    // const { D2DBal } = await init.getTokens(setup);
-    console.log(D2DBal.address);
+    goldToken = setup.tokens.goldToken
+    root = setup.roles.root
 
-    //const operatorAddress = setup.baseRewardPool.operator();
-
-    // setup.controller = await init.getControllerMock(setup);
     controller = await init.getControllerMock(setup);
-    rewardFactory = await init.rewardFactory(setup, controller);
 
-    // setup.baseRewardPool = await init.baseRewardPool(setup, setup.controller, setup.rewardFactory);
-
-    baseRewardPool = await init.baseRewardPool(setup, controller, rewardFactory);
+    baseRewardPool = await init.getBaseRewardPool(setup);
 
     VirtualBalanceRewardPool = await init.getVirtualBalanceRewardPool(
       setup,
@@ -38,12 +28,8 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     );
     randomUser = signers.pop();
 
-    // console.log('hello world', VirtualBalanceRewardPool);
-    // return {
-    //   VirtualBalanceRewardPool,
-    //   root: setup.roles.root,
-    //   randomUser: signers.pop(),
-    // };
+    // add virtual balance reward pool to BaseRewardPool
+    await baseRewardPool.connect(setup.roles.reward_manager).addExtraReward(VirtualBalanceRewardPool.address);
   });
 
   beforeEach(async function () {
@@ -60,26 +46,48 @@ describe('unit - VirtualBalanceRewardPool', async () => {
   });
 
   it('returns the reward per token', async function () {
-    await expect(await VirtualBalanceRewardPool.connect(randomUser).lastTimeRewardApplicable()).to.equal(ZERO);
+    expect(await VirtualBalanceRewardPool.connect(randomUser).lastTimeRewardApplicable()).to.equal(ZERO);
   });
   it('returns the amount earned', async function () {
-    await expect(await VirtualBalanceRewardPool.connect(randomUser).earned(randomUser.address)).to.equal(ZERO);
+    expect(await VirtualBalanceRewardPool.connect(randomUser).earned(randomUser.address)).to.equal(ZERO);
   });
   it('allows caller to stake funds', async function () {
+    // D2DBal is stake token for BaseRewardPool
+    // we mint it to randomuser, so that he can stake it
     await expect(D2DBal.mint(randomUser.address, ONE_HUNDRED_ETHER))
       .to.emit(D2DBal, 'Transfer')
       .withArgs(ZERO_ADDRESS, randomUser.address, ONE_HUNDRED_ETHER);
-    const amount = BigNumber.from('2');
-    // let tx = await randomUser.getBalance();
-    // console.log('this is bal', tx.toString());
-    //await D2DBal.approve(baseRewardPool.address, amount);
+
+    const amount = BigNumber.from('50');
+
     await D2DBal.connect(randomUser).approve(baseRewardPool.address, constants.MaxUint256);
-    let firstStake = await baseRewardPool.connect(randomUser).stake(amount);
-    await expect(firstStake).to.emit(baseRewardPool, 'Staked').withArgs(randomUser.address, amount);
-    await expect(await VirtualBalanceRewardPool.connect(randomUser).stake(randomUser.address, amount))
+
+    // randomUser stakes D2DBal in BaseReward pool
+    // that automatically stakes the same amount in VirtualBalanceRewardPool
+    await expect(baseRewardPool.connect(randomUser).stake(amount))
+      .to.emit(baseRewardPool, 'Staked')
       .to.emit(VirtualBalanceRewardPool, 'Staked')
       .withArgs(randomUser.address, amount);
+
+    await goldToken.mint(root.address, ONE_HUNDRED_ETHER.mul(100));
+    await goldToken.approve(VirtualBalanceRewardPool.address, constants.MaxUint256);
+
+    // Normally extraRewardStash transfers holds the reward token, and transfers it to corresponding
+    // VirtualBalanceRewardPool in extraRewardStash.processStash()
+    // in this case we're skipping that, by donating tokens from EOA directly
+    await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER)
+
+    // In reality controller.earmarkRewards(pid) would queue new rewards 
+    // this way we do it manually
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, ONE_HUNDRED_ETHER)
+
+    // balance before should be 0
+    expect(await goldToken.balanceOf(randomUser.address)).to.equals(0)
+    await expect(VirtualBalanceRewardPool.connect(randomUser)['getReward()']()).to.emit(VirtualBalanceRewardPool, 'RewardPaid')
+    // he should get some goldToken as a reward
+    expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0)
   });
+
   // it('allows caller to withdraw a specified amount', async function () {
   //   // root is operator for deposit token
   //   const amount = BigNumber.from('200');

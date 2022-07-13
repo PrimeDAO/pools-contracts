@@ -2,7 +2,7 @@
 // solium-disable linebreak-style
 pragma solidity 0.8.14;
 
-import "openzeppelin-contracts-sol8/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract CustomDecimalERC20Mock is ERC20 {
     uint8 private immutable _decimals;

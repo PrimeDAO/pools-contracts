@@ -88,4 +88,8 @@ contract ControllerMock is IController {
     function setRewardContracts(address _rewards) external {
         lockRewards = _rewards;
     }
+
+    function queueNewRewardsOnVirtualBalanceRewardContract(address addr, uint256 amt) external {
+        IRewards(addr).queueNewRewards(amt);
+    }
 }
