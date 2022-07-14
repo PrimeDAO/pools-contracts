@@ -90,6 +90,12 @@ contract ExtraRewardStash is IStash {
     /// @notice Clears extra rewards
     /// @dev Only Prime multising has the ability to do this
     function clearExtraRewards() external onlyAddress(IController(operator).owner()) {
+        address[] memory tokenListMemory = tokenList;
+
+        for (uint256 i = 0; i < tokenListMemory.length; i = i.unsafeInc()) {
+            delete tokenInfo[tokenListMemory[i]];
+        }
+
         delete tokenList;
         emit ExtraRewardsCleared();
     }

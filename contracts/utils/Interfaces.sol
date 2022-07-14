@@ -66,7 +66,7 @@ interface IVoterProxy {
 
     function claimRewards(address _gauge) external;
 
-    function claimFees(address _distroContract, IERC20 _token) external returns (uint256);
+    function claimFees(address _distroContract, IERC20[] calldata _tokens) external;
 
     function delegateVotingPower(address _delegateTo) external;
 
@@ -210,7 +210,7 @@ interface IController {
     /// @param _pid the id of the pool where lp tokens are held
     function earmarkRewards(uint256 _pid) external;
 
-    /// @notice Claims fees from the Balancer's fee distributor contract and transfers the tokens into the rewards contract
+    /// @notice Claims rewards from the Balancer's fee distributor contract and transfers the tokens into the rewards contract
     function earmarkFees() external;
 
     function isShutdown() external view returns (bool);

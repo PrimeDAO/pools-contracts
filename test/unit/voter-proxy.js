@@ -263,7 +263,7 @@ describe('unit - VoterProxy', function () {
     await bal.mint(voterProxy.address, ONE_HUNDRED_ETHER);
     expect(await bal.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER);
     // distro mock does nothing
-    await voterProxy.connect(anotherUser).claimFees(distro.address, bal.address);
+    await voterProxy.connect(anotherUser).claimFees(distro.address, [bal.address]);
     expect(await bal.balanceOf(voterProxy.address)).to.equals(0);
     expect(await bal.balanceOf(anotherUser.address)).to.equals(ONE_HUNDRED_ETHER);
   });

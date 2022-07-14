@@ -58,8 +58,11 @@ describe('unit - Controller', function () {
     expect(await controller.lockRewards()).to.equal(baseRewardPool.address);
 
     // set fee info and verify
-    await controller.setFeeInfo(tokens.BAL.address);
-    expect(await controller.feeToken()).to.equal(tokens.BAL.address);
+    await controller.addFeeToken(tokens.BAL.address);
+    await controller.addFeeToken(tokens.incentiveRewardToken.address);
+    expect(await controller.feeTokensLength()).to.equals(2);
+    expect(await controller.feeTokens(0)).to.equal(tokens.BAL.address);
+    expect(await controller.feeTokens(1)).to.equal(tokens.incentiveRewardToken.address);
   });
 
   beforeEach('>>> setup', async function () {
@@ -74,7 +77,6 @@ describe('unit - Controller', function () {
     expect(await controller.poolManager()).to.equals(root.address);
     expect(await controller.feeManager()).to.equals(root.address);
     expect(await controller.feeDistro()).to.equals(feeDistributor.address);
-    expect(await controller.feeToken()).to.equals(bal.address);
     expect(await controller.treasury()).to.equals(ZERO_ADDRESS);
   });
 
@@ -156,7 +158,15 @@ describe('unit - Controller', function () {
 
   it('earmarkFees succeeds', async () => {
     // not reverting means success
+    // we mint reward token to controller (pretend that it got them from voterproxy)
+    await tokens.incentiveRewardToken.mint(controller.address, ONE_HUNDRED_ETHER);
+    // extra rewards contract should have 0 balance before earmarkFees
+    const virtualBalancePoolAddress = await controller.feeTokenToPool(tokens.incentiveRewardToken.address);
+    expect(await tokens.incentiveRewardToken.balanceOf(virtualBalancePoolAddress)).to.equals(0);
     await controller.earmarkFees();
+    // after earmarkFees controller should transfer tokens to virtualBalancePool
+    expect(await tokens.incentiveRewardToken.balanceOf(controller.address)).to.equals(0);
+    expect(await tokens.incentiveRewardToken.balanceOf(virtualBalancePoolAddress)).to.equals(ONE_HUNDRED_ETHER);
   });
 
   context('» _earmarkRewards testing', () => {
@@ -199,6 +209,7 @@ describe('unit - Controller', function () {
       const pid = 0;
       await controller.bulkPoolShutdown(pid, pid + 1);
       await expectRevert(controller.earmarkRewards(pid), 'PoolIsClosed()');
+      await expectRevert(controller.connect(staker).deposit(pid, ONE_HUNDRED_ETHER, true), 'PoolIsClosed()');
     });
   });
 
@@ -235,6 +246,11 @@ describe('unit - Controller', function () {
 
   it('voteGaugeWeight', async function () {
     await controller.voteGaugeWeight([gaugeMock.address], [1000]);
+  });
+
+  it('clearFeeTokens', async function () {
+    await expect(controller.clearFeeTokens()).to.emit(controller, 'FeeTokensCleared');
+    expect(await controller.feeTokensLength()).to.equals(0);
   });
 
   it('delegateVotingPower', async function () {
@@ -274,7 +290,14 @@ describe('unit - Controller', function () {
     const pid = 0;
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
     await controller.bulkPoolShutdown(pid, pid + 1);
+    // repeat call for line coverage to hit 'continue'
+    await controller.bulkPoolShutdown(pid, pid + 1);
     await expect(controller.deposit(pid, ONE_ADDRESS, true)).to.be.revertedWith('PoolIsClosed()');
+  });
+
+  it('gauge redirect fails', async function () {
+    // reverts if gauge address is one address
+    await expect(controller.addPool(tokens.B50WBTC50WETH.address, ONE_ADDRESS)).to.be.revertedWith('RedirectFailed()');
   });
 
   it('deposit reverts if pool is shut down', async () => {

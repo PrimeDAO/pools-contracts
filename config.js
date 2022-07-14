@@ -45,6 +45,16 @@ const contractAddresses = {
         lpToken: '0x16faf9f73748013155b7bc116a3008b57332d1e6',
         gauge: '0xf0f572ad66baacDd07d8c7ea3e0E5EFA56a76081',
       },
+      {
+        name: 'Balancer stETH Stable Pool',
+        lpToken: '0xb60e46d90f2de35f7062a27d3a98749414036d5d',
+        gauge: '0xec94b0453E14cde7fE1A66B54DCA29E9547C57ef',
+      },
+      {
+        name: '50 WETH 50 USDC',
+        lpToken: '0x9F1F16B025F703eE985B58cEd48dAf93daD2f7EF',
+        gauge: '0x2002F2006303748665AF4cFf8ce37a42Fb72f170',
+      },
     ],
     [minter]: '0xdf0399539A72E2689B8B2DD53C3C2A0883879fDd',
     [veBal]: '0x33A99Dcc4C85C014cf12626959111D5898bbCAbF',

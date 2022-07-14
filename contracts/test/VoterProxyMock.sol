@@ -127,13 +127,7 @@ contract VoterProxyMock is IVoterProxy {
 
     function claimRewards(address _gauge) external {}
 
-    function claimFees(address _distroContract, IERC20 _token)
-        external
-        returns (uint256)
-    {
-
-        return 1;
-    }
+    function claimFees(address _distroContract, IERC20[] calldata _tokens) external {}
 
     function balanceOfPool(address _gauge) public view returns (uint256) {
         return 1;
@@ -144,6 +138,10 @@ contract VoterProxyMock is IVoterProxy {
         uint256 _value,
         bytes calldata _data
     ) external returns (bool, bytes memory) {
+        // so that we can test the revert part
+        if(_to == address(1)) {
+            return (false, new bytes(0));
+        }
         // solhint-disable-next-line
         (bool success, bytes memory result) = _to.call{value: _value}(_data);
 

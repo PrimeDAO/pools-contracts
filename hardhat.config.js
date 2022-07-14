@@ -1,5 +1,5 @@
 require('dotenv').config({ path: './.env' });
-require("@nomiclabs/hardhat-etherscan");
+require('@nomiclabs/hardhat-etherscan');
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
 require('hardhat-deploy');
@@ -131,7 +131,7 @@ module.exports = {
       mainnet: ETHERSCAN_API_KEY,
       goerli: ETHERSCAN_API_KEY,
     },
-    customChains: []
+    customChains: [],
   },
   namedAccounts: {
     root: 0,
