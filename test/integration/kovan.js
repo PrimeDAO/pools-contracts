@@ -82,13 +82,13 @@ describe('Kovan clean deployment', function () {
     // deposit from signer
     await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
       .to.emit(controller, 'Deposited')
-      .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(signer.address, pid, ONE_HUNDRED_ETHER, false);
 
     const pidOne = pid + 1;
     // pid + 1 because it is second pool
     await expect(controller.connect(signerTwo).deposit(pidOne, ONE_HUNDRED_ETHER, false)) // do not stake tokens
       .to.emit(controller, 'Deposited')
-      .withArgs(signerTwo.address, pidOne, ONE_HUNDRED_ETHER);
+      .withArgs(signerTwo.address, pidOne, ONE_HUNDRED_ETHER, false);
 
     await increaseTime(60 * 60 * 24 * 10); // 10 days
 
@@ -133,27 +133,33 @@ describe('Kovan clean deployment', function () {
     // deposit from signer
     await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
       .to.emit(controller, 'Deposited')
-      .withArgs(signer.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(signer.address, pid, ONE_HUNDRED_ETHER, false);
 
     // System shutdown withdraws LP tokens to controller
     await expect(controller.shutdownSystem()).to.emit(controller, 'SystemShutdown');
 
-    // Controller should get the LP tokens
-    expect(await lpTokenContract.balanceOf(controller.address)).to.equals(ONE_HUNDRED_ETHER);
-
-    // try to deposit when systemis shut down
+    // try to deposit when system is shut down
     await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
       .to.be.revertedWith('Shutdown()');
   });
 
-  it('adds pool, shuts down pool, reverts', async function () {
+  it('adds pool, deposits, shuts down pool, reverts', async function () {
     await expect(controller.addPool(lpTokenWbtcWeth, gaugeWbtcWeth)).to.emit(rewardFactory, 'BaseRewardPoolCreated');
 
     // We impersonate LP token WHALE and make him a signer
     const signer = await impersonateAddress(lpTokenHolderAddress);
     await lpTokenContract.connect(signer).approve(controller.address, ONE_HUNDRED_ETHER);
 
-    await expect(controller.shutdownPool(pid)).to.emit(controller, 'PoolShutDown').withArgs(pid);
+    await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens
+      .to.emit(controller, 'Deposited')
+      .withArgs(signer.address, pid, ONE_HUNDRED_ETHER, false);
+
+    await expect(controller.bulkPoolShutdown(pid, pid + 1))
+      .to.emit(controller, 'PoolShutDown')
+      .withArgs(pid);
+
+    // Controller should get the LP tokens
+    expect(await lpTokenContract.balanceOf(controller.address)).to.equals(ONE_HUNDRED_ETHER);
 
     // try to deposit
     await expect(controller.connect(signer).deposit(pid, ONE_HUNDRED_ETHER, false)) // do not stake tokens

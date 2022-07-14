@@ -20,7 +20,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   });
 
   // Owner of D2DBal should be BalDepositor
-  await execute('D2DBal', { from: root, log: true }, 'transferOwnership', balDepositor)
+  await execute('D2DBal', { from: root, log: true, gasLimit: 6000000 }, 'transferOwnership', balDepositor)
 };
 
 module.exports = deployFunction;

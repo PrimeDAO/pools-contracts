@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "../utils/Interfaces.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -38,5 +38,9 @@ contract GaugeMock is IBalGauge {
 
     function lp_token() external view returns (address) {
         return address(0);
+    }
+
+    function set_rewards_receiver(address) external view returns(bool, bytes memory) {
+        return (true, new bytes(0));
     }
 }

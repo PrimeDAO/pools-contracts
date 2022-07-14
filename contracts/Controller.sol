@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./utils/Interfaces.sol";
-import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./utils/MathUtil.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title Controller contract
 /// @dev Controller contract for Prime Pools is based on the convex Booster.sol contract
 contract Controller is IController {
+    using SafeERC20 for IERC20;
+    using MathUtil for uint256;
+
     event OwnerChanged(address _newOwner);
     event FeeManagerChanged(address _newFeeManager);
     event PoolManagerChanged(address _newPoolManager);
@@ -15,6 +19,17 @@ contract Controller is IController {
     event VoteDelegateChanged(address _newVoteDelegate);
     event FeesChanged(uint256 _newPlatformFee, uint256 _newProfitFee);
     event PoolShutDown(uint256 _pid);
+    event FeeTokensCleared();
+    event AddedPool(
+        uint256 _pid,
+        address _lpToken,
+        address _token,
+        address _gauge,
+        address _baseRewardsPool,
+        address _stash
+    );
+    event Deposited(address _user, uint256 _pid, uint256 _amount, bool _stake);
+    event Withdrawn(address _user, uint256 _pid, uint256 _amount);
     event SystemShutdown();
 
     error Unauthorized();
@@ -22,6 +37,7 @@ contract Controller is IController {
     error PoolIsClosed();
     error InvalidParameters();
     error InvalidStash();
+    error RedirectFailed();
 
     uint256 public constant MAX_FEES = 3000;
     uint256 public constant FEE_DENOMINATOR = 10000;
@@ -29,8 +45,6 @@ contract Controller is IController {
 
     address public immutable bal;
     address public immutable staker;
-    address public immutable voteOwnership; // 0xE478de485ad2fe566d49342Cbd03E49ed7DB3356
-    address public immutable voteParameter; // 0xBCfF8B0b9419b9A88c44546519b1e909cF330399
     address public immutable feeDistro; // Balancer FeeDistributor
 
     uint256 public profitFees = 250; //2.5% // FEE_DENOMINATOR/100*2.5
@@ -45,8 +59,11 @@ contract Controller is IController {
     address public voteDelegate;
     address public treasury;
     address public lockRewards;
-    address public lockFees;
-    IERC20 public feeToken;
+
+    // Balancer supports rewards in multiple fee tokens
+    IERC20[] public feeTokens;
+    // Fee token to VirtualBalanceReward pool mapping
+    mapping(address => address) public feeTokenToPool;
 
     bool public isShutdown;
 
@@ -63,21 +80,13 @@ contract Controller is IController {
     PoolInfo[] public poolInfo;
     mapping(address => bool) public gaugeMap;
 
-    event Deposited(address indexed user, uint256 indexed poolid, uint256 amount);
-
-    event Withdrawn(address indexed user, uint256 indexed poolid, uint256 amount);
-
     constructor(
         address _staker,
         address _bal,
-        address _feeDistro,
-        address _voteOwnership,
-        address _voteParameter
+        address _feeDistro
     ) {
         bal = _bal;
         feeDistro = _feeDistro;
-        voteOwnership = _voteOwnership;
-        voteParameter = _voteParameter;
         staker = _staker;
         owner = msg.sender;
         voteDelegate = msg.sender;
@@ -161,10 +170,26 @@ contract Controller is IController {
 
     /// @notice sets the address of the feeToken
     /// @param _feeToken feeToken
-    function setFeeInfo(IERC20 _feeToken) external onlyAddress(feeManager) {
-        //create a new reward contract for the new token
-        lockFees = IRewardFactory(rewardFactory).createTokenRewards(address(_feeToken), lockRewards, address(this));
-        feeToken = _feeToken;
+    function addFeeToken(IERC20 _feeToken) external onlyAddress(feeManager) {
+        feeTokens.push(_feeToken);
+        // If fee token is BAL forward rewards to BaseRewardPool
+        if (address(_feeToken) == bal) {
+            feeTokenToPool[address(_feeToken)] = lockRewards;
+            return;
+        }
+        // Create VirtualBalanceRewardPool and forward rewards there for other tokens
+        address virtualBalanceRewardPool = IRewardFactory(rewardFactory).createTokenRewards(
+            address(_feeToken),
+            lockRewards,
+            address(this)
+        );
+        feeTokenToPool[address(_feeToken)] = virtualBalanceRewardPool;
+    }
+
+    /// @notice Clears fee tokens
+    function clearFeeTokens() external onlyAddress(feeManager) {
+        delete feeTokens;
+        emit FeeTokensCleared();
     }
 
     /// @notice sets the lock, staker, caller, platform fees and profit fees
@@ -203,11 +228,15 @@ contract Controller is IController {
         return poolInfo.length;
     }
 
+    function feeTokensLength() external view returns (uint256) {
+        return feeTokens.length;
+    }
+
     /// @notice creates a new pool
     /// @param _lptoken The address of the lp token
     /// @param _gauge The address of the gauge controller
     function addPool(address _lptoken, address _gauge) external onlyAddress(poolManager) isNotShutDown {
-        if (_gauge == address(0) || _lptoken == address(0)) {
+        if (_gauge == address(0) || _lptoken == address(0) || gaugeMap[_gauge]) {
             revert InvalidParameters();
         }
         //the next pool's pid
@@ -217,7 +246,7 @@ contract Controller is IController {
         //create a reward contract for bal rewards
         address newRewardPool = IRewardFactory(rewardFactory).createBalRewards(pid, token);
         //create a stash to handle extra incentives
-        address stash = IStashFactory(stashFactory).createStash(pid, _gauge, staker);
+        address stash = IStashFactory(stashFactory).createStash(pid, _gauge);
 
         if (stash == address(0)) {
             revert InvalidStash();
@@ -239,44 +268,41 @@ contract Controller is IController {
         // VoterProxy so that it can grab the incentive tokens off the contract after claiming rewards
         // RewardFactory so that stashes can make new extra reward contracts if a new incentive is added to the gauge
         poolInfo[pid].stash = stash;
-        IVoterProxy(staker).grantStashAccess(stash);
         IRewardFactory(rewardFactory).grantRewardStashAccess(stash);
+        redirectGaugeRewards(stash, _gauge);
+        emit AddedPool(pid, _lptoken, token, _gauge, newRewardPool, stash);
     }
 
-    /// @notice shuts down a currently active pool
-    /// @param _pid The id of the pool to shutdown
-    function shutdownPool(uint256 _pid) external onlyAddress(poolManager) {
-        PoolInfo storage pool = poolInfo[_pid];
+    /// @notice Shuts down multiple pools
+    /// @dev Claims rewards for that pool before shutting it down
+    /// @param _startPoolIdx Start pool index
+    /// @param _endPoolIdx End pool index (excluded)
+    function bulkPoolShutdown(uint256 _startPoolIdx, uint256 _endPoolIdx) external onlyAddress(poolManager) {
+        for (uint256 i = _startPoolIdx; i < _endPoolIdx; i = i.unsafeInc()) {
+            PoolInfo storage pool = poolInfo[i];
 
-        //withdraw from gauge
-        // solhint-disable-next-line
-        try IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge) {
+            if (pool.shutdown) {
+                continue;
+            }
+
+            _earmarkRewards(i);
+
+            //withdraw from gauge
             // solhint-disable-next-line
-        } catch {}
+            try IVoterProxy(staker).withdrawAll(pool.lptoken, pool.gauge) {
+                // solhint-disable-next-line
+            } catch {}
 
-        pool.shutdown = true;
-        gaugeMap[pool.gauge] = false;
-        emit PoolShutDown(_pid);
+            pool.shutdown = true;
+            gaugeMap[pool.gauge] = false;
+            emit PoolShutDown(i);
+        }
     }
 
     /// @notice shuts down all pools
-    /// @dev This shuts down the contract, unstakes and withdraws all LP tokens
+    /// @dev This shuts down the contract
     function shutdownSystem() external onlyAddress(owner) {
         isShutdown = true;
-
-        for (uint256 i = 0; i < poolInfo.length; i++) {
-            PoolInfo storage pool = poolInfo[i];
-            if (pool.shutdown) continue;
-
-            address token = pool.lptoken;
-            address gauge = pool.gauge;
-
-            //withdraw from gauge
-            try IVoterProxy(staker).withdrawAll(token, gauge) {
-                pool.shutdown = true;
-                // solhint-disable-next-line
-            } catch {}
-        }
         emit SystemShutdown();
     }
 
@@ -310,7 +336,7 @@ contract Controller is IController {
             ITokenMinter(token).mint(msg.sender, _amount);
         }
 
-        emit Deposited(msg.sender, _pid, _amount);
+        emit Deposited(msg.sender, _pid, _amount, _stake);
     }
 
     /// @inheritdoc IController
@@ -412,18 +438,6 @@ contract Controller is IController {
         IVoterProxy(staker).claimRewards(_gauge);
     }
 
-    /// @notice sets the gauge redirect address
-    /// @param _pid the id of the pool
-    function setGaugeRedirect(uint256 _pid) external {
-        address stash = poolInfo[_pid].stash;
-        if (msg.sender != stash) {
-            revert Unauthorized();
-        }
-        address gauge = poolInfo[_pid].gauge;
-        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), stash);
-        IVoterProxy(staker).execute(gauge, uint256(0), data);
-    }
-
     /// @notice internal function that claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held
     function _earmarkRewards(uint256 _pid) internal {
@@ -471,17 +485,36 @@ contract Controller is IController {
     }
 
     /// @inheritdoc IController
-    function earmarkRewards(uint256 _pid) external isNotShutDown {
+    function earmarkRewards(uint256 _pid) external {
         _earmarkRewards(_pid);
     }
 
     /// @inheritdoc IController
     function earmarkFees() external {
-        //claim fee rewards
-        IVoterProxy(staker).claimFees(feeDistro, feeToken);
-        //send fee rewards to reward contract
-        uint256 _balance = feeToken.balanceOf(address(this));
-        feeToken.transfer(lockFees, _balance);
-        IRewards(lockFees).queueNewRewards(_balance);
+        IERC20[] memory feeTokensMemory = feeTokens;
+        // Claim fee rewards from fee distro
+        IVoterProxy(staker).claimFees(feeDistro, feeTokensMemory);
+
+        // VoterProxy transfers rewards to this contract, and we need to distribute them to
+        // VirtualBalanceRewards contracts
+        for (uint256 i = 0; i < feeTokensMemory.length; i = i.unsafeInc()) {
+            IERC20 feeToken = feeTokensMemory[i];
+            uint256 balance = feeToken.balanceOf(address(this));
+            if (balance != 0) {
+                feeToken.safeTransfer(feeTokenToPool[address(feeToken)], balance);
+                IRewards(feeTokenToPool[address(feeToken)]).queueNewRewards(balance);
+            }
+        }
+    }
+
+    /// @notice redirects rewards from gauge to rewards contract
+    /// @param _stash stash address
+    /// @param _gauge gauge address
+    function redirectGaugeRewards(address _stash, address _gauge) private {
+        bytes memory data = abi.encodeWithSelector(bytes4(keccak256("set_rewards_receiver(address)")), _stash);
+        (bool success, ) = IVoterProxy(staker).execute(_gauge, uint256(0), data);
+        if (!success) {
+            revert RedirectFailed();
+        }
     }
 }

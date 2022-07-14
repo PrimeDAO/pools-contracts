@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -33,10 +33,6 @@ interface IBalVoteEscrow {
     function balanceOfAt(address, uint256) external view returns (uint256);
 }
 
-interface IWalletChecker {
-    function check(address) external view returns (bool);
-}
-
 interface IVoting {
     function vote_for_gauge_weights(address, uint256) external;
 }
@@ -49,8 +45,6 @@ interface IVoterProxy {
     function deposit(address _token, address _gauge) external;
 
     function withdrawWethBal(address, uint256) external;
-
-    function withdraw(IERC20 _asset) external returns (uint256 balance);
 
     function withdraw(
         address _token,
@@ -72,9 +66,7 @@ interface IVoterProxy {
 
     function claimRewards(address _gauge) external;
 
-    function claimFees(address _distroContract, IERC20 _token) external returns (uint256);
-
-    function grantStashAccess(address _stash) external;
+    function claimFees(address _distroContract, IERC20[] calldata _tokens) external;
 
     function delegateVotingPower(address _delegateTo) external;
 
@@ -131,7 +123,6 @@ interface IStash {
     function initialize(
         uint256 _pid,
         address _operator,
-        address _staker,
         address _gauge,
         address _rewardFactory
     ) external;
@@ -219,7 +210,7 @@ interface IController {
     /// @param _pid the id of the pool where lp tokens are held
     function earmarkRewards(uint256 _pid) external;
 
-    /// @notice Claims fees from the Balancer's fee distributor contract and transfers the tokens into the rewards contract
+    /// @notice Claims rewards from the Balancer's fee distributor contract and transfers the tokens into the rewards contract
     function earmarkFees() external;
 
     function isShutdown() external view returns (bool);
@@ -238,15 +229,7 @@ interface IController {
 
     function claimRewards(uint256, address) external;
 
-    function setGaugeRedirect(uint256 _pid) external;
-
     function owner() external returns (address);
-}
-
-interface ICrvDeposit {
-    function deposit(uint256, bool) external;
-
-    function lockIncentive() external view returns (uint256);
 }
 
 interface IRewardFactory {
@@ -268,55 +251,11 @@ interface IRewardFactory {
 }
 
 interface IStashFactory {
-    function createStash(
-        uint256,
-        address,
-        address
-    ) external returns (address);
+    function createStash(uint256 _pid, address _gauge) external returns (address);
 }
 
 interface ITokenFactory {
     function createDepositToken(address) external returns (address);
-}
-
-interface IPools {
-    function addPool(address, address) external returns (bool);
-
-    function forceAddPool(address, address) external returns (bool);
-
-    function shutdownPool(uint256) external returns (bool);
-
-    function poolInfo(uint256)
-        external
-        view
-        returns (
-            address,
-            address,
-            address,
-            address,
-            address,
-            bool
-        );
-
-    function poolLength() external view returns (uint256);
-
-    function gaugeMap(address) external view returns (bool);
-
-    function setPoolManager(address _poolM) external;
-}
-
-interface IVestedEscrow {
-    function fund(address[] calldata _recipient, uint256[] calldata _amount) external returns (bool);
-}
-
-interface GaugeController {
-    function gauge_types(address _addr) external returns (int128);
-}
-
-interface LiquidityGauge {
-    function integrate_fraction(address _address) external returns (uint256);
-
-    function user_checkpoint(address _address) external returns (bool);
 }
 
 interface IProxyFactory {

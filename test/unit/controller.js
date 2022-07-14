@@ -26,7 +26,7 @@ describe('unit - Controller', function () {
 
     // mock voterProxy
     voterProxy = await init.getVoterProxyMock(setup);
-    controller = await init.controller(setup, voterProxy, feeDistributor, setup.roles.root, setup.roles.root);
+    controller = await init.controller(setup, voterProxy, feeDistributor);
 
     // Deploy implementation contract
     const implementationAddress = await ethers
@@ -58,8 +58,11 @@ describe('unit - Controller', function () {
     expect(await controller.lockRewards()).to.equal(baseRewardPool.address);
 
     // set fee info and verify
-    await controller.setFeeInfo(tokens.BAL.address);
-    expect(await controller.feeToken()).to.equal(tokens.BAL.address);
+    await controller.addFeeToken(tokens.BAL.address);
+    await controller.addFeeToken(tokens.incentiveRewardToken.address);
+    expect(await controller.feeTokensLength()).to.equals(2);
+    expect(await controller.feeTokens(0)).to.equal(tokens.BAL.address);
+    expect(await controller.feeTokens(1)).to.equal(tokens.incentiveRewardToken.address);
   });
 
   beforeEach('>>> setup', async function () {
@@ -74,7 +77,6 @@ describe('unit - Controller', function () {
     expect(await controller.poolManager()).to.equals(root.address);
     expect(await controller.feeManager()).to.equals(root.address);
     expect(await controller.feeDistro()).to.equals(feeDistributor.address);
-    expect(await controller.feeToken()).to.equals(bal.address);
     expect(await controller.treasury()).to.equals(ZERO_ADDRESS);
   });
 
@@ -156,7 +158,15 @@ describe('unit - Controller', function () {
 
   it('earmarkFees succeeds', async () => {
     // not reverting means success
+    // we mint reward token to controller (pretend that it got them from voterproxy)
+    await tokens.incentiveRewardToken.mint(controller.address, ONE_HUNDRED_ETHER);
+    // extra rewards contract should have 0 balance before earmarkFees
+    const virtualBalancePoolAddress = await controller.feeTokenToPool(tokens.incentiveRewardToken.address);
+    expect(await tokens.incentiveRewardToken.balanceOf(virtualBalancePoolAddress)).to.equals(0);
     await controller.earmarkFees();
+    // after earmarkFees controller should transfer tokens to virtualBalancePool
+    expect(await tokens.incentiveRewardToken.balanceOf(controller.address)).to.equals(0);
+    expect(await tokens.incentiveRewardToken.balanceOf(virtualBalancePoolAddress)).to.equals(ONE_HUNDRED_ETHER);
   });
 
   context('» _earmarkRewards testing', () => {
@@ -197,14 +207,9 @@ describe('unit - Controller', function () {
     it('earmarkRewards reverts if pool is closed', async () => {
       await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
       const pid = 0;
-      await controller.shutdownPool(pid);
+      await controller.bulkPoolShutdown(pid, pid + 1);
       await expectRevert(controller.earmarkRewards(pid), 'PoolIsClosed()');
-    });
-
-    it('earmarkRewards reverts if system is shutdown', async () => {
-      await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
-      await expect(controller.shutdownSystem()).to.emit(controller, 'SystemShutdown');
-      await expectRevert(controller.earmarkRewards(0), 'Shutdown()');
+      await expectRevert(controller.connect(staker).deposit(pid, ONE_HUNDRED_ETHER, true), 'PoolIsClosed()');
     });
   });
 
@@ -222,12 +227,12 @@ describe('unit - Controller', function () {
 
     await expect(controller.connect(staker).deposit(pid, ONE_HUNDRED_ETHER, true))
       .to.emit(controller, 'Deposited')
-      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER, true);
 
     // deposits leftower amount
     await expect(controller.connect(staker).depositAll(pid, false))
       .to.emit(controller, 'Deposited')
-      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER);
+      .withArgs(staker.address, pid, ONE_HUNDRED_ETHER, false);
 
     // withdraws
     await expect(controller.connect(staker).withdrawAll(pid))
@@ -241,6 +246,11 @@ describe('unit - Controller', function () {
 
   it('voteGaugeWeight', async function () {
     await controller.voteGaugeWeight([gaugeMock.address], [1000]);
+  });
+
+  it('clearFeeTokens', async function () {
+    await expect(controller.clearFeeTokens()).to.emit(controller, 'FeeTokensCleared');
+    expect(await controller.feeTokensLength()).to.equals(0);
   });
 
   it('delegateVotingPower', async function () {
@@ -259,9 +269,6 @@ describe('unit - Controller', function () {
 
     const { stash } = await controller.poolInfo(0);
 
-    // revert if unauthorized
-    await expect(controller.setGaugeRedirect(0)).to.be.revertedWith('Unauthorized()');
-
     const contract = await ethers.getContractFactory('StashMock').then((x) => x.attach(stash));
 
     await contract.claimRewards();
@@ -271,4 +278,55 @@ describe('unit - Controller', function () {
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
     await expect(controller.claimRewards(0, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
   });
+
+  it('reverts add pool if system is shut down', async () => {
+    await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
+    await expect(controller.shutdownSystem()).to.emit(controller, 'SystemShutdown');
+    // try add another pool
+    await expect(controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address)).to.be.revertedWith('Shutdown()');
+  });
+
+  it('deposit reverts if pool is shut down', async () => {
+    const pid = 0;
+    await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
+    await controller.bulkPoolShutdown(pid, pid + 1);
+    // repeat call for line coverage to hit 'continue'
+    await controller.bulkPoolShutdown(pid, pid + 1);
+    await expect(controller.deposit(pid, ONE_ADDRESS, true)).to.be.revertedWith('PoolIsClosed()');
+  });
+
+  it('gauge redirect fails', async function () {
+    // reverts if gauge address is one address
+    await expect(controller.addPool(tokens.B50WBTC50WETH.address, ONE_ADDRESS)).to.be.revertedWith('RedirectFailed()');
+  });
+
+  it('deposit reverts if pool is shut down', async () => {
+    // withdraw function is tested in another unit test
+    // this one is to get coverage to 100%
+    const pid = 0;
+    await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
+    const poolInfo = await controller.poolInfo(pid);
+    const balRewards = poolInfo.balRewards;
+    const baseRewardPoolMock = await getBaseRewardPoolMock(balRewards);
+
+    await expect(controller.withdrawTo(pid, ONE_HUNDRED_ETHER, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
+
+    // testing this properly would require hacking things together, and we already have controller._withdraw covered by another unit test
+    // for that reason we don't care that ERC20.burn reverts (in controller._withdraw)
+    await expect(
+      baseRewardPoolMock.callWithdrawToOnController(controller.address, pid, ONE_HUNDRED_ETHER)
+    ).to.be.revertedWith('ERC20: burn amount exceeds balance');
+  });
 });
+
+const getBaseRewardPoolMock = async (address) => {
+  const BaseRewardPoolMockFactory = await ethers.getContractFactory('BaseRewardPoolMock');
+  await BaseRewardPoolMockFactory.deploy();
+
+  const bytecode =
+    require('../../build/artifacts/contracts/test/BaseRewardPoolMock.sol/BaseRewardPoolMock.json').deployedBytecode;
+
+  await ethers.provider.send('hardhat_setCode', [address, bytecode]);
+
+  return BaseRewardPoolMockFactory.attach(address);
+};

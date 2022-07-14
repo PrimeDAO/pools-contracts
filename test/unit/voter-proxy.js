@@ -5,6 +5,8 @@ const init = require('../test-init.js');
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
 const { getFutureTimestamp, getCurrentBlockTimestamp } = require('../helpers/helpers');
 
+const wethBalBalanceOfVoterProxy = ONE_HUNDRED_ETHER.mul(5);
+
 describe('unit - VoterProxy', function () {
   let voterProxy,
     mintr,
@@ -18,8 +20,7 @@ describe('unit - VoterProxy', function () {
     veBal,
     wethBal,
     B50WBTC50WETH,
-    anotherUser,
-    stash;
+    anotherUser;
 
   const setupTests = deployments.createFixture(async () => {
     const signers = await ethers.getSigners();
@@ -33,7 +34,7 @@ describe('unit - VoterProxy', function () {
     const externalContractMock = await init.getExternalContractMock(setup);
     const B50WBTC50WETH = setup.tokens.B50WBTC50WETH;
     const gaugeMock = await init.getGaugeMock(setup, B50WBTC50WETH.address);
-    await setup.tokens.WethBal.mint(voterProxy.address, ONE_HUNDRED_ETHER.mul(5));
+    await setup.tokens.WethBal.mint(voterProxy.address, wethBalBalanceOfVoterProxy);
     const smartWalletChecker = await init.getSmartWalletCheckerMock(setup);
     await setup.tokens.VeBal.connect(setup.roles.authorizer_adaptor).commit_smart_wallet_checker(
       smartWalletChecker.address
@@ -42,6 +43,7 @@ describe('unit - VoterProxy', function () {
     await smartWalletChecker.allow(voterProxy.address);
     await gaugeControllerMock.add_type('Ethereum', 0);
     await gaugeControllerMock.add_gauge(gaugeMock.address, 0, 0);
+    await init.getDelegateRegistry(setup);
 
     return {
       voterProxy,
@@ -57,7 +59,6 @@ describe('unit - VoterProxy', function () {
       wethBal: setup.tokens.WethBal,
       B50WBTC50WETH, // LP token
       anotherUser: signers.pop(),
-      stash: signers.pop(),
     };
   });
 
@@ -77,7 +78,6 @@ describe('unit - VoterProxy', function () {
     wethBal = setup.wethBal;
     B50WBTC50WETH = setup.B50WBTC50WETH;
     anotherUser = setup.anotherUser;
-    stash = setup.stash;
   });
 
   context('setup', async function () {
@@ -101,12 +101,6 @@ describe('unit - VoterProxy', function () {
     await expect(
       voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365))
     ).to.be.revertedWith('Unauthorized()');
-  });
-
-  it('reverts if no stash access', async function () {
-    await expect(voterProxy.connect(anotherUser)['withdraw(address)'](B50WBTC50WETH.address)).to.be.revertedWith(
-      'Unauthorized()'
-    );
   });
 
   it('should revert if not authorized', async function () {
@@ -149,11 +143,6 @@ describe('unit - VoterProxy', function () {
       .withArgs(anotherUser.address);
   });
 
-  it('grants stash access', async function () {
-    await changeOperator(voterProxy, anotherUser.address);
-    await voterProxy.connect(anotherUser).grantStashAccess(stash.address);
-  });
-
   it('deposits lp tokens', async function () {
     // We're depositing B50WBTC50WETH LP tokens to voter proxy, and it is interacting with gauge mock
     await changeOperator(voterProxy, anotherUser.address);
@@ -169,38 +158,6 @@ describe('unit - VoterProxy', function () {
   });
 
   context('Withdraw', async function () {
-    context('withdraww(address)', async function () {
-      it('withdraws unprotected asset using withdraww(address)', async function () {
-        // unprotected asset is token that is not deposited to VoterProxy via .deposit
-
-        // mint 100 B50WBTC50WETH
-        await B50WBTC50WETH.mint(voterProxy.address, ONE_HUNDRED_ETHER);
-
-        await changeOperator(voterProxy, anotherUser.address);
-        // give access to self
-        await voterProxy.connect(anotherUser).grantStashAccess(anotherUser.address);
-
-        expect(await B50WBTC50WETH.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER);
-        await voterProxy.connect(anotherUser)['withdraw(address)'](B50WBTC50WETH.address);
-        expect(await B50WBTC50WETH.balanceOf(anotherUser.address)).to.equals(ONE_HUNDRED_ETHER);
-      });
-
-      it("doesn't withdraw protected asset", async function () {
-        await changeOperator(voterProxy, anotherUser.address);
-        // give access to self
-        await voterProxy.connect(anotherUser).grantStashAccess(anotherUser.address);
-
-        await B50WBTC50WETH.mint(voterProxy.address, ONE_HUNDRED_ETHER);
-        expect(await B50WBTC50WETH.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER);
-
-        await voterProxy.connect(anotherUser).deposit(B50WBTC50WETH.address, gauge.address);
-
-        await voterProxy.connect(anotherUser)['withdraw(address)'](B50WBTC50WETH.address);
-        // gauge should have the same amount of tokens
-        expect(await B50WBTC50WETH.balanceOf(gauge.address)).to.equals(ONE_HUNDRED_ETHER);
-      });
-    });
-
     context('withdraw(address,address,uint256)', async function () {
       it('withdraws amount', async function () {
         await changeOperator(voterProxy, anotherUser.address);
@@ -306,7 +263,7 @@ describe('unit - VoterProxy', function () {
     await bal.mint(voterProxy.address, ONE_HUNDRED_ETHER);
     expect(await bal.balanceOf(voterProxy.address)).to.equals(ONE_HUNDRED_ETHER);
     // distro mock does nothing
-    await voterProxy.connect(anotherUser).claimFees(distro.address, bal.address);
+    await voterProxy.connect(anotherUser).claimFees(distro.address, [bal.address]);
     expect(await bal.balanceOf(voterProxy.address)).to.equals(0);
     expect(await bal.balanceOf(anotherUser.address)).to.equals(ONE_HUNDRED_ETHER);
   });
@@ -319,6 +276,34 @@ describe('unit - VoterProxy', function () {
     await expect(voterProxy.connect(anotherUser).execute(externalContract.address, 0, tx))
       .to.emit(externalContract, 'Yay')
       .withArgs(number);
+  });
+
+  it('delegates voting power and then clears it', async function () {
+    await changeOperator(voterProxy, anotherUser.address);
+
+    await expect(voterProxy.connect(anotherUser).delegateVotingPower(ONE_ADDRESS))
+      .to.emit(voterProxy, 'VotingPowerDelegated')
+      .withArgs(ONE_ADDRESS);
+
+    await expect(voterProxy.clearDelegate()).to.be.revertedWith('Unauthorized()');
+
+    await expect(voterProxy.connect(anotherUser).clearDelegate()).to.emit(voterProxy, 'VotingPowerCleared');
+  });
+
+  it('withdraws unlocked wethbal', async function () {
+    expect(await wethBal.balanceOf(ONE_ADDRESS)).to.equals(0);
+    await voterProxy.setDepositor(anotherUser.address);
+    await changeOperator(voterProxy, anotherUser.address);
+
+    await voterProxy.connect(anotherUser).createLock(ONE_HUNDRED_ETHER, await getFutureTimestamp(365));
+
+    const timestampBefore = await getCurrentBlockTimestamp();
+    const nextBlockTimestamp = timestampBefore + 366 * 24 * 60 * 60; // 366 days
+    await network.provider.send('evm_setNextBlockTimestamp', [nextBlockTimestamp]);
+
+    await voterProxy.connect(anotherUser).withdrawWethBal(ONE_ADDRESS, wethBalBalanceOfVoterProxy.mul(2));
+    // withdraws 100 (max amount)
+    expect(await wethBal.balanceOf(ONE_ADDRESS)).to.equals(wethBalBalanceOfVoterProxy);
   });
 });
 

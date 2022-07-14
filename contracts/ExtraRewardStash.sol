@@ -1,27 +1,30 @@
 // SPDX-License-Identifier: MIT
-// solium-disable linebreak-style
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./utils/Interfaces.sol";
+import "./utils/MathUtil.sol";
 
 /// @title ExtraRewardStash
 contract ExtraRewardStash is IStash {
+    using SafeERC20 for IERC20;
+    using MathUtil for uint256;
+
     error Unauthorized();
     error AlreadyInitialized();
 
     event RewardHookSet(address newRewardHook);
+    event ExtraRewardsCleared();
 
     uint256 private constant MAX_REWARDS = 8;
     address public immutable bal;
 
     uint256 public pid;
     address public operator;
-    address public staker;
     address public gauge;
     address public rewardFactory;
     address public rewardHook; // address to call for reward pulls
-    bool public hasRedirected;
     bool public hasBalRewards;
 
     mapping(address => uint256) public historicalRewards;
@@ -42,7 +45,6 @@ contract ExtraRewardStash is IStash {
     function initialize(
         uint256 _pid,
         address _operator,
-        address _staker,
         address _gauge,
         address _rFactory
     ) external {
@@ -51,9 +53,15 @@ contract ExtraRewardStash is IStash {
         }
         pid = _pid;
         operator = _operator;
-        staker = _staker;
         gauge = _gauge;
         rewardFactory = _rFactory;
+    }
+
+    modifier onlyAddress(address authorizedAddress) {
+        if (msg.sender != authorizedAddress) {
+            revert Unauthorized();
+        }
+        _;
     }
 
     /// @notice Returns the length of the tokenList
@@ -62,18 +70,9 @@ contract ExtraRewardStash is IStash {
     }
 
     /// @notice Claims registered reward tokens
-    function claimRewards() external {
-        if (msg.sender != operator) {
-            revert Unauthorized();
-        }
+    function claimRewards() external onlyAddress(operator) {
         // this is updateable from v2 gauges now so must check each time.
         checkForNewRewardTokens();
-
-        // make sure we're redirected
-        if (!hasRedirected) {
-            IController(operator).setGaugeRedirect(pid);
-            hasRedirected = true;
-        }
 
         if (hasBalRewards) {
             // claim rewards on gauge for staker
@@ -88,9 +87,22 @@ contract ExtraRewardStash is IStash {
         }
     }
 
+    /// @notice Clears extra rewards
+    /// @dev Only Prime multising has the ability to do this
+    function clearExtraRewards() external onlyAddress(IController(operator).owner()) {
+        address[] memory tokenListMemory = tokenList;
+
+        for (uint256 i = 0; i < tokenListMemory.length; i = i.unsafeInc()) {
+            delete tokenInfo[tokenListMemory[i]];
+        }
+
+        delete tokenList;
+        emit ExtraRewardsCleared();
+    }
+
     /// @notice Checks if the gauge rewards have changed
     function checkForNewRewardTokens() internal {
-        for (uint256 i = 0; i < MAX_REWARDS; i++) {
+        for (uint256 i = 0; i < MAX_REWARDS; i = i.unsafeInc()) {
             address token = IBalGauge(gauge).reward_tokens(i);
             if (token == address(0)) {
                 break;
@@ -104,22 +116,14 @@ contract ExtraRewardStash is IStash {
 
     /// @notice Registers an extra reward token to be handled
     /// @param _token The reward token address
-    /// @dev Used for any new incentive that is not directly on curve gauges
-    function setExtraReward(address _token) external {
-        // owner of booster can set extra rewards
-        if (msg.sender != IController(operator).owner()) {
-            revert Unauthorized();
-        }
+    /// @dev Used for any new incentive that is not directly on balancer gauges
+    function setExtraReward(address _token) external onlyAddress(IController(operator).owner()) {
         setToken(_token);
     }
 
     /// @notice Sets the reward hook address
     /// @param _hook The address of the reward hook
-    function setRewardHook(address _hook) external {
-        // owner of booster can set reward hook
-        if (msg.sender != IController(operator).owner()) {
-            revert Unauthorized();
-        }
+    function setRewardHook(address _hook) external onlyAddress(IController(operator).owner()) {
         rewardHook = _hook;
         emit RewardHookSet(_hook);
     }
@@ -151,10 +155,7 @@ contract ExtraRewardStash is IStash {
     }
 
     /// @notice Sends all of the extra rewards to the reward contracts
-    function processStash() external {
-        if (msg.sender != operator) {
-            revert Unauthorized();
-        }
+    function processStash() external onlyAddress(operator) {
         uint256 tCount = tokenList.length;
         for (uint256 i = 0; i < tCount; i++) {
             TokenInfo storage t = tokenInfo[tokenList[i]];
@@ -166,13 +167,12 @@ contract ExtraRewardStash is IStash {
                 historicalRewards[token] = historicalRewards[token] + amount;
                 if (token == bal) {
                     //if BAL, send back to booster to distribute
-                    IERC20(token).transfer(operator, amount);
+                    IERC20(token).safeTransfer(operator, amount);
                     continue;
                 }
                 //add to reward contract
                 address rewards = t.rewardAddress;
-                if (rewards == address(0)) continue;
-                IERC20(token).transfer(rewards, amount);
+                IERC20(token).safeTransfer(rewards, amount);
                 IRewards(rewards).queueNewRewards(amount);
             }
         }

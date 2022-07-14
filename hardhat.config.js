@@ -1,4 +1,5 @@
 require('dotenv').config({ path: './.env' });
+require('@nomiclabs/hardhat-etherscan');
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
 require('hardhat-deploy');
@@ -80,6 +81,11 @@ module.exports = {
       url: `https://kovan.infura.io/v3/${INFURA_KEY}`,
       saveDeployments: true,
     },
+    goerli: {
+      ...sharedNetworkConfig,
+      url: `https://goerli.infura.io/v3/${INFURA_KEY}`,
+      saveDeployments: true,
+    },
     ganache: {
       ...sharedNetworkConfig,
       url: 'http://127.0.0.1:7545',
@@ -101,6 +107,7 @@ module.exports = {
       apiKey: {
         mainnet: ETHERSCAN_API_KEY,
         kovan: ETHERSCAN_API_KEY,
+        goerli: ETHERSCAN_API_KEY,
         arbitrumOne: ARBISCAN_API_KEY,
       },
     },
@@ -108,7 +115,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.14',
+        version: '0.8.15',
         settings: {
           viaIR: false, // false gives us better results
           optimizer: {
@@ -122,8 +129,9 @@ module.exports = {
   etherscan: {
     apiKey: {
       mainnet: ETHERSCAN_API_KEY,
-      arbitrumOne: ARBISCAN_API_KEY,
+      goerli: ETHERSCAN_API_KEY,
     },
+    customChains: [],
   },
   namedAccounts: {
     root: 0,
