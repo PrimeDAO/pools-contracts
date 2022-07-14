@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
@@ -173,7 +173,6 @@ contract BaseRewardPool is IBaseRewardsPool {
 
         // withdraw from linked rewards
         withdrawExtraRewards(msg.sender, _amount);
-
         _totalSupply = _totalSupply - (_amount);
         _balances[msg.sender] = _balances[msg.sender] - (_amount);
 

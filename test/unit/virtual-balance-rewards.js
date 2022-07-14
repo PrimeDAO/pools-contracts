@@ -28,7 +28,7 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     );
     randomUser = signers.pop();
 
-    // add virtual balance reward pool to BaseRewardPool
+    // add virtual balance reward pool to BaseRewardPool - relationship between these twop
     await baseRewardPool.connect(setup.roles.reward_manager).addExtraReward(VirtualBalanceRewardPool.address);
   });
 
@@ -39,7 +39,6 @@ describe('unit - VirtualBalanceRewardPool', async () => {
   it('returns lastTime reward applicable', async function () {
     const currentTimeInSeconds = await getCurrentBlockTimestamp();
     const periodFinish = await VirtualBalanceRewardPool.periodFinish();
-    console.log('get tex', periodFinish);
     const minTime = Math.min(currentTimeInSeconds, periodFinish.toString());
 
     expect(await VirtualBalanceRewardPool.lastTimeRewardApplicable()).to.equal(minTime);
@@ -91,34 +90,58 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0);
   });
 
-  // it('allows caller to withdraw a specified amount', async function () {
-  //   // root is operator for deposit token
-  //   const amount = BigNumber.from('200');
-  //   await expect(await VirtualBalanceRewardPool.connect(randomUser).withdraw(amount))
-  //     .to.emit(VirtualBalanceRewardPool, 'Withdrawn')
-  //     .withArgs(randomUser.address, amount);
-  // });
-  // it('allows caller to claim rewards', async function () {
-  //   // root is operator for deposit token
-  //   const randomUserRewards = await VirtualBalanceRewardPool.connect(randomUser).rewards(randomUser.address);
-  //   await expect(await VirtualBalanceRewardPool.connect(randomUser).getReward(amount))
-  //     .to.emit(VirtualBalanceRewardPool, 'RewardPaid')
-  //     .withArgs(randomUser.address, randomUserRewards);
-  // });
-  // it('allows caller to donate rewards', async function () {
-  //   // root is operator for deposit token
-  //   const amount = BigNumber.from('200');
-  //   await D2DBal.connect(randomUser).approve(VirtualBalanceRewardPool.address, constants.MaxUint256);
+  it('allows caller to withdraw a specified amount', async function () {
+    const withdrawAmount = BigNumber.from('5');
+    const claim = false;
 
-  //   await VirtualBalanceRewardPool.connect(randomUser).donate(amount);
-  //   await expect(await VirtualBalanceRewardPool.connect(randomUser).queuedRewards()).to.equal(amount);
-  // });
-  // it('allows caller to queueNewRewards rewards', async function () {
-  //   // root is operator for deposit token
-  //   const amount = BigNumber.from('200');
-  //   const currentRewards = await VirtualBalanceRewardPool.connect(randomUser).queuedRewards();
-  //   await VirtualBalanceRewardPool.connect(randomUser).queueNewRewards();
-  //   const newRewards = currentRewards + amount;
-  //   await expect(await VirtualBalanceRewardPool.connect(randomUser).queuedRewards()).to.equal(newRewards);
-  // });
+    await expect(D2DBal.mint(randomUser.address, ONE_HUNDRED_ETHER))
+      .to.emit(D2DBal, 'Transfer')
+      .withArgs(ZERO_ADDRESS, randomUser.address, ONE_HUNDRED_ETHER);
+
+    const amount = BigNumber.from('50');
+
+    await D2DBal.connect(randomUser).approve(baseRewardPool.address, constants.MaxUint256);
+
+    await expect(baseRewardPool.connect(randomUser).stake(amount))
+      .to.emit(baseRewardPool, 'Staked')
+      .to.emit(VirtualBalanceRewardPool, 'Staked')
+      .withArgs(randomUser.address, amount);
+
+    await expect(baseRewardPool.connect(randomUser).withdraw(withdrawAmount, claim))
+      .to.emit(baseRewardPool, 'Withdrawn')
+      .to.emit(VirtualBalanceRewardPool, 'Withdrawn')
+      .withArgs(randomUser.address, withdrawAmount);
+  });
+  it('allows caller to claim rewards', async function () {
+    await expect(D2DBal.mint(randomUser.address, ONE_HUNDRED_ETHER))
+      .to.emit(D2DBal, 'Transfer')
+      .withArgs(ZERO_ADDRESS, randomUser.address, ONE_HUNDRED_ETHER);
+
+    const amount = BigNumber.from('50');
+
+    await D2DBal.connect(randomUser).approve(baseRewardPool.address, constants.MaxUint256);
+
+    await expect(baseRewardPool.connect(randomUser).stake(amount))
+      .to.emit(baseRewardPool, 'Staked')
+      .to.emit(VirtualBalanceRewardPool, 'Staked')
+      .withArgs(randomUser.address, amount);
+
+    await goldToken.mint(root.address, ONE_HUNDRED_ETHER.mul(100));
+    await goldToken.approve(VirtualBalanceRewardPool.address, constants.MaxUint256);
+    await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER);
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, ONE_HUNDRED_ETHER);
+
+    expect(await goldToken.balanceOf(randomUser.address)).to.equals(0);
+    await expect(VirtualBalanceRewardPool.connect(randomUser)['getReward()']()).to.emit(
+      VirtualBalanceRewardPool,
+      'RewardPaid'
+    );
+    expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0);
+  });
+  it('allows caller to donate rewards', async function () {
+    await goldToken.mint(root.address, ONE_HUNDRED_ETHER.mul(100));
+    await goldToken.approve(VirtualBalanceRewardPool.address, constants.MaxUint256);
+    await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER);
+    expect(await VirtualBalanceRewardPool.queuedRewards()).to.not.equals(0);
+  });
 });
