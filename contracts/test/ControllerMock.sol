@@ -86,6 +86,10 @@ contract ControllerMock is IController {
         lockRewards = _rewards;
     }
 
+    function queueNewRewardsOnVirtualBalanceRewardContract(address addr, uint256 amt) external {
+        IRewards(addr).queueNewRewards(amt);
+    }
+
     function callExtraRewardStashClaimRewards(address _stash, address _rewardFactory) external {
         IRewardFactory(_rewardFactory).grantRewardStashAccess(_stash);
         IStash(_stash).claimRewards();

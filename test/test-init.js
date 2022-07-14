@@ -28,10 +28,10 @@ const getTokens = async (setup) => {
 
   const B50WBTC50WETH = await ERC20Factory.deploy('Balancer 50 WBTC 50 WETH', 'B-50WBTC-50WETH'); // LP token
   const BAL = await ERC20Factory.deploy('Bal', 'BAL');
+  const goldToken = await ERC20Factory.deploy('Gold', 'GLD');
   const D2DBal = await D2DBalFactory.deploy();
   const depositToken = await DepositTokenFactory.deploy(setup.roles.root.address, B50WBTC50WETH.address);
   const PoolContract = await ERC20Factory.deploy('PoolToken', 'BALP');
-  const incentiveRewardToken = await ERC20Factory.deploy('IncentiveRewardToken', 'INC');
   const WethBal = await ERC20Factory.deploy('WethBal', 'WethBAL'); // Balancer80BAL20WETH LP token
   const VeBal = await VeBalFactory.deploy(WethBal.address, 'VeBal', 'VeBAL', setup.roles.authorizer_adaptor.address);
 
@@ -47,7 +47,7 @@ const getTokens = async (setup) => {
     B50WBTC50WETH,
     StashMock,
     depositToken,
-    incentiveRewardToken,
+    goldToken,
   };
 
   setup.tokens = tokens;
@@ -73,13 +73,15 @@ const getStash = async (setup) => {
   return await Stash.deploy(setup.tokens.BAL.address);
 };
 
-const controller = async (setup, voterProxy, feeDistributor) => {
+const controller = async (setup, voterProxy, feeDistributor, voteOwnership, voteParameter) => {
   const controllerFactory = await ethers.getContractFactory('Controller', setup.roles.root);
 
   const controller = await controllerFactory.deploy(
     voterProxy.address,
     setup.tokens.BAL.address,
-    feeDistributor.address
+    feeDistributor.address,
+    voteOwnership.address,
+    voteParameter.address
   );
 
   await voterProxy.setOperator(controller.address);
@@ -114,6 +116,13 @@ const baseRewardPool = async (setup, controller, rewardFactory) => {
     controller.address,
     rewardFactory.address
   );
+};
+
+const getVirtualBalanceRewardPool = async (setup, baseRewardPool, controller) => {
+  const getVirtualBalanceRewardPool = await ethers.getContractFactory('VirtualBalanceRewardPool', setup.roles.root);
+  const rewardToken = setup.tokens.goldToken;
+
+  return await getVirtualBalanceRewardPool.deploy(baseRewardPool, rewardToken.address, controller);
 };
 
 const proxyFactory = async (setup) => {
@@ -152,7 +161,7 @@ const getStashFactoryMock = async (setup, controller, rewardFactory, proxyFactor
 };
 
 const getBaseRewardPool = async (setup) => {
-  const BaseRewardPoolFactory = await ethers.getContractFactory('BaseRewardPool', setup.roles.root);
+  const BaseRewardPoolFactory = await ethers.getContractFactory('BaseRewardPoolInTest', setup.roles.root);
 
   const controller = await getControllerMock(setup);
 
@@ -226,17 +235,6 @@ const getSmartWalletCheckerMock = async (setup) => {
   return await SmartWalletCheckerFactory.deploy();
 };
 
-const getDelegateRegistry = async (setup) => {
-  const DelegateRegistryFactory = await ethers.getContractFactory('DelegateRegistry', setup.roles.root);
-  await DelegateRegistryFactory.deploy();
-
-  const bytecode =
-    require('../build/artifacts/contracts/test/DelegateRegistry.sol/DelegateRegistry.json').deployedBytecode;
-
-  // replaces bytecode of an address
-  await ethers.provider.send('hardhat_setCode', ['0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446', bytecode]);
-};
-
 module.exports = {
   initialize,
   getVoterProxy,
@@ -263,5 +261,5 @@ module.exports = {
   getDistro,
   getStashMock,
   getStash,
-  getDelegateRegistry,
+  getVirtualBalanceRewardPool,
 };
