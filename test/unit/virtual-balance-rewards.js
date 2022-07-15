@@ -50,6 +50,11 @@ describe('unit - VirtualBalanceRewardPool', async () => {
   it('returns the amount earned', async function () {
     expect(await VirtualBalanceRewardPool.connect(randomUser).earned(randomUser.address)).to.equal(ZERO);
   });
+  it('fails if the user is not authorized to call stake funds', async function () {
+    await expect(
+      VirtualBalanceRewardPool.connect(randomUser).stake(randomUser.address, ONE_HUNDRED_ETHER)
+    ).to.be.revertedWith('Unauthorized()');
+  });
   it('allows caller to stake funds', async function () {
     // D2DBal is stake token for BaseRewardPool
     // we mint it to randomuser, so that he can stake it
@@ -145,7 +150,7 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER);
     expect(await VirtualBalanceRewardPool.queuedRewards()).to.not.equals(0);
   });
-  it('fails if the user is not authorized to call the function', async function () {
+  it('fails if the user is not authorized to call queueNewRewards', async function () {
     await expect(VirtualBalanceRewardPool.queueNewRewards(ONE_HUNDRED_ETHER)).to.be.revertedWith('Unauthorized()');
   });
   it('tests notify rewards for when block.timestamp is less than periodFinish', async function () {
