@@ -34,7 +34,7 @@ and add the following
 
 ```
 INFURA_KEY = infura key
-PK = private-key
+MNEMONIC = mnemonic
 ETHERSCAN_API_KEY = etherscan key
 ```
 
@@ -73,10 +73,10 @@ Since this is a project that is continuously being extended, it is generally not
 
 There are two **npm scripts** that facilitate the deployment to _mainnet_, and _kovan_. All require the specification of **tags**. When using these scripts, at the end of the deployment, it automatically exports the addresses & artifacts in one file per network.
 
-### Deployment to kovan
+### Deployment to Goerli
 
 General:
-`npm run deploy:contracts:kovan`
+`npm run deploy:contracts:goerli`
 
 ### Deployment to mainnet
 
@@ -88,7 +88,7 @@ General:
 To verify contracts, the enviornment variable should contain `ETHERSCAN_API_KEY` set.
 
 General:
-`npm run verify:contracts:kovan`
+`npm run verify:contracts:goerli`
 
 Find more information in the documentation of [hardhat-etherscan](https://hardhat.org/plugins/nomiclabs-hardhat-etherscan.html)
 

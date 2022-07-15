@@ -13,6 +13,8 @@ contract ControllerMock is IController {
 
     address public owner;
 
+    address public baseRewardPool;
+
     constructor() {
         owner = msg.sender;
     }
@@ -38,7 +40,7 @@ contract ControllerMock is IController {
             address,
             bool
         ) {
-            return (address(0), address(0), address(0), address(0), address(0), false);
+            return (address(0), address(0), address(0), baseRewardPool, address(0), false);
         }
 
     function withdrawTo(
@@ -86,8 +88,19 @@ contract ControllerMock is IController {
         lockRewards = _rewards;
     }
 
-    function callExtraRewardStashClaimRewards(address _stash, address _rewardFactory) external {
+    function callGrantRewardStashAccess(address _stash, address _rewardFactory) external {
         IRewardFactory(_rewardFactory).grantRewardStashAccess(_stash);
+    }
+
+    function setBaseRewardPool(address pool) external {
+        baseRewardPool = pool;
+    }
+
+    function callExtraRewardStashClaimRewards(address _stash) external {
         IStash(_stash).claimRewards();
+    }
+
+    function callProcessStash(address _stash) external {
+        IStash(_stash).processStash();
     }
 }
