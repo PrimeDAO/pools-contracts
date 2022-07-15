@@ -16,6 +16,7 @@ contract ExtraRewardStash is IStash {
 
     event RewardHookSet(address newRewardHook);
     event ExtraRewardsCleared();
+    event ExtraRewardCleared(address extraReward);
 
     uint256 private constant MAX_REWARDS = 8;
     address public immutable bal;
@@ -89,6 +90,7 @@ contract ExtraRewardStash is IStash {
 
     /// @notice Clears extra rewards
     /// @dev Only Prime multising has the ability to do this
+    /// if you want to remove only one token, use `clearExtraReward`
     function clearExtraRewards() external onlyAddress(IController(operator).owner()) {
         address[] memory tokenListMemory = tokenList;
 
@@ -98,6 +100,18 @@ contract ExtraRewardStash is IStash {
 
         delete tokenList;
         emit ExtraRewardsCleared();
+    }
+
+    /// @notice Clears extra reward by index
+    /// @param index index of the extra reward to clear
+    function clearExtraReward(uint256 index) external onlyAddress(IController(operator).owner()) {
+        address extraReward = tokenList[index];
+        // Move the last element into the place to delete
+        tokenList[index] = tokenList[tokenList.length - 1];
+        // Remove the last element
+        tokenList.pop();
+        delete tokenInfo[extraReward];
+        emit ExtraRewardCleared(extraReward);
     }
 
     /// @notice Checks if the gauge rewards have changed
