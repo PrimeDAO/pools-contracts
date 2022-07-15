@@ -93,6 +93,7 @@ describe('unit - VirtualBalanceRewardPool', async () => {
   it('allows caller to withdraw a specified amount', async function () {
     const withdrawAmount = BigNumber.from('5');
     const claim = false;
+    const unwrap = false;
 
     await expect(D2DBal.mint(randomUser.address, ONE_HUNDRED_ETHER))
       .to.emit(D2DBal, 'Transfer')
@@ -107,7 +108,7 @@ describe('unit - VirtualBalanceRewardPool', async () => {
       .to.emit(VirtualBalanceRewardPool, 'Staked')
       .withArgs(randomUser.address, amount);
 
-    await expect(baseRewardPool.connect(randomUser).withdraw(withdrawAmount, claim))
+    await expect(baseRewardPool.connect(randomUser).withdraw(withdrawAmount, claim, unwrap))
       .to.emit(baseRewardPool, 'Withdrawn')
       .to.emit(VirtualBalanceRewardPool, 'Withdrawn')
       .withArgs(randomUser.address, withdrawAmount);

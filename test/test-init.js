@@ -32,6 +32,7 @@ const getTokens = async (setup) => {
   const D2DBal = await D2DBalFactory.deploy();
   const depositToken = await DepositTokenFactory.deploy(setup.roles.root.address, B50WBTC50WETH.address);
   const PoolContract = await ERC20Factory.deploy('PoolToken', 'BALP');
+  const incentiveRewardToken = await ERC20Factory.deploy('IncentiveRewardToken', 'INC');
   const WethBal = await ERC20Factory.deploy('WethBal', 'WethBAL'); // Balancer80BAL20WETH LP token
   const VeBal = await VeBalFactory.deploy(WethBal.address, 'VeBal', 'VeBAL', setup.roles.authorizer_adaptor.address);
 
@@ -48,6 +49,7 @@ const getTokens = async (setup) => {
     StashMock,
     depositToken,
     goldToken,
+    incentiveRewardToken,
   };
 
   setup.tokens = tokens;
@@ -73,15 +75,13 @@ const getStash = async (setup) => {
   return await Stash.deploy(setup.tokens.BAL.address);
 };
 
-const controller = async (setup, voterProxy, feeDistributor, voteOwnership, voteParameter) => {
+const controller = async (setup, voterProxy, feeDistributor) => {
   const controllerFactory = await ethers.getContractFactory('Controller', setup.roles.root);
 
   const controller = await controllerFactory.deploy(
     voterProxy.address,
     setup.tokens.BAL.address,
-    feeDistributor.address,
-    voteOwnership.address,
-    voteParameter.address
+    feeDistributor.address
   );
 
   await voterProxy.setOperator(controller.address);
@@ -161,7 +161,7 @@ const getStashFactoryMock = async (setup, controller, rewardFactory, proxyFactor
 };
 
 const getBaseRewardPool = async (setup) => {
-  const BaseRewardPoolFactory = await ethers.getContractFactory('BaseRewardPoolInTest', setup.roles.root);
+  const BaseRewardPoolFactory = await ethers.getContractFactory('BaseRewardPool', setup.roles.root);
 
   const controller = await getControllerMock(setup);
 
@@ -235,6 +235,17 @@ const getSmartWalletCheckerMock = async (setup) => {
   return await SmartWalletCheckerFactory.deploy();
 };
 
+const getDelegateRegistry = async (setup) => {
+  const DelegateRegistryFactory = await ethers.getContractFactory('DelegateRegistry', setup.roles.root);
+  await DelegateRegistryFactory.deploy();
+
+  const bytecode =
+    require('../build/artifacts/contracts/test/DelegateRegistry.sol/DelegateRegistry.json').deployedBytecode;
+
+  // replaces bytecode of an address
+  await ethers.provider.send('hardhat_setCode', ['0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446', bytecode]);
+};
+
 module.exports = {
   initialize,
   getVoterProxy,
@@ -261,5 +272,6 @@ module.exports = {
   getDistro,
   getStashMock,
   getStash,
+  getDelegateRegistry,
   getVirtualBalanceRewardPool,
 };
