@@ -98,6 +98,6 @@ describe('unit - ExtraRewardStash', function () {
     await extraRewardStash.setExtraReward(setup.tokens.BAL.address);
 
     await controller.callProcessStash(extraRewardStash.address);
-    await controller.callExtraRewardStashClaimRewards(extraRewardStash.address);
+    await controller['callExtraRewardStashClaimRewards(address)'](extraRewardStash.address);
   });
 });
