@@ -43,6 +43,8 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "hardhat/console.sol";
+
 contract VirtualBalanceRewardPool {
     using SafeERC20 for IERC20;
 
@@ -112,12 +114,13 @@ contract VirtualBalanceRewardPool {
     }
 
     function rewardPerToken() public view returns (uint256) {
-        if (totalSupply() == 0) {
+        uint256 totalSupplyMemory = totalSupply();
+        if (totalSupplyMemory == 0) {
             return rewardPerTokenStored;
         }
         return
             rewardPerTokenStored +
-            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupply());
+            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupplyMemory);
     }
 
     function earned(address account) public view returns (uint256) {
@@ -185,6 +188,7 @@ contract VirtualBalanceRewardPool {
             rewardRate = reward / DURATION;
         } else {
             // solhint-disable-next-line
+            console.log("in else block in VBR");
             uint256 remaining = periodFinish - block.timestamp;
             uint256 leftover = remaining * rewardRate;
             reward = reward + leftover;

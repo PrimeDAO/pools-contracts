@@ -145,4 +145,35 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER);
     expect(await VirtualBalanceRewardPool.queuedRewards()).to.not.equals(0);
   });
+  it('fails if the user is not authorized to call the function', async function () {
+    await expect(VirtualBalanceRewardPool.queueNewRewards(ONE_HUNDRED_ETHER)).to.be.revertedWith('Unauthorized()');
+  });
+  it('tests notify rewards for when block.timestamp is less than periodFinish', async function () {
+    await expect(D2DBal.mint(randomUser.address, ONE_HUNDRED_ETHER))
+      .to.emit(D2DBal, 'Transfer')
+      .withArgs(ZERO_ADDRESS, randomUser.address, ONE_HUNDRED_ETHER);
+
+    const amount = BigNumber.from('50');
+
+    await D2DBal.connect(randomUser).approve(baseRewardPool.address, constants.MaxUint256);
+
+    await expect(baseRewardPool.connect(randomUser).stake(amount))
+      .to.emit(baseRewardPool, 'Staked')
+      .to.emit(VirtualBalanceRewardPool, 'Staked')
+      .withArgs(randomUser.address, amount);
+
+    await goldToken.mint(root.address, ONE_HUNDRED_ETHER.mul(100));
+    await goldToken.approve(VirtualBalanceRewardPool.address, constants.MaxUint256);
+    await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER);
+    await VirtualBalanceRewardPool.donate(ONE_HUNDRED_ETHER);
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, ONE_HUNDRED_ETHER);
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, ONE_HUNDRED_ETHER);
+
+    expect(await goldToken.balanceOf(randomUser.address)).to.equals(0);
+    await expect(VirtualBalanceRewardPool.connect(randomUser)['getReward()']()).to.emit(
+      VirtualBalanceRewardPool,
+      'RewardPaid'
+    );
+    expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0);
+  });
 });
