@@ -13,9 +13,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     args: [
       voterProxy.address, 
       addresses.bal,
-      addresses.feeDistro, 
-      addresses.PRIME_MULTISIG,
-      addresses.PRIME_MULTISIG
+      addresses.feeDistro
     ],
     log: true,
   });

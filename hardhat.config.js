@@ -1,4 +1,5 @@
 require('dotenv').config({ path: './.env' });
+require('@nomiclabs/hardhat-etherscan');
 require('@nomiclabs/hardhat-ethers');
 require('@nomiclabs/hardhat-waffle');
 require('hardhat-deploy');
@@ -114,7 +115,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.14',
+        version: '0.8.15',
         settings: {
           viaIR: false, // false gives us better results
           optimizer: {
@@ -128,8 +129,9 @@ module.exports = {
   etherscan: {
     apiKey: {
       mainnet: ETHERSCAN_API_KEY,
-      arbitrumOne: ARBISCAN_API_KEY,
+      goerli: ETHERSCAN_API_KEY,
     },
+    customChains: [],
   },
   namedAccounts: {
     root: 0,

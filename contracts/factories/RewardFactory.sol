@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "../utils/Interfaces.sol";
 import "../BaseRewardPool.sol";
@@ -12,7 +12,7 @@ contract RewardFactory is IRewardFactory {
 
     event StashAccessGranted(address stash);
     event BaseRewardPoolCreated(address poolAddress);
-    event VirtualBalanceRewardPoolCreated(address poolAddress);
+    event VirtualBalanceRewardPoolCreated(address baseRewardPool, address poolAddress, address token);
 
     error Unauthorized();
 
@@ -68,7 +68,7 @@ contract RewardFactory is IRewardFactory {
 
         // create new pool, use main pool for balance lookup
         VirtualBalanceRewardPool rewardPool = new VirtualBalanceRewardPool(_mainRewards, _token, _rewardPoolOwner);
-        emit VirtualBalanceRewardPoolCreated(address(rewardPool));
+        emit VirtualBalanceRewardPoolCreated(_mainRewards, address(rewardPool), _token);
 
         address rAddress = address(rewardPool);
         // add the new pool to main pool's list of extra rewards, assuming this factory has "reward manager" role

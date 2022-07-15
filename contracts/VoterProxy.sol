@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./utils/Interfaces.sol";
 import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title VoterProxy contract
 /// @dev based on Convex's VoterProxy smart contract
 ///      https://etherscan.io/address/0x989AEb4d175e16225E39E87d0D97A3360524AD80#code
 contract VoterProxy is IVoterProxy {
     using MathUtil for uint256;
+    using SafeERC20 for IERC20;
 
     // Same address on all chains
     address public constant SNAPSHOT_REGISTRY = 0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446;
@@ -111,13 +113,6 @@ contract VoterProxy is IVoterProxy {
         emit DepositorChanged(_depositor);
     }
 
-    /// @notice Sets `_stash` access to `_status`
-    /// @param _stash The address of the stash
-    function grantStashAccess(address _stash) external onlyOperator {
-        stashAccess[_stash] = true;
-        emit StashAccessGranted(_stash);
-    }
-
     /// @notice Used to deposit tokens
     /// @param _token The address of the LP token
     /// @param _gauge The gauge to deposit to
@@ -204,13 +199,16 @@ contract VoterProxy is IVoterProxy {
 
     /// @notice Claims fees
     /// @param _distroContract The distro contract to claim from
-    /// @param _token The token to claim from
-    /// @return uint256 amaunt claimed
-    function claimFees(address _distroContract, IERC20 _token) external onlyOperator returns (uint256) {
-        IFeeDistro(_distroContract).claimToken(address(this), _token);
-        uint256 _balance = _token.balanceOf(address(this));
-        _token.transfer(operator, _balance);
-        return _balance;
+    /// @param _tokens The tokens to claim
+    function claimFees(address _distroContract, IERC20[] calldata _tokens) external onlyOperator {
+        IFeeDistro(_distroContract).claimTokens(address(this), _tokens);
+
+        for (uint256 i = 0; i < _tokens.length; i = i.unsafeInc()) {
+            uint256 balance = _tokens[i].balanceOf(address(this));
+            if (balance != 0) {
+                _tokens[i].safeTransfer(operator, balance);
+            }
+        }
     }
 
     /// @notice Executes a call to `_to` with calldata `_data`
@@ -252,23 +250,6 @@ contract VoterProxy is IVoterProxy {
     /// @dev Only possible if the lock has expired
     function release() external onlyDepositor {
         IBalVoteEscrow(veBal).withdraw();
-    }
-
-    /// @notice Used for pulling extra incentive reward tokens out
-    /// @param _asset ERC20 token address
-    /// @return amount of tokens withdrawn
-    function withdraw(IERC20 _asset) external returns (uint256) {
-        if (!stashAccess[msg.sender]) {
-            revert Unauthorized();
-        }
-
-        if (protectedTokens[address(_asset)]) {
-            return 0;
-        }
-
-        uint256 balance = _asset.balanceOf(address(this));
-        _asset.transfer(msg.sender, balance);
-        return balance;
     }
 
     /// @notice Used for withdrawing tokens
