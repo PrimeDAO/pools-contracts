@@ -43,8 +43,6 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "hardhat/console.sol";
-
 contract VirtualBalanceRewardPool {
     using SafeERC20 for IERC20;
 
@@ -188,7 +186,6 @@ contract VirtualBalanceRewardPool {
             rewardRate = reward / DURATION;
         } else {
             // solhint-disable-next-line
-            console.log("in else block in VBR");
             uint256 remaining = periodFinish - block.timestamp;
             uint256 leftover = remaining * rewardRate;
             reward = reward + leftover;
