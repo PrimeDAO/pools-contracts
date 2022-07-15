@@ -92,6 +92,7 @@ contract BaseRewardPool is IBaseRewardsPool {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
     event ExtraRewardsCleared();
+    event ExtraRewardCleared(address extraReward);
 
     error Unauthorized();
     error InvalidAmount();
@@ -181,9 +182,21 @@ contract BaseRewardPool is IBaseRewardsPool {
 
     /// @notice Clears extra rewards
     /// @dev Only Prime multising has the ability to do this
+    /// if you want to remove only one token, use `clearExtraReward`
     function clearExtraRewards() external onlyAddress(IController(operator).owner()) {
         delete extraRewards;
         emit ExtraRewardsCleared();
+    }
+
+    /// @notice Clears extra reward by index
+    /// @param index index of the extra reward to clear
+    function clearExtraReward(uint256 index) external onlyAddress(IController(operator).owner()) {
+        address extraReward = extraRewards[index];
+        // Move the last element into the place to delete
+        extraRewards[index] = extraRewards[extraRewards.length - 1];
+        // Remove the last element
+        extraRewards.pop();
+        emit ExtraRewardCleared(extraReward);
     }
 
     /// @notice Returns last time reward applicable

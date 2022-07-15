@@ -5,6 +5,7 @@ const { getCurrentBlockTimestamp } = require('../helpers/helpers.js');
 const init = require('../test-init.js');
 
 const addressOne = '0x0000000000000000000000000000000000000001';
+const addressTwo = '0x0000000000000000000000000000000000000002';
 const FOURTY_SECONDS = 40;
 const FIFTY_SECONDS = 50;
 const ONE_WEEK = 604800;
@@ -297,6 +298,16 @@ describe('unit - BaseRewardPool', function () {
     expect(await baseRewardPool.extraRewardsLength()).to.equal(1);
     await expect(baseRewardPool.connect(root).clearExtraRewards()).to.emit(baseRewardPool, 'ExtraRewardsCleared');
     expect(await baseRewardPool.extraRewardsLength()).to.equal(0);
+  });
+
+  it('clears extra rewards', async function () {
+    const { baseRewardPool, rewardManager, root } = await setupTests();
+    await baseRewardPool.connect(rewardManager).addExtraReward(addressOne);
+    await baseRewardPool.connect(rewardManager).addExtraReward(addressTwo);
+    expect(await baseRewardPool.extraRewardsLength()).to.equal(2);
+    await expect(baseRewardPool.connect(root).clearExtraReward(0)).to.emit(baseRewardPool, 'ExtraRewardCleared');
+    expect(await baseRewardPool.extraRewardsLength()).to.equal(1);
+    expect(await baseRewardPool.extraRewards(0)).to.equals(addressTwo);
   });
 });
 

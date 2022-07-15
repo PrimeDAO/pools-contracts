@@ -112,12 +112,13 @@ contract VirtualBalanceRewardPool {
     }
 
     function rewardPerToken() public view returns (uint256) {
-        if (totalSupply() == 0) {
+        uint256 totalSupplyMemory = totalSupply();
+        if (totalSupplyMemory == 0) {
             return rewardPerTokenStored;
         }
         return
             rewardPerTokenStored +
-            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupply());
+            (((lastTimeRewardApplicable() - lastUpdateTime) * rewardRate * 1e18) / totalSupplyMemory);
     }
 
     function earned(address account) public view returns (uint256) {
