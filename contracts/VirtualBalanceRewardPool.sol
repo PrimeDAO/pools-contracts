@@ -43,6 +43,8 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "hardhat/console.sol";
+
 contract VirtualBalanceRewardPool {
     using SafeERC20 for IERC20;
 
@@ -54,6 +56,7 @@ contract VirtualBalanceRewardPool {
     error Unauthorized();
 
     uint256 public constant DURATION = 7 days;
+    uint256 public constant NEW_REWARD_RATIO = 830;
 
     IBaseRewardsPool public immutable deposits;
     IERC20 public immutable rewardToken;
@@ -66,7 +69,6 @@ contract VirtualBalanceRewardPool {
     uint256 public queuedRewards;
     uint256 public currentRewards;
     uint256 public historicalRewards;
-    uint256 public newRewardRatio = 830;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -157,7 +159,7 @@ contract VirtualBalanceRewardPool {
             revert Unauthorized();
         }
         _rewards = _rewards + queuedRewards;
-
+        console.log("in vbr _rewards", _rewards);
         // solhint-disable-next-line
         if (block.timestamp >= periodFinish) {
             notifyRewardAmount(_rewards);
@@ -168,13 +170,17 @@ contract VirtualBalanceRewardPool {
         //et = now - (finish-duration)
         // solhint-disable-next-line
         uint256 elapsedTime = block.timestamp - (periodFinish - DURATION);
+        console.log("in vbr elapsed time", elapsedTime);
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
+        console.log("in vbr currentAtNow", currentAtNow);
         uint256 queuedRatio = (currentAtNow * 1000) / _rewards;
-        if (queuedRatio < newRewardRatio) {
+        console.log("in vbr queuedRatio", queuedRatio);
+        if (queuedRatio < NEW_REWARD_RATIO) {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
         } else {
+            console.log("in vbr I am in else block");
             queuedRewards = _rewards;
         }
     }

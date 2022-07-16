@@ -1,5 +1,5 @@
 const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants.js');
-const { ONE_HUNDRED_ETHER } = require('../helpers/constants.js');
+const { ONE_HUNDRED_ETHER, FIFTEEN_HUNDRED_ETHER } = require('../helpers/constants.js');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { getCurrentBlockTimestamp } = require('../helpers/helpers.js');
@@ -55,6 +55,42 @@ describe('unit - VirtualBalanceRewardPool', async () => {
       VirtualBalanceRewardPool.connect(randomUser).stake(randomUser.address, ONE_HUNDRED_ETHER)
     ).to.be.revertedWith('Unauthorized()');
   });
+
+  it('tests for when queratio is greater than newRewardRatio', async function () {
+    await expect(D2DBal.mint(randomUser.address, FIFTEEN_HUNDRED_ETHER))
+      .to.emit(D2DBal, 'Transfer')
+      .withArgs(ZERO_ADDRESS, randomUser.address, FIFTEEN_HUNDRED_ETHER);
+
+    const amount = BigNumber.from('50');
+
+    await D2DBal.connect(randomUser).approve(baseRewardPool.address, constants.MaxUint256);
+
+    await expect(baseRewardPool.connect(randomUser).stake(amount))
+      .to.emit(baseRewardPool, 'Staked')
+      .to.emit(VirtualBalanceRewardPool, 'Staked')
+      .withArgs(randomUser.address, amount);
+
+    await goldToken.mint(root.address, FIFTEEN_HUNDRED_ETHER.mul(100));
+    await goldToken.approve(VirtualBalanceRewardPool.address, constants.MaxUint256);
+    await VirtualBalanceRewardPool.donate(FIFTEEN_HUNDRED_ETHER);
+    // await VirtualBalanceRewardPool.donate(FIFTEEN_HUNDRED_ETHER);
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(
+      VirtualBalanceRewardPool.address,
+      FIFTEEN_HUNDRED_ETHER
+    );
+    // await controller.queueNewRewardsOnVirtualBalanceRewardContract(
+    //   VirtualBalanceRewardPool.address,
+    //   FIFTEEN_HUNDRED_ETHER
+    // );
+
+    expect(await goldToken.balanceOf(randomUser.address)).to.equals(0);
+    await expect(VirtualBalanceRewardPool.connect(randomUser)['getReward()']()).to.emit(
+      VirtualBalanceRewardPool,
+      'RewardPaid'
+    );
+    expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0);
+  });
+
   it('allows caller to stake funds', async function () {
     // D2DBal is stake token for BaseRewardPool
     // we mint it to randomuser, so that he can stake it
