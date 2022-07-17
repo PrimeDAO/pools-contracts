@@ -217,4 +217,34 @@ describe('unit - VirtualBalanceRewardPool', async () => {
     );
     expect(await goldToken.balanceOf(randomUser.address)).to.not.equals(0);
   });
+
+  it('cleanup pls :)', async function () {
+    const FOURTY_SECONDS = 40;
+    const FIFTY_SECONDS = 50;
+    const ONE_WEEK = 604800;
+
+    const currentTimeInSeconds = await getCurrentBlockTimestamp();
+
+    const rewardAmount = BigNumber.from(ONE_WEEK.toString()).mul(10000);
+    const newRewardAmount = BigNumber.from(ONE_WEEK.toString()).mul(100);
+    await goldToken.mint(root.address, rewardAmount);
+    await goldToken.mint(root.address, newRewardAmount);
+    await goldToken.approve(VirtualBalanceRewardPool.address, constants.MaxUint256);
+
+    await VirtualBalanceRewardPool.donate(rewardAmount);
+
+    // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
+    const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
+    await network.provider.send('evm_setNextBlockTimestamp', [nextBlockTimestamp]);
+
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, rewardAmount);
+
+    // change timestamp to 10 min + 10 seconds difference between last reward queue
+    const blockPlusOneTimestamp = currentTimeInSeconds + FIFTY_SECONDS + 6000;
+    await network.provider.send('evm_setNextBlockTimestamp', [blockPlusOneTimestamp]);
+
+    await VirtualBalanceRewardPool.donate(newRewardAmount);
+
+    await controller.queueNewRewardsOnVirtualBalanceRewardContract(VirtualBalanceRewardPool.address, newRewardAmount);
+  });
 });
