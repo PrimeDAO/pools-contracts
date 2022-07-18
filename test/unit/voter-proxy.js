@@ -301,7 +301,7 @@ describe('unit - VoterProxy', function () {
     const nextBlockTimestamp = timestampBefore + 366 * 24 * 60 * 60; // 366 days
     await network.provider.send('evm_setNextBlockTimestamp', [nextBlockTimestamp]);
 
-    await voterProxy.connect(anotherUser).withdrawWethBal(ONE_ADDRESS, wethBalBalanceOfVoterProxy.mul(2));
+    await voterProxy.connect(anotherUser).withdrawWethBal(ONE_ADDRESS);
     // withdraws 100 (max amount)
     expect(await wethBal.balanceOf(ONE_ADDRESS)).to.equals(wethBalBalanceOfVoterProxy);
   });

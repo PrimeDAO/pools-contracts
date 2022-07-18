@@ -263,15 +263,10 @@ contract VoterProxy is IVoterProxy {
     }
 
     /// @notice Used for withdrawing wethBal tokens to address
-    /// @dev If contract doesn't have asked _amount tokens it will withdraw all tokens
     /// @param _to send to address
-    /// @param _amount The amount to withdraw
-    function withdrawWethBal(address _to, uint256 _amount) external onlyOperator {
+    function withdrawWethBal(address _to) external onlyOperator {
         IBalVoteEscrow(veBal).withdraw();
         uint256 _balance = IERC20(wethBal).balanceOf(address(this));
-        if (_balance < _amount) {
-            _amount = _balance;
-        }
-        IERC20(wethBal).transfer(_to, _amount);
+        IERC20(wethBal).transfer(_to, _balance);
     }
 }

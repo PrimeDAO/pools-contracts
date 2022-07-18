@@ -18,6 +18,7 @@ contract VoterProxyMock is IVoterProxy {
 
     address public immutable mintr;
     address public immutable bal;
+    address public wethBal;
 
     address public immutable veBal;
     address public immutable gaugeController;
@@ -33,6 +34,7 @@ contract VoterProxyMock is IVoterProxy {
         address mintr_,
         address bal_,
         address veBal_,
+        address wethBal_,
         address gaugeController_
     ) {
         owner = msg.sender;
@@ -40,6 +42,7 @@ contract VoterProxyMock is IVoterProxy {
         mintr = mintr_;
         bal = bal_;
         veBal = veBal_;
+        wethBal = wethBal_;
         gaugeController = gaugeController_;
     }
 
@@ -53,8 +56,6 @@ contract VoterProxyMock is IVoterProxy {
 
     function release() external {}
 
-    function withdrawWethBal(address, uint256) external {}
-
     function delegateVotingPower(address _to) external {
         emit VotingPowerDelegated(_to);
     }
@@ -64,11 +65,11 @@ contract VoterProxyMock is IVoterProxy {
     }
 
     function setOperator(address _operator) external {
-
+        operator = _operator;
     }
 
     function setDepositor(address _depositor) external {
-
+        depositor = _depositor;
     }
 
     function grantStashAccess(address _stash)
@@ -108,14 +109,9 @@ contract VoterProxyMock is IVoterProxy {
 
     function increaseTime(uint256 _value) external {}
 
-    // Withdraw partial funds
-    function withdrawWethBal(
-        address _to, //treasury
-        address _gauge,
-        uint256 _amount
-    ) public returns (uint256) {
-
-        return 1;
+    function withdrawWethBal(address _to) external {
+        uint256 _balance = IERC20(wethBal).balanceOf(address(this));
+        IERC20(wethBal).transfer(_to, _balance);
     }
 
     function voteMultipleGauges(address[] calldata _gauges, uint256[] calldata _weights) external {}

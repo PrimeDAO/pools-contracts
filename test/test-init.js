@@ -59,8 +59,9 @@ const getVoterProxyMock = async (setup) => {
   const mintr = setup.tokens.D2DBal;
   const bal = setup.tokens.BAL;
   const veBal = setup.tokens.VeBal;
+  const WethBal = setup.tokens.WethBal;
 
-  return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, ZERO_ADDRESS);
+  return await VoterProxyMockFactory.deploy(mintr.address, bal.address, veBal.address, WethBal.address, ZERO_ADDRESS);
 };
 
 const getStashMock = async (setup) => {

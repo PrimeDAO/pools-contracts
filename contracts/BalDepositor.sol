@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title BalDepositor contract
 /// @dev Deposit contract for Prime Pools is based on the convex contract crvDepositor.sol
-contract BalDepositor {
+contract BalDepositor is IBalDepositor {
     event FeeManagerChanged(address newFeeManager);
     event LockIncentiveChanged(uint256 newLockIncentive);
 
@@ -137,6 +137,16 @@ contract BalDepositor {
         // stake for msg.sender
         IERC20(d2dBal).approve(_stakeAddress, _amount);
         IRewards(_stakeAddress).stakeFor(msg.sender, _amount);
+    }
+
+    /// @notice Burns D2DBal from some address
+    /// @dev Only Controller can call this
+    function burnD2DBal(address _from, uint256 _amount) external {
+        if (msg.sender != IVoterProxy(staker).operator()) {
+            revert Unauthorized();
+        }
+
+        ITokenMinter(d2dBal).burn(_from, _amount);
     }
 
     /// @notice Transfers Weth/Bal from VoterProxy `staker` to veBal contract

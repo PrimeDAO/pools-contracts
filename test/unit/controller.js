@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { deployments, ethers } = require('hardhat');
+const { constants } = require('ethers');
 const { expectRevert } = require('@openzeppelin/test-helpers');
 const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ONE_ADDRESS, ONE_HUNDRED_ETHER } = require('../helpers/constants');
@@ -10,7 +11,7 @@ const defaultPlatformFee = 1000;
 
 describe('unit - Controller', function () {
   const setupTests = deployments.createFixture(async () => {
-    const setup = await init.initialize(await ethers.getSigners());
+    setup = await init.initialize(await ethers.getSigners());
 
     await init.getTokens(setup);
     tokens = setup.tokens;
@@ -22,6 +23,7 @@ describe('unit - Controller', function () {
     feeDistributor = await init.getDistroMock(setup);
     bal = setup.tokens.BAL;
     root = setup.roles.root;
+    randomUser = setup.roles.buyer1;
     reward_manager = setup.roles.reward_manager;
 
     // mock voterProxy
@@ -241,7 +243,62 @@ describe('unit - Controller', function () {
   });
 
   it('withdrawsUnlockedWethBal', async function () {
-    await controller.withdrawUnlockedWethBal(ONE_HUNDRED_ETHER);
+    await controller.withdrawUnlockedWethBal();
+  });
+
+  it('reverts redeems wethBal if calClaim is false', async function () {
+    await expect(controller.redeemWethBal()).to.be.reverted;
+  });
+
+  it('redeems wethBal if calClaim is true', async function () {
+    const balDepositor = await init.balDepositor(setup, voterProxy);
+    // set balDepositor and operator in voterProxy mock
+    await voterProxy.setDepositor(balDepositor.address);
+    await voterProxy.setOperator(controller.address);
+
+    // get d2dBal contract to check that user has 0 balance of d2dBal before depositing
+    const d2dBalAddress = await balDepositor.d2dBal();
+    const d2dBal = await ethers.getContractFactory('D2DBal').then((x) => x.attach(d2dBalAddress));
+
+    expect(await d2dBal.balanceOf(randomUser.address)).to.equals(0);
+
+    const wethBalAmount = ONE_HUNDRED_ETHER;
+    // mint to randomUser and approve
+    await tokens.WethBal.mint(randomUser.address, wethBalAmount);
+    await tokens.WethBal.connect(randomUser).approve(balDepositor.address, constants.MaxUint256);
+
+    // initialize staking contract
+    const baseRewardPool = await init.getBaseRewardPool(setup);
+
+    // default owner is deployer of d2dBal, we need to transfer ownership to balDepositor
+    await d2dBal.transferOwnership(balDepositor.address);
+
+    // deposit wethBal, this will transfer funds to voterProxyMock, mint d2dBal and stake it for depositor
+    await balDepositor.connect(randomUser).deposit(wethBalAmount, true, baseRewardPool.address);
+
+    // withdraw staked d2dBal from rewrads contract
+    await baseRewardPool.connect(randomUser).withdrawAll(false);
+
+    // assert d2dBal balance to depositor d2dBal is 1:1 with wethBal
+    expect(await d2dBal.balanceOf(randomUser.address)).to.equals(wethBalAmount);
+
+    // this will flip calClaim to true
+    await controller.withdrawUnlockedWethBal();
+
+    // balance should be 0 before redeem
+    expect(await tokens.WethBal.balanceOf(randomUser.address)).to.equals(0);
+
+    // user should get wethBal
+    await expect(controller.connect(randomUser).redeemWethBal())
+      .to.emit(tokens.WethBal, 'Transfer')
+      .withArgs(controller.address, randomUser.address, wethBalAmount)
+      .to.emit(d2dBal, 'Transfer')
+      .withArgs(randomUser.address, ZERO_ADDRESS, wethBalAmount);
+
+    expect(await d2dBal.balanceOf(randomUser.address)).to.equals(0);
+
+    // assert balance
+    expect(await tokens.WethBal.balanceOf(randomUser.address)).to.equals(wethBalAmount);
   });
 
   it('voteGaugeWeight', async function () {
