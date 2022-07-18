@@ -81,8 +81,6 @@ import "./utils/MathUtil.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "hardhat/console.sol";
-
 /// @title Base Reward Pool contract
 /// @dev Rewards contract for Prime Pools is based on the convex contract
 contract BaseRewardPool is IBaseRewardsPool {
@@ -356,7 +354,6 @@ contract BaseRewardPool is IBaseRewardsPool {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
         } else {
-            console.log("in basereward else block");
             queuedRewards = _rewards;
         }
     }
