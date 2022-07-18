@@ -54,6 +54,7 @@ contract VirtualBalanceRewardPool {
     error Unauthorized();
 
     uint256 public constant DURATION = 7 days;
+    uint256 public constant NEW_REWARD_RATIO = 830;
 
     IBaseRewardsPool public immutable deposits;
     IERC20 public immutable rewardToken;
@@ -66,7 +67,6 @@ contract VirtualBalanceRewardPool {
     uint256 public queuedRewards;
     uint256 public currentRewards;
     uint256 public historicalRewards;
-    uint256 public newRewardRatio = 830;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -157,7 +157,6 @@ contract VirtualBalanceRewardPool {
             revert Unauthorized();
         }
         _rewards = _rewards + queuedRewards;
-
         // solhint-disable-next-line
         if (block.timestamp >= periodFinish) {
             notifyRewardAmount(_rewards);
@@ -171,7 +170,7 @@ contract VirtualBalanceRewardPool {
         //current at now: rewardRate * elapsedTime
         uint256 currentAtNow = rewardRate * elapsedTime;
         uint256 queuedRatio = (currentAtNow * 1000) / _rewards;
-        if (queuedRatio < newRewardRatio) {
+        if (queuedRatio < NEW_REWARD_RATIO) {
             notifyRewardAmount(_rewards);
             queuedRewards = 0;
         } else {

@@ -16,7 +16,7 @@ pragma solidity 0.8.15;
 *
 *
 * MIT License
-* 
+*
 *
 * Copyright (c) 2020 Synthetix
 *
