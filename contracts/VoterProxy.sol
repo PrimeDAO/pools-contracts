@@ -267,6 +267,6 @@ contract VoterProxy is IVoterProxy {
     function withdrawWethBal(address _to) external onlyOperator {
         IBalVoteEscrow(veBal).withdraw();
         uint256 _balance = IERC20(wethBal).balanceOf(address(this));
-        IERC20(wethBal).transfer(_to, _balance);
+        IERC20(wethBal).safeTransfer(_to, _balance);
     }
 }

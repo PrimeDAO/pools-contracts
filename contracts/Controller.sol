@@ -414,7 +414,7 @@ contract Controller is IController {
         IBalDepositor balDepositor = IBalDepositor(IVoterProxy(staker).depositor());
         uint256 balance = IERC20(balDepositor.d2dBal()).balanceOf(msg.sender);
         balDepositor.burnD2DBal(msg.sender, balance);
-        IERC20(balDepositor.wethBal()).transfer(msg.sender, balance);
+        IERC20(balDepositor.wethBal()).safeTransfer(msg.sender, balance);
     }
 
     /// @notice Delegates voting power from VoterProxy
