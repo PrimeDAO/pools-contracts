@@ -163,7 +163,7 @@ describe('unit - Controller', function () {
     // extra rewards contract should have 0 balance before earmarkFees
     const virtualBalancePoolAddress = await controller.feeTokenToPool(tokens.incentiveRewardToken.address);
     expect(await tokens.incentiveRewardToken.balanceOf(virtualBalancePoolAddress)).to.equals(0);
-    await controller.earmarkFees();
+    await controller.earmarkFees_F4P();
     // after earmarkFees controller should transfer tokens to virtualBalancePool
     expect(await tokens.incentiveRewardToken.balanceOf(controller.address)).to.equals(0);
     expect(await tokens.incentiveRewardToken.balanceOf(virtualBalancePoolAddress)).to.equals(ONE_HUNDRED_ETHER);
@@ -196,7 +196,7 @@ describe('unit - Controller', function () {
       expect(await tokens.BAL.balanceOf(ONE_ADDRESS)).to.equals(0);
       const balanceBefore = await tokens.BAL.balanceOf(root.address);
 
-      await controller.earmarkRewards(0);
+      await controller.earmarkRewards_pcp(0);
 
       // 2.5 eth is 2.5% from 100 (100 is being minted as a bal reward in our mock)
       expect(await tokens.BAL.balanceOf(root.address)).to.equals(balanceBefore.add(ethers.utils.parseEther('2.5')));
@@ -208,7 +208,7 @@ describe('unit - Controller', function () {
       await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
       const pid = 0;
       await controller.bulkPoolShutdown(pid, pid + 1);
-      await expectRevert(controller.earmarkRewards(pid), 'PoolIsClosed()');
+      await expectRevert(controller.earmarkRewards_pcp(pid), 'PoolIsClosed()');
       await expectRevert(controller.connect(staker).deposit(pid, ONE_HUNDRED_ETHER, true), 'PoolIsClosed()');
     });
   });
@@ -271,12 +271,12 @@ describe('unit - Controller', function () {
 
     const contract = await ethers.getContractFactory('StashMock').then((x) => x.attach(stash));
 
-    await contract.claimRewards();
+    await contract.claimRewards_6H10();
   });
 
   it('reverts claimRewards() if unauthorized', async function () {
     await controller.addPool(tokens.B50WBTC50WETH.address, gaugeMock.address);
-    await expect(controller.claimRewards(0, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
+    await expect(controller.claimRewards_poF(0, ZERO_ADDRESS)).to.be.revertedWith('Unauthorized()');
   });
 
   it('reverts add pool if system is shut down', async () => {

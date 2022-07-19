@@ -49,7 +49,7 @@ contract ControllerMock is IController {
         address
     ) external {}
 
-    function claimRewards(uint256, address) external {}
+    function claimRewards_poF(uint256, address) external {}
 
     function queueNewRewards(uint256 _rewards) external {
         IRewards(lockRewards).queueNewRewards(_rewards);
@@ -80,9 +80,9 @@ contract ControllerMock is IController {
 
     function withdrawUnlockedWethBal(uint256 _amount) external {}
 
-    function earmarkFees() external {}
+    function earmarkFees_F4P() external {}
 
-    function earmarkRewards(uint256 _pid) external {}
+    function earmarkRewards_pcp(uint256 _pid) external {}
 
     function setRewardContracts(address _rewards) external {
         lockRewards = _rewards;
@@ -94,7 +94,7 @@ contract ControllerMock is IController {
     
     function callExtraRewardStashClaimRewards(address _stash, address _rewardFactory) external {
         IRewardFactory(_rewardFactory).grantRewardStashAccess(_stash);
-        IStash(_stash).claimRewards();
+        IStash(_stash).claimRewards_6H10();
     }
     
     function callGrantRewardStashAccess(address _stash, address _rewardFactory) external {
@@ -106,10 +106,10 @@ contract ControllerMock is IController {
     }
 
     function callExtraRewardStashClaimRewards(address _stash) external {
-        IStash(_stash).claimRewards();
+        IStash(_stash).claimRewards_6H10();
     }
 
     function callProcessStash(address _stash) external {
-        IStash(_stash).processStash();
+        IStash(_stash).processStash_WfQ();
     }
 }

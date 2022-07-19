@@ -92,7 +92,7 @@ describe('Kovan clean deployment', function () {
 
     await increaseTime(60 * 60 * 24 * 10); // 10 days
 
-    await controller.earmarkRewards(pid);
+    await controller.earmarkRewards_pcp(pid);
     // Fee Manager (root) BAL balance should not be zero anymore
     expect(await balTokenContract.balanceOf(root)).to.be.gt(startBalanceOfRoot);
     // Treasury (root) BAL balance should not be zero anymore
@@ -100,7 +100,7 @@ describe('Kovan clean deployment', function () {
     expect(treasuryBalanceAfterFirstEarmark).to.not.equals(0);
 
     // collect rewards from second pool
-    await controller.earmarkRewards(pidOne);
+    await controller.earmarkRewards_pcp(pidOne);
 
     // Treasury should have bigger balance on secon reward
     expect(await balTokenContract.balanceOf(treasury)).to.be.gt(treasuryBalanceAfterFirstEarmark);
