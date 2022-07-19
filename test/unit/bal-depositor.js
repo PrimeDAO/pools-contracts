@@ -1,7 +1,7 @@
 const { assert, expect } = require('chai');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
-const { ONE_HUNDRED_ETHER, MOCK_INITIAL_SUPPLY } = require('../helpers/constants');
+const { ONE_HUNDRED_ETHER, MOCK_INITIAL_SUPPLY, ONE_ADDRESS } = require('../helpers/constants');
 const { getCurrentBlockTimestamp } = require('../helpers/helpers.js');
 
 describe('unit - Contract: BalDepositor', async () => {
@@ -164,6 +164,10 @@ describe('unit - Contract: BalDepositor', async () => {
 
       // if it extends lock time it should emit event on veBal
       await expect(balDepositor.deposit(depositAmount, true, baseRewardPool.address)).to.emit(veBal, 'Supply');
+    });
+
+    it('reverts d2dBal burn when unauthorized', async function () {
+      await expect(balDepositor.burnD2DBal(ONE_ADDRESS, 0)).to.be.revertedWith('Unauthorized()');
     });
   });
 });

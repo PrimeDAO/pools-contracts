@@ -41,10 +41,22 @@ interface IMinter {
     function mint(address) external;
 }
 
+interface IBalDepositor {
+    function d2dBal() external view returns (address);
+
+    function wethBal() external view returns (address);
+
+    function burnD2DBal(address _from, uint256 _amount) external;
+}
+
 interface IVoterProxy {
     function deposit(address _token, address _gauge) external;
 
-    function withdrawWethBal(address, uint256) external;
+    function withdrawWethBal(address _to) external;
+
+    function wethBal() external view returns (address);
+
+    function depositor() external view returns (address);
 
     function withdraw(
         address _token,
@@ -202,9 +214,12 @@ interface IController {
         address _to
     ) external;
 
-    /// @notice Withdraws `amount` of unlocked WethBal to treasury
-    /// @param _amount amount of tokens to withdraw
-    function withdrawUnlockedWethBal(uint256 _amount) external;
+    /// @notice Withdraws `amount` of unlocked WethBal to controller
+    /// @dev WethBal is redeemable by burning equivalent amount of D2D WethBal
+    function withdrawUnlockedWethBal() external;
+
+    /// @notice Burns all D2DWethBal from a user, and transfers the equivalent amount of unlocked WethBal tokes
+    function redeemWethBal() external;
 
     /// @notice Claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held

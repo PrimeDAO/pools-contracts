@@ -66,6 +66,7 @@ contract Controller is IController {
     mapping(address => address) public feeTokenToPool;
 
     bool public isShutdown;
+    bool public canClaim;
 
     struct PoolInfo {
         address lptoken;
@@ -402,8 +403,18 @@ contract Controller is IController {
     }
 
     /// @inheritdoc IController
-    function withdrawUnlockedWethBal(uint256 _amount) external {
-        IVoterProxy(staker).withdrawWethBal(treasury, _amount);
+    function withdrawUnlockedWethBal() external onlyAddress(owner) {
+        canClaim = true;
+        IVoterProxy(staker).withdrawWethBal(address(this));
+    }
+
+    /// @inheritdoc IController
+    function redeemWethBal() external {
+        require(canClaim);
+        IBalDepositor balDepositor = IBalDepositor(IVoterProxy(staker).depositor());
+        uint256 balance = IERC20(balDepositor.d2dBal()).balanceOf(msg.sender);
+        balDepositor.burnD2DBal(msg.sender, balance);
+        IERC20(balDepositor.wethBal()).safeTransfer(msg.sender, balance);
     }
 
     /// @notice Delegates voting power from VoterProxy

@@ -29,6 +29,10 @@ contract ControllerMock is IController {
         return 0;
     }
 
+    function redeemWethBal() external {
+
+    }
+
     function poolInfo(uint256)
         external
         view
@@ -78,7 +82,7 @@ contract ControllerMock is IController {
 
     function withdrawAll(uint256 _pid) external {}
 
-    function withdrawUnlockedWethBal(uint256 _amount) external {}
+    function withdrawUnlockedWethBal() external {}
 
     function earmarkFees() external {}
 
