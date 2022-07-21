@@ -3,7 +3,7 @@ const { getAddresses, tags: { VoterProxySetters, deployment, VoterProxy } } = re
 const deployFunction = async ({ deployments }) => {
     const { root } = await getNamedAccounts();
     const { execute } = deployments;
-    const opts = { from: root, log: true }
+    const opts = { from: root, log: true, gasLimit: process.env.GAS_LIMIT }
 
     // set set operator to controller smart contract
     const { address: controllerAddress } = await deployments.get('Controller');

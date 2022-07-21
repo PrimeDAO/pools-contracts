@@ -16,6 +16,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
       addresses.feeDistro
     ],
     log: true,
+    gasLimit: process.env.GAS_LIMIT,
   });
 };
 

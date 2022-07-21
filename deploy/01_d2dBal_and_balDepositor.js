@@ -11,16 +11,18 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const { address: d2dBalAddress } = await deploy("D2DBal", {
     from: root,
     log: true,
+    gasLimit: process.env.GAS_LIMIT,
   })
 
   const { address: balDepositor } = await deploy("BalDepositor", {
     from: root,
     args: [addresses.wethBal, addresses.veBal, voterProxy.address, d2dBalAddress],
     log: true,
+    gasLimit: process.env.GAS_LIMIT,
   });
 
   // Owner of D2DBal should be BalDepositor
-  await execute('D2DBal', { from: root, log: true, gasLimit: 6000000 }, 'transferOwnership', balDepositor)
+  await execute('D2DBal', { from: root, log: true, gasLimit: process.env.GAS_LIMIT }, 'transferOwnership', balDepositor)
 };
 
 module.exports = deployFunction;
