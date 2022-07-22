@@ -59,7 +59,7 @@ describe('unit - ExtraRewardStash', function () {
   });
 
   it('reverts if unauthorized', async function () {
-    await expect(extraRewardStash.claimRewards()).to.be.revertedWith('Unauthorized()');
+    await expect(extraRewardStash.claimRewards_6H10()).to.be.revertedWith('Unauthorized()');
   });
 
   it('clears extra reward', async function () {

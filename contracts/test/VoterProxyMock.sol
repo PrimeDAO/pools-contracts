@@ -116,7 +116,7 @@ contract VoterProxyMock is IVoterProxy {
 
     function voteMultipleGauges(address[] calldata _gauges, uint256[] calldata _weights) external {}
 
-    function claimBal(address _gauge) external returns (uint256) {
+    function claimBal__mo(address _gauge) external returns (uint256) {
         IMint(bal).mint(msg.sender, 100 ether);
         return 100 ether;
     }
