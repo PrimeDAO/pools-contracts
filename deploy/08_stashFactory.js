@@ -7,17 +7,20 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   const controller = await deployments.get('Controller');
   const rewardFactory = await deployments.get('RewardFactory');
   const proxyFactory = await deployments.get('ProxyFactory');
-  
+
   await deploy("StashFactory", {
     from: root,
     args: [controller.address, rewardFactory.address, proxyFactory.address],
     log: true,
+    gasLimit: process.env.GAS_LIMIT,
   });
-  
+
   // Set implementation contract on stash factory
   const stashDeployment = await deployments.get('ExtraRewardStash');
 
-  await execute('StashFactory', { from: root, log: true }, 'setImplementation', stashDeployment.address)
+  await execute('StashFactory', {
+    from: root, log: true, gasLimit: process.env.GAS_LIMIT,
+  }, 'setImplementation', stashDeployment.address)
 };
 
 module.exports = deployFunction;

@@ -14,9 +14,10 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
         from: root,
         args: [0, d2dBal.address, addresses.bal, controller.address, root],
         log: true,
+        gasLimit: process.env.GAS_LIMIT,
     });
 
-    await execute('Controller', { from: root, log: true }, 'setRewardContracts', baseRewardPoolAddress)
+    await execute('Controller', { from: root, log: true, gasLimit: process.env.GAS_LIMIT }, 'setRewardContracts', baseRewardPoolAddress)
 
     console.log('Controller setRewardContracts: ', baseRewardPoolAddress);
 };
