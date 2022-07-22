@@ -12,6 +12,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     from: root,
     args: [controller.address, addresses.bal],
     log: true,
+    gasLimit: process.env.GAS_LIMIT,
   });
 };
 

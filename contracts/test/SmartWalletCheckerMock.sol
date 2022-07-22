@@ -3,6 +3,8 @@ pragma solidity 0.8.15;
 
 contract SmartWalletCheckerMock {
 
+    event ContractAddressAdded(address contractAddress);
+
     mapping(address => bool) public allowed;
 
     function allow(address _addr) public {
@@ -12,4 +14,6 @@ contract SmartWalletCheckerMock {
     function check(address _caller) external view returns(bool) {
         return allowed[_caller];
     }
+
+    function allowlistAddress(address contractAddress) external {}
 }

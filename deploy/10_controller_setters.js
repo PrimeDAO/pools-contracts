@@ -4,17 +4,19 @@ const deployFunction = async ({ deployments }) => {
     const { execute } = deployments;
     const { root } = await getNamedAccounts();
     const addresses = getAddresses();
+    
+    const opts = { from: root, log: true, gasLimit: process.env.GAS_LIMIT }
 
     const { address: rewardFactoryAddress } = await deployments.get('RewardFactory');
     const { address: stashFactoryAddress } = await deployments.get('StashFactory');
     const { address: tokenFactoryAddress } = await deployments.get('TokenFactory');
 
-    await execute('Controller', { from: root, log: true }, 'setFactories', rewardFactoryAddress, stashFactoryAddress, tokenFactoryAddress)
-    await execute('Controller', { from: root, log: true }, 'addFeeToken', addresses.bal)
-    await execute('Controller', { from: root, log: true }, 'setVoteDelegate', addresses.PRIME_MULTISIG)
-    await execute('Controller', { from: root, log: true }, 'setFeeManager', addresses.PRIME_MULTISIG)
-    await execute('Controller', { from: root, log: true }, 'setPoolManager', addresses.PRIME_MULTISIG)
-    await execute('Controller', { from: root, log: true }, 'setOwner', addresses.PRIME_MULTISIG)
+    await execute('Controller', opts, 'setFactories', rewardFactoryAddress, stashFactoryAddress, tokenFactoryAddress)
+    await execute('Controller', opts, 'addFeeToken', addresses.bal)
+    await execute('Controller', opts, 'setVoteDelegate', addresses.PRIME_MULTISIG)
+    await execute('Controller', opts, 'setFeeManager', addresses.PRIME_MULTISIG)
+    await execute('Controller', opts, 'setPoolManager', addresses.PRIME_MULTISIG)
+    await execute('Controller', opts, 'setOwner', addresses.PRIME_MULTISIG)
     console.log('Controller setVoteDelegate: ', addresses.PRIME_MULTISIG);
     console.log('Controller setFeeManager: ', addresses.PRIME_MULTISIG);
     console.log('Controller setPoolManager: ', addresses.PRIME_MULTISIG);

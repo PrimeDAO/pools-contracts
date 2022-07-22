@@ -7,6 +7,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
   await deploy("ProxyFactory", {
     from: root,
     log: true,
+    gasLimit: process.env.GAS_LIMIT,
   });
 };
 

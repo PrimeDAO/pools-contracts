@@ -20,13 +20,12 @@ if (PK) {
   };
 }
 
-// Moralis has archive node for free
-// And we are using it to test the deployment on a fork
+// Archive node is needed for mainnet fork
 const testForking = {
   ...sharedNetworkConfig,
   forking: {
-    url: `https://speedy-nodes-nyc.moralis.io/${process.env.MORALIS_KEY}/eth/${process.env.BLOCKCHAIN_FORK}/archive`,
-    blockNumber: process.env.BLOCKCHAIN_FORK == 'kovan' ? 32152859 : 14854404, // Adapt if needed
+    url: `https://mainnet.infura.io/v3/${INFURA_KEY}`,
+    blockNumber: 15177559,
   },
 };
 
