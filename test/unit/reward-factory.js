@@ -1,4 +1,3 @@
-const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { expect, assert } = require('chai');
 const { deployments, ethers } = require('hardhat');
 const { ONE_ADDRESS, TWO_ADDRESS } = require('../helpers/constants.js');
@@ -33,96 +32,13 @@ describe('unit - RewardFactory', function () {
         .to.emit(rewardFactoryContract, 'StashAccessGranted')
         .withArgs(anotherUser.address);
     });
-  });
 
-  context('Active rewards', async function () {
-    it('adds reward', async function () {
-      const { rewardFactoryContract, anotherUser, operator } = await setupTests();
-
-      // Give access to somebody
-      await expect(rewardFactoryContract.connect(operator).grantRewardStashAccess(anotherUser.address));
-
-      const pid = 1;
-
-      await expect(rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid))
-        .to.emit(rewardFactoryContract, 'ExtraRewardAdded')
-        .withArgs(ONE_ADDRESS, pid);
-    });
-
-    it('reverts if user is unauthorized to add reward', async function () {
-      const { rewardFactoryContract } = await setupTests();
-
-      await expect(rewardFactoryContract.addActiveReward(ONE_ADDRESS, 1)).to.be.revertedWith('Unauthorized()');
-    });
-
-    it('reverts if user is unauthorized to remove reward', async function () {
-      const { rewardFactoryContract } = await setupTests();
-
-      await expect(rewardFactoryContract.removeActiveReward(ZERO_ADDRESS, 1)).to.be.revertedWith('Unauthorized()');
-    });
-
-    it('reverts if user is unauthorized to add access', async function () {
+    it('reverts if user is unauthorized to add stash access', async function () {
       const { rewardFactoryContract, anotherUser } = await setupTests();
 
       await expect(rewardFactoryContract.grantRewardStashAccess(anotherUser.address)).to.be.revertedWith(
         'Unauthorized()'
       );
-    });
-
-    it('gets rewards count', async function () {
-      const { rewardFactoryContract, anotherUser, operator } = await setupTests();
-
-      // Give access to somebody
-      await expect(rewardFactoryContract.connect(operator).grantRewardStashAccess(anotherUser.address));
-
-      const pid = 1;
-
-      await expect(rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid))
-        .to.emit(rewardFactoryContract, 'ExtraRewardAdded')
-        .withArgs(ONE_ADDRESS, pid);
-
-      // should not revert if we try to add the same reward again, it returns early
-      expect(await rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid));
-
-      // returns early
-      expect(await rewardFactoryContract.connect(anotherUser).addActiveReward(ZERO_ADDRESS, pid));
-
-      expect(await rewardFactoryContract.activeRewardCount(ONE_ADDRESS)).to.equal(1);
-    });
-
-    it('removes reward', async function () {
-      const { rewardFactoryContract, anotherUser, operator } = await setupTests();
-
-      // Give access to somebody
-      await expect(rewardFactoryContract.connect(operator).grantRewardStashAccess(anotherUser.address));
-
-      const pid = 1;
-
-      // add extra rewards
-      await expect(rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid)).to.emit(
-        rewardFactoryContract,
-        'ExtraRewardAdded'
-      );
-      await expect(rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid + 1)).to.emit(
-        rewardFactoryContract,
-        'ExtraRewardAdded'
-      );
-      await expect(rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid + 2)).to.emit(
-        rewardFactoryContract,
-        'ExtraRewardAdded'
-      );
-      await expect(rewardFactoryContract.connect(anotherUser).addActiveReward(ONE_ADDRESS, pid + 3)).to.emit(
-        rewardFactoryContract,
-        'ExtraRewardAdded'
-      );
-
-      // returns early zero address test
-      await expect(rewardFactoryContract.connect(anotherUser).removeActiveReward(ZERO_ADDRESS, pid));
-      await expect(rewardFactoryContract.connect(anotherUser).removeActiveReward(ZERO_ADDRESS, pid));
-
-      await expect(rewardFactoryContract.connect(anotherUser).removeActiveReward(ONE_ADDRESS, pid))
-        .to.emit(rewardFactoryContract, 'ExtraRewardRemoved')
-        .withArgs(ONE_ADDRESS, pid);
     });
   });
 
