@@ -15,7 +15,8 @@ const contractAddresses = {
     [gaugeController]: '0xC128468b7Ce63eA702C1f104D55A2566b13D3ABD',
     [wethBal]: '0x5c6ee304399dbdb9c8ef030ab642b10820db8f56',
     [feeDistro]: '0x26743984e3357eFC59f2fd6C1aFDC310335a61c9',
-    [PRIME_MULTISIG]: '0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f', // TODO: setup multisig wallet
+    // [PRIME_MULTISIG]: '0xbF63Afb77A49159b4502E91CD3f4EbDcc161431f', // Dev wallet
+    [PRIME_MULTISIG]: '0x8E2944982DC2837B250e1B115b195b2e6d808F31', // https://gnosis-safe.io/app/eth:0x8E2944982DC2837B250e1B115b195b2e6d808F31/home
     [pools]: [],
   },
   goerli: {

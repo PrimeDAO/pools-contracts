@@ -40,10 +40,10 @@ module.exports = {
   gasReporter: {
     currency: 'USD',
     token: 'ETH',
-    gasPrice: 100, // Leaving gas price constant so that we can see results better
-    // gasPriceApi:
-    //     "https://api.etherscan.com/api?module=proxy&action=eth_gasPrice&apikey=" +
-    //     process.env.ETHERSCAN_API_KEY,
+    // gasPrice: 100, // Leaving gas price constant so that we can see results better
+    gasPriceApi:
+        "https://api.etherscan.com/api?module=proxy&action=eth_gasPrice&apikey=" +
+        process.env.ETHERSCAN_API_KEY,
     enabled: process.env.REPORT_GAS ? true : false,
     src: './contracts',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
