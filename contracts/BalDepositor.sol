@@ -171,15 +171,17 @@ contract BalDepositor is IBalDepositor {
 
         // solhint-disable-next-line
         uint256 newUnlockAt = block.timestamp + MAXTIME;
-        uint256 unlockInWeeks = (newUnlockAt / WEEK) * WEEK;
+        // Calculate newUnlockInWeeks, because veBal contract is rounding down the timestamp this way
+        uint256 newUnlockInWeeks = (newUnlockAt / WEEK) * WEEK;
 
         // We always want to have max voting power on each vote
         // Bal voting is a weekly event, and we want to increase time every week
         // solhint-disable-next-line
-        if ((unlockInWeeks - unlockTime) > 2) {
+        if ((newUnlockInWeeks - unlockTime) > 1) {
             IVoterProxy(stakerMemory).increaseTime(newUnlockAt);
             // solhint-disable-next-line
-            unlockTime = newUnlockAt;
+            // save rounded down timestamp
+            unlockTime = newUnlockInWeeks;
         }
     }
 }
