@@ -126,11 +126,6 @@ const getVirtualBalanceRewardPool = async (setup, baseRewardPool, controller) =>
   return await getVirtualBalanceRewardPool.deploy(baseRewardPool, rewardToken.address, controller);
 };
 
-const proxyFactory = async (setup) => {
-  const ProxyFactory = await ethers.getContractFactory('ProxyFactory', setup.roles.root);
-  return await ProxyFactory.deploy();
-};
-
 const balDepositor = async (setup, voterProxy) => {
   const balDepositor = await ethers.getContractFactory('BalDepositor', setup.roles.root);
 
@@ -150,15 +145,15 @@ const getMintrMock = async (setup) => {
   return await MintrMock.deploy(setup.tokens.BAL.address, controllerMock.address);
 };
 
-const stashFactory = async (setup, controller, rewardFactory, proxyFactory) => {
+const stashFactory = async (setup, controller, rewardFactory) => {
   const StashFactory = await ethers.getContractFactory('StashFactory', setup.roles.root);
 
-  return await StashFactory.deploy(controller.address, rewardFactory.address, proxyFactory.address);
+  return await StashFactory.deploy(controller.address, rewardFactory.address);
 };
 
-const getStashFactoryMock = async (setup, controller, rewardFactory, proxyFactory) => {
+const getStashFactoryMock = async (setup, controller, rewardFactory) => {
   const StashFactoryMock = await ethers.getContractFactory('StashFactoryMock', setup.roles.root);
-  return await StashFactoryMock.deploy(controller.address, rewardFactory.address, proxyFactory.address);
+  return await StashFactoryMock.deploy(controller.address, rewardFactory.address);
 };
 
 const getBaseRewardPool = async (setup) => {
@@ -214,11 +209,6 @@ const getDistroMock = async (setup) => {
   return await DistroMock.deploy();
 };
 
-const getDistro = async (setup) => {
-  const Distro = await ethers.getContractFactory('Distro', setup.roles.root);
-  return await Distro.deploy(setup.tokens.BAL.address);
-};
-
 const getExternalContractMock = async (setup) => {
   const DistroMock = await ethers.getContractFactory('ExternalContractMock', setup.roles.root);
   return await DistroMock.deploy();
@@ -256,7 +246,6 @@ module.exports = {
   baseRewardPool,
   controller,
   getMintrMock,
-  proxyFactory,
   stashFactory,
   getBaseRewardPool,
   getExtraRewardMock,
@@ -270,7 +259,6 @@ module.exports = {
   getDistroMock,
   getExternalContractMock,
   getSmartWalletCheckerMock,
-  getDistro,
   getStashMock,
   getStash,
   getDelegateRegistry,

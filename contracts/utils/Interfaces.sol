@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.15;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -271,10 +271,6 @@ interface IStashFactory {
 
 interface ITokenFactory {
     function createDepositToken(address) external returns (address);
-}
-
-interface IProxyFactory {
-    function clone(address _target) external returns (address);
 }
 
 interface IRewardHook {

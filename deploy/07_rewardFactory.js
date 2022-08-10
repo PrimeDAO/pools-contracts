@@ -13,6 +13,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     args: [controller.address, addresses.bal],
     log: true,
     gasLimit: process.env.GAS_LIMIT,
+    gasPrice: process.env.GAS_PRICE
   });
 };
 

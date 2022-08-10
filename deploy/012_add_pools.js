@@ -9,7 +9,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     const pools = addresses.pools
 
     for (const pool of pools) {
-        await execute('Controller', { from: root, log: true, gasLimit: process.env.GAS_LIMIT }, 'addPool', pool.lpToken, pool.gauge);
+        await execute('Controller', { from: root, log: true, gasLimit: process.env.GAS_LIMIT, gasPrice: process.env.GAS_PRICE }, 'addPool', pool.lpToken, pool.gauge);
         console.log('Controller addPool: ', pool.name);
     }
 };

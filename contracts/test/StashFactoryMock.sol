@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // solium-disable linebreak-style
-pragma solidity 0.8.15;
+pragma solidity 0.8.16;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -17,7 +17,6 @@ contract StashFactoryMock {
 
     address public immutable operator;
     address public immutable rewardFactory;
-    address public immutable proxyFactory;
 
     address public v1Implementation;
     address public v2Implementation;
@@ -25,12 +24,10 @@ contract StashFactoryMock {
 
     constructor(
         address _operator,
-        address _rewardFactory,
-        address _proxyFactory
+        address _rewardFactory
     ) {
         operator = _operator;
         rewardFactory = _rewardFactory;
-        proxyFactory = _proxyFactory;
     }
 
     function setImplementation(
