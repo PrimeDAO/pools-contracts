@@ -24,6 +24,11 @@ SOFTWARE.
                        Version 3, 29 June 2007
 
 Copyright (c) 2022 prime-dao
+Specific files referenced in GPU licensing:
+
+- BalancerErrors.sol
+- IVault.sol
+- WETHBALMock.sol
 
 Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
 Everyone is permitted to copy and distribute verbatim copies
