@@ -31,7 +31,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./BalancerErrors.sol";
 
 
-pragma solidity 0.8.15;
+pragma solidity 0.8.16;
 
 /**
  * @dev Interface for the SignatureValidator helper, used to support meta-transactions.

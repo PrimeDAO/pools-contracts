@@ -42,8 +42,7 @@ module.exports = {
     token: 'ETH',
     // gasPrice: 100, // Leaving gas price constant so that we can see results better
     gasPriceApi:
-        "https://api.etherscan.com/api?module=proxy&action=eth_gasPrice&apikey=" +
-        process.env.ETHERSCAN_API_KEY,
+      'https://api.etherscan.com/api?module=proxy&action=eth_gasPrice&apikey=' + process.env.ETHERSCAN_API_KEY,
     enabled: process.env.REPORT_GAS ? true : false,
     src: './contracts',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY,
@@ -114,7 +113,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: '0.8.15',
+        version: '0.8.16',
         settings: {
           viaIR: false, // false gives us better results
           optimizer: {

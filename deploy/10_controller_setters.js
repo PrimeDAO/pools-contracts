@@ -5,7 +5,7 @@ const deployFunction = async ({ deployments }) => {
     const { root } = await getNamedAccounts();
     const addresses = getAddresses();
     
-    const opts = { from: root, log: true, gasLimit: process.env.GAS_LIMIT }
+    const opts = { from: root, log: true, gasLimit: process.env.GAS_LIMIT, gasPrice: process.env.GAS_PRICE }
 
     const { address: rewardFactoryAddress } = await deployments.get('RewardFactory');
     const { address: stashFactoryAddress } = await deployments.get('StashFactory');

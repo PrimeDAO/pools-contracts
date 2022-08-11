@@ -36,10 +36,9 @@ describe('unit - Controller', function () {
       .then((x) => x.deploy())
       .then((x) => x.address);
 
-    proxyFactory = await init.proxyFactory(setup);
     rewardFactory = await init.rewardFactory(setup, controller);
 
-    stashFactory = await init.stashFactory(setup, controller, rewardFactory, proxyFactory);
+    stashFactory = await init.stashFactory(setup, controller, rewardFactory);
     // Set implementation contract to mock
     expect(await stashFactory.connect(root).setImplementation(implementationAddress))
       .to.emit(stashFactory, 'ImpelemntationChanged')
@@ -47,7 +46,7 @@ describe('unit - Controller', function () {
     tokenFactory = await init.tokenFactory(setup, controller);
 
     baseRewardPool = await init.baseRewardPool(setup, controller, rewardFactory);
-    stashFactoryMock = await init.getStashFactoryMock(setup, controller, rewardFactory, proxyFactory);
+    stashFactoryMock = await init.getStashFactoryMock(setup, controller, rewardFactory);
 
     // set factories and verify
     await controller.setFactories(rewardFactory.address, stashFactory.address, tokenFactory.address);

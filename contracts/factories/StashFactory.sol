@@ -1,6 +1,32 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.15;
 
+/*
+ * MIT License
+ *
+ * Copyright (c) 2021 convex-eth
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+pragma solidity 0.8.16;
+
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "../utils/Interfaces.sol";
 
 /// @title Stash Factory
@@ -11,18 +37,12 @@ contract StashFactory is IStashFactory {
 
     address public immutable operator;
     address public immutable rewardFactory;
-    address public immutable proxyFactory;
 
     address public implementation;
 
-    constructor(
-        address _operator,
-        address _rewardFactory,
-        address _proxyFactory
-    ) {
+    constructor(address _operator, address _rewardFactory) {
         operator = _operator;
         rewardFactory = _rewardFactory;
-        proxyFactory = _proxyFactory;
     }
 
     /// @notice Used to set address for new implementation contract
@@ -42,7 +62,7 @@ contract StashFactory is IStashFactory {
         if (msg.sender != operator) {
             revert Unauthorized();
         }
-        address stash = IProxyFactory(proxyFactory).clone(implementation);
+        address stash = Clones.clone(implementation);
         IStash(stash).initialize(_pid, msg.sender, _gauge, rewardFactory);
         return stash;
     }

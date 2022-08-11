@@ -19,9 +19,7 @@ describe('unit - StashFactory', function () {
 
     setup.baseRewardPool = await init.baseRewardPool(setup, setup.controller, setup.rewardFactory);
 
-    setup.proxyFactory = await init.proxyFactory(setup);
-
-    const stashFactory = await init.stashFactory(setup, setup.controller, setup.rewardFactory, setup.proxyFactory);
+    const stashFactory = await init.stashFactory(setup, setup.controller, setup.rewardFactory);
     return {
       stashFactory,
       root: setup.roles.root,

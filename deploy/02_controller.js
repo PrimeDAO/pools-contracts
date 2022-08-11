@@ -17,6 +17,7 @@ const deployFunction = async ({ getNamedAccounts, deployments }) => {
     ],
     log: true,
     gasLimit: process.env.GAS_LIMIT,
+    gasPrice: process.env.GAS_PRICE
   });
 };
 
