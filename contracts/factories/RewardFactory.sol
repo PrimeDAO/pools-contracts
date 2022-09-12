@@ -35,8 +35,6 @@ import "../utils/MathUtil.sol";
 contract RewardFactory is IRewardFactory {
     using MathUtil for uint256;
 
-    event ExtraRewardAdded(address reward, uint256 pid);
-    event ExtraRewardRemoved(address reward, uint256 pid);
     event StashAccessGranted(address stash);
     event BaseRewardPoolCreated(address poolAddress);
     event VirtualBalanceRewardPoolCreated(address baseRewardPool, address poolAddress, address token);
@@ -47,58 +45,10 @@ contract RewardFactory is IRewardFactory {
     address public immutable operator;
 
     mapping(address => bool) private rewardAccess;
-    mapping(address => uint256[]) public rewardActiveList;
 
     constructor(address _operator, address _bal) {
         operator = _operator;
         bal = _bal;
-    }
-
-    /// @notice Get active rewards count
-    /// @return uint256 number of active rewards
-    function activeRewardCount(address _reward) external view returns (uint256) {
-        return rewardActiveList[_reward].length;
-    }
-
-    /// @notice Adds a new reward to the active list
-    /// @return true on success
-    function addActiveReward(address _reward, uint256 _pid) external returns (bool) {
-        if (!rewardAccess[msg.sender]) {
-            revert Unauthorized();
-        }
-        uint256 pid = _pid + 1; // offset by 1 so that we can use 0 as empty
-
-        uint256[] memory activeListMemory = rewardActiveList[_reward];
-        for (uint256 i = 0; i < activeListMemory.length; i = i.unsafeInc()) {
-            if (activeListMemory[i] == pid) return true;
-        }
-        rewardActiveList[_reward].push(pid);
-        emit ExtraRewardAdded(_reward, _pid);
-        return true;
-    }
-
-    /// @notice Removes active reward
-    /// @param _reward The address of the reward contract
-    /// @param _pid The pid of the pool
-    /// @return true on success
-    function removeActiveReward(address _reward, uint256 _pid) external returns (bool) {
-        if (!rewardAccess[msg.sender]) {
-            revert Unauthorized();
-        }
-        uint256 pid = _pid + 1; //offset by 1 so that we can use 0 as empty
-
-        uint256[] memory activeListMemory = rewardActiveList[_reward];
-        for (uint256 i = 0; i < activeListMemory.length; i = i.unsafeInc()) {
-            if (activeListMemory[i] == pid) {
-                if (i != activeListMemory.length - 1) {
-                    rewardActiveList[_reward][i] = rewardActiveList[_reward][activeListMemory.length - 1];
-                }
-                rewardActiveList[_reward].pop();
-                emit ExtraRewardRemoved(_reward, _pid);
-                break;
-            }
-        }
-        return true;
     }
 
     /// @notice Grants rewardAccess to stash
