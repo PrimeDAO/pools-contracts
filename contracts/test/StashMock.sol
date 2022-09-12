@@ -12,10 +12,10 @@ contract StashMock is IStash {
     address public rewardFactory;
 
     // solhint-disable-next-line
-    function processStash() external {}
+    function processStash_WfQ() external {}
     // solhint-disable-next-line
-    function claimRewards() external {
-        IController(operator).claimRewards(pid, gauge);
+    function claimRewards_6H10() external {
+        IController(operator).claimRewards_poF(pid, gauge);
     }
 
     function initialize(

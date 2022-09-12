@@ -74,7 +74,7 @@ interface IVoterProxy {
 
     function release() external;
 
-    function claimBal(address _gauge) external returns (uint256);
+    function claimBal__mo(address _gauge) external returns (uint256);
 
     function claimRewards(address _gauge) external;
 
@@ -128,9 +128,9 @@ interface IRewards {
 }
 
 interface IStash {
-    function processStash() external;
+    function processStash_WfQ() external;
 
-    function claimRewards() external;
+    function claimRewards_6H10() external;
 
     function initialize(
         uint256 _pid,
@@ -223,13 +223,18 @@ interface IController {
 
     /// @notice Claims rewards from a pool and disperses them to the rewards contract
     /// @param _pid the id of the pool where lp tokens are held
-    function earmarkRewards(uint256 _pid) external;
+    /// weird naming reduces gas cost
+    function earmarkRewards_pcp(uint256 _pid) external;
 
     /// @notice Claims rewards from the Balancer's fee distributor contract and transfers the tokens into the rewards contract
-    function earmarkFees() external;
+    /// weird naming reduces gas cost
+    function earmarkFees_F4P() external;
 
+    /// @notice Returns contact state
+    /// @return bool indicating if the contract is shut down
     function isShutdown() external view returns (bool);
 
+    /// @notice Returns the pool information
     function poolInfo(uint256)
         external
         view
@@ -242,8 +247,11 @@ interface IController {
             bool
         );
 
-    function claimRewards(uint256, address) external;
+    /// weird naming reduces gas cost
+    function claimRewards_poF(uint256, address) external;
 
+    /// @notice Returns the owner
+    /// @dev Prime Multisig
     function owner() external returns (address);
 }
 

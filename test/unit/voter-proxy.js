@@ -247,7 +247,7 @@ describe('unit - VoterProxy', function () {
     await changeOperator(voterProxy, anotherUser.address);
     expect(await bal.balanceOf(anotherUser.address)).to.equals(0);
     // Mintr mock doesn't care about zero address
-    await voterProxy.connect(anotherUser).claimBal(ZERO_ADDRESS);
+    await voterProxy.connect(anotherUser).claimBal__mo(ZERO_ADDRESS);
     // mintr mock mints 100 bal
     expect(await bal.balanceOf(anotherUser.address)).to.equals(ONE_HUNDRED_ETHER);
   });

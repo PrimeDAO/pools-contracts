@@ -96,14 +96,14 @@ contract ExtraRewardStash is IStash {
     }
 
     /// @notice Claims registered reward tokens
-    function claimRewards() external onlyAddress(operator) {
+    function claimRewards_6H10() external onlyAddress(operator) {
         // this is updateable from v2 gauges now so must check each time.
         checkForNewRewardTokens();
 
         if (hasBalRewards) {
             // claim rewards on gauge for staker
             // using reward_receiver so all rewards will be moved to this stash
-            IController(operator).claimRewards(pid, gauge);
+            IController(operator).claimRewards_poF(pid, gauge);
         }
 
         // hook for reward pulls
@@ -194,7 +194,7 @@ contract ExtraRewardStash is IStash {
     }
 
     /// @notice Sends all of the extra rewards to the reward contracts
-    function processStash() external onlyAddress(operator) {
+    function processStash_WfQ() external onlyAddress(operator) {
         uint256 tCount = tokenList.length;
         for (uint256 i = 0; i < tCount; i++) {
             TokenInfo storage t = tokenInfo[tokenList[i]];

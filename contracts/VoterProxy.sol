@@ -204,7 +204,7 @@ contract VoterProxy is IVoterProxy {
     /// @notice Claims VeBal tokens
     /// @param _gauge The gauge to claim from
     /// @return amount claimed
-    function claimBal(address _gauge) external onlyOperator returns (uint256) {
+    function claimBal__mo(address _gauge) external onlyOperator returns (uint256) {
         uint256 _balance;
 
         try IMinter(mintr).mint(_gauge) {

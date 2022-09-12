@@ -466,7 +466,7 @@ contract Controller is IController {
     /// @notice claims rewards from a specific pool
     /// @param _pid the id of the pool
     /// @param _gauge address of the gauge
-    function claimRewards(uint256 _pid, address _gauge) external {
+    function claimRewards_poF(uint256 _pid, address _gauge) external {
         address stash = poolInfo[_pid].stash;
         if (msg.sender != stash) {
             revert Unauthorized();
@@ -484,15 +484,15 @@ contract Controller is IController {
         address gauge = pool.gauge;
 
         //claim bal
-        IVoterProxy(staker).claimBal(gauge);
+        IVoterProxy(staker).claimBal__mo(gauge);
 
         //check if there are extra rewards
         address stash = pool.stash;
         if (stash != address(0)) {
             //claim extra rewards
-            IStash(stash).claimRewards();
+            IStash(stash).claimRewards_6H10();
             //process extra rewards
-            IStash(stash).processStash();
+            IStash(stash).processStash_WfQ();
         }
 
         //bal balance
@@ -521,12 +521,12 @@ contract Controller is IController {
     }
 
     /// @inheritdoc IController
-    function earmarkRewards(uint256 _pid) external {
+    function earmarkRewards_pcp(uint256 _pid) external {
         _earmarkRewards(_pid);
     }
 
     /// @inheritdoc IController
-    function earmarkFees() external {
+    function earmarkFees_F4P() external {
         IERC20[] memory feeTokensMemory = feeTokens;
         // Claim fee rewards from fee distro
         IVoterProxy(staker).claimFees(feeDistro, feeTokensMemory);
